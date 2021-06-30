@@ -1,0 +1,10 @@
+channels:
+ - conda-forge
+ - ebi-gene-expression-group
+dependencies:
+ - r-atlas-internal
+ - r-data.table
+ - r-genefilter
+ - r-gplots
+ - r-rcolorbrewer
+ - r-optparse

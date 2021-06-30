@@ -1,0 +1,14 @@
+wildcard_constraints:
+    accession="E-\D+-\d+"
+
+rule get_experiment_type:
+  container:
+    "docker://quay.io/biocontainers/perl-atlas-modules:0.2.0--h1b792b2_0"
+  input:
+    config_file="{accession}/{accession}-configuration.xml"
+  output:
+    type="{accession}/{accession}.type.txt"
+  shell:
+    """
+    perl get_experiment_type_from_xml.pl {input.config_file} > {output.config_file}
+    """
