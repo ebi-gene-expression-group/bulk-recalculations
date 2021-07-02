@@ -33,3 +33,8 @@ snakemake --dry-run --config accession="E-MTAB-5577" tool="all-diff" contrast_id
 ```
 snakemake --dry-run --config accession="E-MTAB-5577" tool="all-baseline" assay_ids="g1:g1" assay_labels="Assay1:Assay2" gff_file="../gff/organism.gtf" metric="tpm:fpkm" organism='arabidopsis_thaliana' -j 2 -s ../../Snakefile
 ```
+
+To run sorting hat, which will produce running calls for all studies in the working directory:
+```
+snakemake --use-conda --conda-frontend mamba --config gtf_dir=gff sm_options="--use-conda --conda-frontend mamba -j 2" -j 1 -s ../Snakefile-sorting-hat
+```
