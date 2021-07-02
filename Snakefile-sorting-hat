@@ -1,14 +1,135 @@
-wildcard_constraints:
-    accession="E-\D+-\d+"
+import yaml
+import glob
 
-rule get_experiment_type:
-  container:
-    "docker://quay.io/biocontainers/perl-atlas-modules:0.2.0--h1b792b2_0"
-  input:
-    config_file="{accession}/{accession}-configuration.xml"
-  output:
-    type="{accession}/{accession}.type.txt"
-  shell:
+# atom: set grammar=python:
+
+metadata = {}
+
+def fill_metadata(acc):
+    with open(f"{acc}/{acc}.metadata_summary.yaml", 'r') as meta:
+        metadata[acc] = yaml.load(meta, Loader=yaml.FullLoader)
+
+
+def get_tool(acc):
     """
-    perl get_experiment_type_from_xml.pl {input.config_file} > {output.config_file}
+    If a tool is given in the config, then that tool is preferred,
+    otherwise it is determined by the experiment type.
     """
+    if 'tool' in config:
+        return config['tool']
+    if acc not in metadata:
+        fill_metadata(acc)
+    if 'experiment_type' not in metadata[acc]:
+        print(f"Experiment type not found for {acc}")
+        return None
+    if 'differential' in metadata[acc]['experiment_type']:
+        return "all-diff"
+    if 'baseline' in metadata[acc]['experiment_type']:
+        return "all-baseline"
+    print(f"Could not determine tool for {acc}")
+    return None
+
+
+def get_organism(acc):
+    if acc not in metadata:
+        fill_metadata(acc)
+    return metadata[acc]['organism']
+
+def get_exp_type(acc):
+    if acc not in metadata:
+        fill_metadata(acc)
+    return metadata[acc]['experiment_type']
+
+def get_assay_contrast_line(acc):
+    if acc not in metadata:
+        fill_metadata(acc)
+    if 'contrasts' in metadata[acc]:
+        contrast_ids = "::".join(metadata[acc]['contrasts'].keys())
+        contrast_labels = "&&".join(metadata[acc]['contrasts'].values())
+        return f"contrast_ids={contrast_ids} contrast_labels=\"{contrast_labels}\""
+    elif 'assays' in metadata[acc]:
+        assay_ids = "::".join(metadata[acc]['assays'].keys())
+        assay_labels = "&&".join(metadata[acc]['assays'].values())
+        return f"assay_ids={assay_ids} assay_labels=\"{assay_labels}\""
+    return None
+
+def get_gff_path(acc):
+    if acc not in metadata:
+        fill_metadata(acc)
+    return metadata[acc]['gff']
+
+def get_outputs():
+    ACC=[]
+    if 'accessions' in config:
+        ACC=config['accessions'].split(":")
+    else:
+        ACC=glob.glob('E-*')
+    return expand("{accession}/{accession}.recalculations.done", accession=ACC)
+
+
+wildcard_constraints:
+    accession = "E-\D+-\d+"
+
+rule all:
+    input:
+        required_outputs=get_outputs()
+
+rule get_experiment_metadata:
+    container:
+        "docker://quay.io/biocontainers/perl-atlas-modules:0.2.0--h1b792b2_0"
+    conda:
+        "envs/perl-atlas-modules.yaml"
+    input:
+        config_file = "{accession}/{accession}-configuration.xml",
+        gtf_dir = config['gtf_dir']
+    output:
+        metadata = "{accession}/{accession}.metadata_summary.yaml"
+    shell:
+        """
+        # needed for container conda env activation
+        # /usr/local/env-execute
+        source {workflow.basedir}/bin/metadata_retrieval_functions.sh
+        perl {workflow.basedir}/bin/get_exptype_contrasts_assays.pl {wildcards.accession} {input.config_file} {output.metadata}
+        if [ -e "{wildcards.accession}/{wildcards.accession}.condensed-sdrf.tsv" ]; then
+           organism=$(get_organism_from_condensed_sdrf "{wildcards.accession}/{wildcards.accession}.condensed-sdrf.tsv")
+        elif [ -e "{wildcards.accession}/{wildcards.accession}-configuration.xml" ]; then
+           perl {workflow.basedir}/bin/get_experiment_info.pl --experiment {wildcards.accession} --xmlfile {wildcards.accession}/{wildcards.accession}-configuration.xml --organism
+        else
+           >&2 echo "Can't retrieve organism: neither {wildcards.accession}/{wildcards.accession}.condensed-sdrf.tsv nor {wildcards.accession}/{wildcards.accession}-configuration.xml not found "
+           exit 1
+        fi
+        gff_file=$( find {input.gtf_dir}/$organism -iname "$organism.*.gff3" | head -n1)
+        echo "organism: $organism" >> {output.metadata}
+        echo "gff: $gff_file" >> {output.metadata}
+        """
+
+rule produce_recalculations_call:
+    input:
+        metadata = "{accession}/{accession}.metadata_summary.yaml",
+        working_directory = "{accession}"
+    # params:
+        # snakemake_opts=config["sm_options"],
+        # tool=get_tool("{accession}"),
+        # organism=get_organism("{accession}"),
+        # type=get_exp_type("{accession}"),
+        # gff_path=get_gff_path("{accession}"),
+        # assay_contrast_line = get_assay_contrast_line("{accession}")
+    output:
+        touch("{accession}/{accession}.recalculations.done")
+    run:
+        command_line=f"""
+        snakemake {config['sm_options']} --config \
+            accession={wildcards.accession} tool={get_tool(wildcards.accession)} \
+            {get_assay_contrast_line(wildcards.accession)} \
+            organism={get_organism(wildcards.accession)} \
+            gff={get_gff_path(wildcards.accession)} \
+            -s {workflow.basedir}/Snakefile
+        """
+        print(command_line)
+        # shell(f"pushd {input.working_directory} && {command_line} && popd")
+    #shell:
+    #    """
+    #    pushd {input.working_directory}
+    #    echo ""
+    #    popd
+    #    """

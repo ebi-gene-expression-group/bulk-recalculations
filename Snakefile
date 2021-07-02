@@ -1,16 +1,18 @@
 from sys import exit
 
+# atom: set grammar=python:
+
 def get_contrast_labels():
-    return f"{config['contrast_labels']}".split(":")
+    return f"{config['contrast_labels']}".split("&&")
 
 def get_contrast_ids():
-    return f"{config['contrast_ids']}".split(":")
+    return f"{config['contrast_ids']}".split("::")
 
 def get_assay_labels():
-    return f"{config['assay_labels']}".split(":")
+    return f"{config['assay_labels']}".split("&&")
 
 def get_assay_ids():
-    return f"{config['assay_ids']}".split(":")
+    return f"{config['assay_ids']}".split("::")
 
 def get_ext_db():
     if 'ext' in config:
@@ -141,21 +143,6 @@ rule differential_tracks:
         touch "{output.fake}"
         """
 
-rule baseline_tracks:
-    conda:
-        "envs/irap.yaml"
-    input:
-        gff=config['gff_file'],
-        analytics="{accession}-{metric}.tsv"
-    output:
-        fake=temp("fake_baseline_tracks.{accession}.{assay_id}-_-{assay_label}-_-{metric}")
-    shell:
-        """
-        source {workflow.basedir}/bin/tracks_functions.sh
-        generate_baseline_tracks {wildcards.accession} {wildcards.assay_id} {input.analytics} {input.gff} ./ {wildcards.assay_label}
-        touch "{output.fake}"
-        """
-
 rule differential_gsea:
     conda:
         "envs/irap.yaml"
@@ -184,22 +171,24 @@ rule differential_gsea:
         touch "{output.fake}"
         """
 
-rule atlas_experiment_summary:
+rule baseline_tracks:
     conda:
-        "envs/atlas-internal.yaml"
+        "envs/irap.yaml"
+    input:
+        gff=config['gff_file'],
+        analytics="{accession}-{metric}.tsv"
     output:
-        rsummary="{accession}-atlasExperimentSummary.Rdata"
+        fake=temp("fake_baseline_tracks.{accession}.{assay_id}-_-{assay_label}-_-{metric}")
     shell:
         """
-        {workflow.basedir}/bin/createAtlasExperimentSummary.R \
-	          --source ./ \
-	          --accession {wildcards.accession} \
-	          --output {output.rsummary}
+        source {workflow.basedir}/bin/tracks_functions.sh
+        generate_baseline_tracks {wildcards.accession} {wildcards.assay_id} {input.analytics} {input.gff} ./ {wildcards.assay_label}
+        touch "{output.fake}"
         """
 
 rule baseline_coexpression:
     conda:
-        "envs/irap.yaml"
+        "envs/clusterseq.yaml"
     input:
         expression="{accession}-{metric}.tsv.undecorated.aggregated"
     output:
@@ -242,4 +231,17 @@ rule baseline_heatmap:
         {workflow.basedir}/bin/generateBaselineHeatmap.R --configuration {wildcards.accession}-configuration.xml \
 		--input  input.expression \
 		--output output.heatmap
+        """
+
+rule atlas_experiment_summary:
+    conda:
+        "envs/atlas-internal.yaml"
+    output:
+        rsummary="{accession}-atlasExperimentSummary.Rdata"
+    shell:
+        """
+        {workflow.basedir}/bin/createAtlasExperimentSummary.R \
+	          --source ./ \
+	          --accession {wildcards.accession} \
+	          --output {output.rsummary}
         """
