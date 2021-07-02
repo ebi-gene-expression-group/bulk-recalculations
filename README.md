@@ -12,7 +12,7 @@ It deals with:
 Run like:
 
 ```
-atlas-bulk-recalculations/test-data/E-MTAB-5577 on  master [?] via 🅒 snakemake on ☁️ pmoreno@ebi.ac.uk
+atlas-bulk-recalculations/test-data/E-MTAB-5577 on  master [?] via 🅒 snakemake on ☁️
 ❯ snakemake --config accession="E-MTAB-5577" tool="all" --use-conda --conda-frontend mamba -j 2 -s ../../Snakefile
 ```
 
