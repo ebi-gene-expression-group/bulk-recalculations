@@ -58,6 +58,10 @@ def get_gff_path(acc):
         fill_metadata(acc)
     return metadata[acc]['gff']
 
+def get_bioentities_property_path():
+    return config['bioentities_properties']
+
+
 def get_outputs():
     ACC=[]
     if 'accessions' in config:
@@ -79,6 +83,7 @@ rule get_experiment_metadata:
         "docker://quay.io/biocontainers/perl-atlas-modules:0.2.0--h1b792b2_0"
     conda:
         "envs/perl-atlas-modules.yaml"
+    log: "{accession}/get_experiment_metadata.log"
     input:
         config_file = "{accession}/{accession}-configuration.xml",
         gtf_dir = config['gtf_dir']
@@ -88,13 +93,18 @@ rule get_experiment_metadata:
         """
         # needed for container conda env activation
         # /usr/local/env-execute
+        exec &> {log}
         source {workflow.basedir}/bin/metadata_retrieval_functions.sh
         perl {workflow.basedir}/bin/get_exptype_contrasts_assays.pl {wildcards.accession} {input.config_file} {output.metadata}
+        echo "Past first perl"
         if [ -e "{wildcards.accession}/{wildcards.accession}.condensed-sdrf.tsv" ]; then
+           echo "Trying with condensed..."
            organism=$(get_organism_from_condensed_sdrf "{wildcards.accession}/{wildcards.accession}.condensed-sdrf.tsv")
         elif [ -e "{wildcards.accession}/{wildcards.accession}-configuration.xml" ]; then
-           perl {workflow.basedir}/bin/get_experiment_info.pl --experiment {wildcards.accession} --xmlfile {wildcards.accession}/{wildcards.accession}-configuration.xml --organism
+           echo "Trying with perl"
+           organism=$(perl {workflow.basedir}/bin/get_experiment_info.pl --experiment {wildcards.accession} --xmlfile {wildcards.accession}/{wildcards.accession}-configuration.xml --organism)
         else
+           echo "Nothing worked..."
            >&2 echo "Can't retrieve organism: neither {wildcards.accession}/{wildcards.accession}.condensed-sdrf.tsv nor {wildcards.accession}/{wildcards.accession}-configuration.xml not found "
            exit 1
         fi
@@ -107,7 +117,9 @@ rule produce_recalculations_call:
     input:
         metadata = "{accession}/{accession}.metadata_summary.yaml",
         working_directory = "{accession}"
-    # params:
+    log: "{accession}/produce_recalculations_call.log"
+    params:
+        bioentities_properties=get_bioentities_property_path()
         # snakemake_opts=config["sm_options"],
         # tool=get_tool("{accession}"),
         # organism=get_organism("{accession}"),
@@ -119,10 +131,12 @@ rule produce_recalculations_call:
     run:
         command_line=f"""
         snakemake {config['sm_options']} --config \
-            accession={wildcards.accession} tool={get_tool(wildcards.accession)} \
+            accession={wildcards.accession}
+            tool={get_tool(wildcards.accession)} \
             {get_assay_contrast_line(wildcards.accession)} \
             organism={get_organism(wildcards.accession)} \
             gff={get_gff_path(wildcards.accession)} \
+            bioentities_properties={params.bioentities_properties} \
             -s {workflow.basedir}/Snakefile
         """
         print(command_line)

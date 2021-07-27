@@ -3,3 +3,5 @@ channels:
  - ebi-gene-expression-group
 dependencies:
  - irap-components
+ - grep
+ - bioconductor-piano

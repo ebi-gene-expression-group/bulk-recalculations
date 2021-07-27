@@ -71,7 +71,7 @@ def get_outputs():
             w_metric = expand(f"{ap}-_-"+"{metric}", metric=f"{config['metric']}".split(":"))
             outputs.extend(w_metric)
     if 'differential-gsea' in config['tool'] or config['tool']=="all-diff":
-        check_config_required(fields=['contrast_ids', 'contrast_labels', 'organism', 'BIOENTITIES_PROPERTIES_PATH'], method='differential-gsea')
+        check_config_required(fields=['contrast_ids', 'contrast_labels', 'organism', 'bioentities_properties'], method='differential-gsea')
         contrast_part=expand("fake_diff_gsea."+config['accession']+
                             ".{id}-_-{label}", zip, id=get_contrast_ids(),
                             label=get_contrast_labels())
@@ -124,7 +124,7 @@ rule differential_tracks:
     conda:
         "envs/irap.yaml"
     input:
-        gff=config['gff_file']
+        gff=config['gff']
         # analytics will be derived below since it could be either {accession}-{arraydesign}-analytics.tsv
         # or just {accession}-analytics.tsv for RNA-Seq
     output:
@@ -134,11 +134,13 @@ rule differential_tracks:
     shell:
         """
         source {workflow.basedir}/bin/tracks_functions.sh
+        set +e
         analyticsFile=$(grep -l -P "\\t{wildcards.contrast_id}\." {wildcards.accession}_A-*-analytics.tsv)
-        if [ ! -s $analyticsFile ]; then
+        if [ $? -ne 0 ]; then
             # rnaseq case
             analyticsFile={wildcards.accession}-analytics.tsv
         fi
+        set -e
         generate_differential_tracks {wildcards.accession} {wildcards.contrast_id} $analyticsFile {input.gff} "{wildcards.contrast_label}" ./
         touch "{output.fake}"
         """
@@ -148,26 +150,28 @@ rule differential_gsea:
         "envs/irap.yaml"
     params:
         organism=config['organism'],
-        BIOENTITIES_PROPERTIES_PATH=config['BIOENTITIES_PROPERTIES_PATH']
+        BIOENTITIES_PROPERTIES_PATH=config['bioentities_properties']
     output:
         fake=temp("fake_diff_gsea.{accession}.{contrast_id}-_-{contrast_label}-_-{ext_db}-_-{ext_db_label}")
     shell:
         """
         export BIOENTITIES_PROPERTIES_PATH={params.BIOENTITIES_PROPERTIES_PATH}
         source {workflow.basedir}/bin/gsea_functions.sh
+        set +e
         analyticsFile=$(grep -l -P "\\t{wildcards.contrast_id}\." {wildcards.accession}_A-*-analytics.tsv)
-        if [ ! -s $analyticsFile ]; then
+        if [ $? -ne 0 ]; then
             # rnaseq case
             analyticsFile={wildcards.accession}-analytics.tsv
         fi
-        pvalColNum=$(get_contrast_colnum $analyticsFile {wildcards.contrast_id} p-value)
-        log2foldchangeColNum=$(get_contrast_colnum $analyticsFile {wildcards.contrast_id} log2foldchange)
+        set -e
+        pvalColNum=$(get_contrast_colnum $analyticsFile {wildcards.contrast_id} "p-value")
+        log2foldchangeColNum=$(get_contrast_colnum $analyticsFile {wildcards.contrast_id} "log2foldchange")
         plotTitle="
         Top 10 {wildcards.ext_db_label} enriched in
         {wildcards.contrast_label}
         (Fisher-exact, FDR < 0.1)"
         annotationFile=$(find_properties_file {params.organism} {wildcards.ext_db})
-        {workflow.basedir}/bin/gxa_calculate_gsea.sh {wildcards.accession} $annotationFile $analyticsFile $pvalColNum $log2foldchangeColNum ./ {wildcards.contrast_id} "$plotTitle" {params.organism} {ext_db}
+        {workflow.basedir}/bin/gxa_calculate_gsea.sh {wildcards.accession} $annotationFile $analyticsFile $pvalColNum $log2foldchangeColNum ./ {wildcards.contrast_id} "$plotTitle" {params.organism} {wildcards.ext_db}
         touch "{output.fake}"
         """
 
@@ -175,7 +179,7 @@ rule baseline_tracks:
     conda:
         "envs/irap.yaml"
     input:
-        gff=config['gff_file'],
+        gff=config['gff'],
         analytics="{accession}-{metric}.tsv"
     output:
         fake=temp("fake_baseline_tracks.{accession}.{assay_id}-_-{assay_label}-_-{metric}")
@@ -198,20 +202,20 @@ rule baseline_coexpression:
         {workflow.basedir}/run_coexpression_for_experiment.R {input.expression} {output.coexpression_comp}
         """
 
-rule link_baseline_coexpression
+rule link_baseline_coexpression:
     """
     There is a case where coexpression might not be calculated, when the dataset
     has less than 3 columns. In that case it might be that the input files for this
     never appear, not sure whether this will timeout without errors or not.
     """
     input:
-        expand(f"{accession}"+"-{metric}-coexpressions.tsv.gz", metric=get_metrics())
+        expand("{accession}-{metric}-coexpressions.tsv.gz", metric=get_metrics(), accession=["{accession}"])
     shell:
         """
         if [ -s {wildcards.accession}-tpm-coexpressions.tsv.gz ]; then
-            ln -s {accession}-tpm-coexpressions.tsv.gz {accession}-coexpressions.tsv.gz
+            ln -s {wildcards.accession}-tpm-coexpressions.tsv.gz {wildcards.accession}-coexpressions.tsv.gz
         elif [ -s {wildcards.accession}-fpkm-coexpressions.tsv.gz ]; then
-            ln -s {accession}-fpkm-coexpressions.tsv.gz {accession}-coexpressions.tsv.gz
+            ln -s {wildcards.accession}-fpkm-coexpressions.tsv.gz {wildcards.accession}-coexpressions.tsv.gz
         else
             echo "Error: neither TPM nor FPKM coexpressions.tsv.gz file found"
             exit 1
