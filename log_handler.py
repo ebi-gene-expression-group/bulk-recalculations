@@ -1,7 +1,13 @@
 import sys
+import logging
+import os
+
+l = logging.getLogger(__name__)
+l.setLevel(logging.DEBUG)
+fh = logging.FileHandler(os.environ.get('LOG_PATH'), mode='w')
+l.addHandler(fh)
 
 jobs = {}
-sys.stdout = open('/tmp/run_test.log', 'w')
 
 def log_handler(msg):
 
@@ -27,10 +33,10 @@ def log_handler(msg):
                 log=""
                 if 'log' in j_cont:
                     log=j_cont['log']
-                print(f"{j_cont['accession']}\t{j_cont['name']}\t{j_cont['status']}\t{log}")
+                l.info(f"{j_cont['accession']}\t{j_cont['name']}\t{j_cont['status']}\t{log}")
                 jobs_to_remove.append(j_id)
-                sys.stdout.flush()
-    
+                #sys.stdout.flush()
+
         for j_id in jobs_to_remove:
             del jobs[j_id]
 
@@ -38,6 +44,5 @@ def log_handler(msg):
     #    cur = msg['done']
     #    total = msg['total']
     #    print(get_bar(cur, total) + f" {cur}/{total}")
-    if 'msg' in msg and msg['msg'] == 'removed all locks':
-        sys.stdout.close()
-
+    #if 'msg' in msg and msg['msg'] == 'removed all locks':
+    #    sys.stdout.close()
