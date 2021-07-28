@@ -96,10 +96,13 @@ rule all:
 rule percentile_ranks:
     conda:
         "envs/atlas-internal.yaml"
+    log: "log/{accession}-percentile_ranks.log"
     output:
         percentile_ranks_merged="{accession}-percentile-ranks.tsv"
     shell:
         """
+        mkdir -p log
+        exec &> "{log}"
         rm -f {wildcards.accession}*-percentile-ranks.tsv
         for analytics in $(ls {wildcards.accession}*-analytics.tsv.unrounded); do
             {workflow.basedir}/bin/calculate_percentile_ranks.R $analytics
@@ -123,6 +126,7 @@ rule percentile_ranks:
 rule differential_tracks:
     conda:
         "envs/irap.yaml"
+    log: "log/{accession}-_-{contrast_id}-_-{contrast_label}-differential_tracks.log"
     input:
         gff=config['gff']
         # analytics will be derived below since it could be either {accession}-{arraydesign}-analytics.tsv
@@ -133,6 +137,8 @@ rule differential_tracks:
         fake=temp("fake_diff_tracks.{accession}.{contrast_id}-_-{contrast_label}")
     shell:
         """
+        mkdir -p log
+        exec &> "{log}"
         source {workflow.basedir}/bin/tracks_functions.sh
         set +e
         analyticsFile=$(grep -l -P "\\t{wildcards.contrast_id}\." {wildcards.accession}_A-*-analytics.tsv)
@@ -148,6 +154,7 @@ rule differential_tracks:
 rule differential_gsea:
     conda:
         "envs/irap.yaml"
+    log: "log/{accession}.{contrast_id}-_-{contrast_label}-_-{ext_db}-_-{ext_db_label}-differential_gsea.log"
     params:
         organism=config['organism'],
         BIOENTITIES_PROPERTIES_PATH=config['bioentities_properties']
@@ -155,6 +162,8 @@ rule differential_gsea:
         fake=temp("fake_diff_gsea.{accession}.{contrast_id}-_-{contrast_label}-_-{ext_db}-_-{ext_db_label}")
     shell:
         """
+        mkdir -p log
+        exec &> "{log}"
         export BIOENTITIES_PROPERTIES_PATH={params.BIOENTITIES_PROPERTIES_PATH}
         source {workflow.basedir}/bin/gsea_functions.sh
         set +e
@@ -178,6 +187,7 @@ rule differential_gsea:
 rule baseline_tracks:
     conda:
         "envs/irap.yaml"
+    log: "log/{accession}-{assay_id}-_-{assay_label}-_-{metric}-baseline_tracks.log"
     input:
         gff=config['gff'],
         analytics="{accession}-{metric}.tsv"
@@ -185,6 +195,8 @@ rule baseline_tracks:
         fake=temp("fake_baseline_tracks.{accession}.{assay_id}-_-{assay_label}-_-{metric}")
     shell:
         """
+        mkdir -p log
+        exec &> "{log}"
         source {workflow.basedir}/bin/tracks_functions.sh
         generate_baseline_tracks {wildcards.accession} {wildcards.assay_id} {input.analytics} {input.gff} ./ {wildcards.assay_label}
         touch "{output.fake}"
@@ -193,12 +205,15 @@ rule baseline_tracks:
 rule baseline_coexpression:
     conda:
         "envs/clusterseq.yaml"
+    log: "log/{accession}-{metric}-baseline_coexpression.log"
     input:
         expression="{accession}-{metric}.tsv.undecorated.aggregated"
     output:
         coexpression_comp="{accession}-{metric}-coexpressions.tsv.gz"
     shell:
         """
+        mkdir -p log
+        exec &> "{log}"
         {workflow.basedir}/run_coexpression_for_experiment.R {input.expression} {output.coexpression_comp}
         """
 
@@ -208,10 +223,13 @@ rule link_baseline_coexpression:
     has less than 3 columns. In that case it might be that the input files for this
     never appear, not sure whether this will timeout without errors or not.
     """
+    log: "{accession}-{metric}-link_baseline_coexpression.log"
     input:
         expand("{accession}-{metric}-coexpressions.tsv.gz", metric=get_metrics(), accession=["{accession}"])
     shell:
         """
+        mkdir -p log
+        exec &> "{log}"
         if [ -s {wildcards.accession}-tpm-coexpressions.tsv.gz ]; then
             ln -s {wildcards.accession}-tpm-coexpressions.tsv.gz {wildcards.accession}-coexpressions.tsv.gz
         elif [ -s {wildcards.accession}-fpkm-coexpressions.tsv.gz ]; then
@@ -226,12 +244,15 @@ rule link_baseline_coexpression:
 rule baseline_heatmap:
     conda:
         "envs/atlas-internal.yaml"
+    log: "log/{accession}-{metric}-baseline_heatmap.log"
     input:
         expression="{accession}-{metric}.tsv"
     output:
         heatmap="{accession}-heatmap-{metric}.pdf"
     shell:
         """
+        mkdir -p log
+        exec &> "{log}"
         {workflow.basedir}/bin/generateBaselineHeatmap.R --configuration {wildcards.accession}-configuration.xml \
 		--input  input.expression \
 		--output output.heatmap
@@ -240,10 +261,13 @@ rule baseline_heatmap:
 rule atlas_experiment_summary:
     conda:
         "envs/atlas-internal.yaml"
+    log: "log/{accession}-atlas_experiment_summary.log"
     output:
         rsummary="{accession}-atlasExperimentSummary.Rdata"
     shell:
         """
+        mkdir -p log
+        exec &> "{log}"
         {workflow.basedir}/bin/createAtlasExperimentSummary.R \
 	          --source ./ \
 	          --accession {wildcards.accession} \

@@ -9,6 +9,10 @@ def fill_metadata(acc):
     with open(f"{acc}/{acc}.metadata_summary.yaml", 'r') as meta:
         metadata[acc] = yaml.load(meta, Loader=yaml.FullLoader)
 
+def get_log_handler_script():
+    if 'loghandler' in config:
+        return f"--log-handler-script {config['loghandler']} &>/dev/null"
+    return ""
 
 def get_tool(acc):
     """
@@ -119,7 +123,8 @@ rule produce_recalculations_call:
         working_directory = "{accession}"
     log: "{accession}/produce_recalculations_call.log"
     params:
-        bioentities_properties=get_bioentities_property_path()
+        bioentities_properties=get_bioentities_property_path(),
+        log_handler_script=get_log_handler_script()
         # snakemake_opts=config["sm_options"],
         # tool=get_tool("{accession}"),
         # organism=get_organism("{accession}"),
@@ -130,17 +135,20 @@ rule produce_recalculations_call:
         touch("{accession}/{accession}.recalculations.done")
     run:
         command_line=f"""
+        exec &> {log}
+        pushd {input.working_directory}
         snakemake {config['sm_options']} --config \
-            accession={wildcards.accession}
+            accession={wildcards.accession} \
             tool={get_tool(wildcards.accession)} \
             {get_assay_contrast_line(wildcards.accession)} \
             organism={get_organism(wildcards.accession)} \
             gff={get_gff_path(wildcards.accession)} \
             bioentities_properties={params.bioentities_properties} \
-            -s {workflow.basedir}/Snakefile
+            -s {workflow.basedir}/Snakefile {get_log_handler_script()}
+        popd
         """
         print(command_line)
-        # shell(f"pushd {input.working_directory} && {command_line} && popd")
+        #shell(command_line)
     #shell:
     #    """
     #    pushd {input.working_directory}
