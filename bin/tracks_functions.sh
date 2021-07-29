@@ -31,7 +31,7 @@ generate_baseline_tracks() {
   label=$6
 
   tpmORfpkm=$(basename $expressionsFile | awk -F"-" '{print $4}' | sed 's/.tsv//g')
-  gxa_tsv2bedGraph.sh --out ${expPath}/${expAcc}.${id}.genes.expressions_${tpmORfpkm} --tsv $expressionsFile --gtf $gffFile --value_col $id --label "$label" --description "For more information please visit http://www.ebi.ac.uk/gxa/experiments/${expAcc}"
+  tsv2bedGraph --out ${expPath}/${expAcc}.${id}.genes.expressions_${tpmORfpkm} --tsv $expressionsFile --gtf $gffFile --value_col $id --label "$label" --description "For more information please visit http://www.ebi.ac.uk/gxa/experiments/${expAcc}"
   if [ $? -ne 0 ]; then
     echo "ERROR: Failed to generate ${id}.genes.expressions.bedGraph_${tpmORfpkm} for $expAcc" >&2
     return 1
