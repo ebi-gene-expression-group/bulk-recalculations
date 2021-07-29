@@ -87,7 +87,7 @@ rule get_experiment_metadata:
         "docker://quay.io/biocontainers/perl-atlas-modules:0.2.0--h1b792b2_0"
     conda:
         "envs/perl-atlas-modules.yaml"
-    log: "{accession}/get_experiment_metadata.log"
+    log: "{accession}/log/get_experiment_metadata.log"
     input:
         config_file = "{accession}/{accession}-configuration.xml",
         gtf_dir = config['gtf_dir']
@@ -97,6 +97,7 @@ rule get_experiment_metadata:
         """
         # needed for container conda env activation
         # /usr/local/env-execute
+        mkdir -p {accession}/log
         exec &> {log}
         source {workflow.basedir}/bin/metadata_retrieval_functions.sh
         perl {workflow.basedir}/bin/get_exptype_contrasts_assays.pl {wildcards.accession} {input.config_file} {output.metadata}
