@@ -113,9 +113,14 @@ rule get_experiment_metadata:
            >&2 echo "Can't retrieve organism: neither {wildcards.accession}/{wildcards.accession}.condensed-sdrf.tsv nor {wildcards.accession}/{wildcards.accession}-configuration.xml not found "
            exit 1
         fi
+        magetab_files=$( perl {workflow.basedir}/bin/get_experiment_info.pl --experiment {wildcards.accession} --xmlfile {wildcards.accession}/{wildcards.accession}-configuration.xml )
+        idf=$( echo $magetabfiles | awk -F',' '{ print $1 }' )
+        sdrf=$( echo $magetabfiles | awk -F',' '{ print $1 }' )
         gff_file=$( find {input.gtf_dir}/$organism -iname "$organism.*.gff3" | head -n1)
         echo "organism: $organism" >> {output.metadata}
         echo "gff: $gff_file" >> {output.metadata}
+        echo "idf: $idf" >> {output.metadata}
+        echo "sdrf: $sdrf" >> {output.metadata}
         """
 
 rule produce_recalculations_call:

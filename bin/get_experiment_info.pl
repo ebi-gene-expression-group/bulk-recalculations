@@ -42,6 +42,10 @@ Optional. ArrayExpress accession of array designs used in a microarray experimen
 
 Optional. Filenames of raw data files for a microarray experiment.
 
+=item -m --magetabfiles
+
+Optional. Filenames of IDF and SDRF files, comma separated.
+
 =item -h --help
 
 Optional. Display this help.
@@ -104,41 +108,36 @@ my $assays = $magetab4atlas->get_assays;
 $assays = remove_non_xml_assays( $assays, $args->{ "xml_filename" } );
 
 if( $args->{ "organism" } ) { say_experiment_organism( $assays, $expAcc ); }
-
 elsif( $args->{ "array_design" } ) {
-
     unless( $experimentType =~ /array/ ) {
         $logger->logdie( "$expAcc is not a microarray experiment, cannot find array designs." );
     }
-
     say_array_designs( $assays, $expAcc );
 }
-
 elsif( $args->{ "raw_data_files" } ) {
-
     unless( $experimentType =~ /array/ ) {
         $logger->logdie( "$expAcc is not a microarray experiment, cannot find raw microarray data files." );
     }
-
     say_raw_data_files( $assays, $expAcc );
+}
+elsif( $args->{ "magetabfiles" } ) {
+  (my $sdrfFile = $idfFile) =~ s/\.idf\./\.sdrf\./g;
+  say $idfFile.",".$sdrfFile;
 }
 
 
 sub parse_args {
-
     my %args;
-
     my $want_help;
-
     GetOptions(
         "h|help"            => \$want_help,
         "e|experiment=s"    => \$args{ "experiment_accession" },
         "o|organism"        => \$args{ "organism" },
         "a|arraydesign"     => \$args{ "array_design" },
         "r|rawdatafiles"    => \$args{ "raw_data_files" },
+        "m|magetabfiles"    => \$args{ "magetabfiles" },
         "x|xmlfile=s"         => \$args{ "xml_filename" }
     );
-
     if( $want_help ) {
         pod2usage(
             -exitval    => 255,
@@ -146,7 +145,6 @@ sub parse_args {
             -verbose    => 1
         );
     }
-
     unless( $args{ "experiment_accession" } ) {
         pod2usage(
             -message    => "You must specify an experiment accession.\n",
@@ -155,7 +153,6 @@ sub parse_args {
             -verbose    => 1
         );
     }
-
     unless( $args{ "xml_filename" } ) {
         pod2usage(
             -message    => "You must specify the full path to the Atlas XML configuration file.\n",
@@ -164,7 +161,6 @@ sub parse_args {
             -verbose    => 1
         );
     }
-
     unless( $args{ "experiment_accession" } =~ /^E-\w{4}-\d+$/ ) {
         pod2usage(
             -message    => "\"" . $args{ "experiment_accession" } . "\" does not look like an ArrayExpress experiment accession.\n",
@@ -173,7 +169,6 @@ sub parse_args {
             -verbose    => 1
         );
     }
-
     # Only do one attribute per script run.
     my $definedArgs;
     foreach my $arg ( keys %args ) {
@@ -187,8 +182,7 @@ sub parse_args {
             -verbose    => 1
         );
     }
-
-    unless( $args{ "organism" } || $args{ "array_design" } || $args{ "raw_data_files" } ) {
+    unless( $args{ "organism" } || $args{ "array_design" } || $args{ "raw_data_files" } || $args{ "magetabfiles" } ) {
         pod2usage(
             -message    => "You must specify an attribute to retrieve.\n",
             -exitval    => 255,
@@ -202,17 +196,11 @@ sub parse_args {
 
 
 sub say_experiment_organism {
-
     my ( $assays, $expAcc ) = @_;
-
     my $organisms = {};
-
     foreach my $assay ( @{ $assays } ) {
-
         my $characteristics = $assay->get_characteristics;
-
         my @organisms = keys %{ $characteristics->{ "organism" } };
-
         foreach my $organism ( @organisms ) {
             $organisms->{ $organism } = 1;
         }
@@ -228,22 +216,15 @@ sub say_experiment_organism {
 }
 
 sub say_array_designs {
-
     my ( $assays, $expAcc ) = @_;
-
     my $arrayDesigns = {};
-
     foreach my $assay ( @{ $assays } ) {
-
         my $arrayDesign = $assay->get_array_design;
-
         $arrayDesigns->{ $arrayDesign } = 1;
     }
-
     unless( keys %{ $arrayDesigns } ) {
         $logger->logdie( "ERROR - No array designs found for $expAcc." );
     }
-
     foreach my $arrayDesign ( keys %{ $arrayDesigns } ) {
         say $arrayDesign;
     }
@@ -251,17 +232,11 @@ sub say_array_designs {
 
 
 sub say_raw_data_files {
-
     my ( $assays, $expAcc ) = @_;
-
     my $rawDataFiles = {};
-
     foreach my $assay ( @{ $assays } ) {
-
         if( $assay->has_array_data_file ) {
-
             my $rawDataFile = $assay->get_array_data_file;
-
             $rawDataFiles->{ $rawDataFile } = 1;
         }
     }
@@ -277,31 +252,20 @@ sub say_raw_data_files {
 
 
 sub remove_non_xml_assays {
-
     my ( $assays, $xmlFilename ) = @_;
-
     my $experimentConfig = parseAtlasConfig( $xmlFilename );
-
     my $allAnalytics = $experimentConfig->get_atlas_analytics;
-
     my $xmlAssayNames = {};
-
     foreach my $analytics ( @{ $allAnalytics } ) {
-
         my $analyticsAssays = $analytics->get_assays;
-
         foreach my $analyticsAssay ( @{ $analyticsAssays } ) {
-
             my $assayName = $analyticsAssay->get_name;
-
             $xmlAssayNames->{ $assayName } = 1;
         }
     }
 
     my $assaysToKeep = [];
-
     foreach my $assay ( @{ $assays } ) {
-
         if( $xmlAssayNames->{ $assay->get_name } ) {
 
             push @{ $assaysToKeep }, $assay;
