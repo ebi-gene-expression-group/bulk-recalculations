@@ -88,6 +88,9 @@ rule get_experiment_metadata:
     conda:
         "envs/perl-atlas-modules.yaml"
     log: "{accession}/log/get_experiment_metadata.log"
+    params:
+        atlas_meta_config = config['atlas_meta_config'],
+        atlas_prod = config['atlas_prod']
     input:
         config_file = "{accession}/{accession}-configuration.xml",
         gtf_dir = config['gtf_dir']
@@ -99,6 +102,8 @@ rule get_experiment_metadata:
         # /usr/local/env-execute
         mkdir -p {accession}/log
         exec &> {log}
+        export ATLAS_META_CONFIG={params.atlas_meta_config}
+        export ATLAS_PROD={params.atlas_prod}
         source {workflow.basedir}/bin/metadata_retrieval_functions.sh
         perl {workflow.basedir}/bin/get_exptype_contrasts_assays.pl {wildcards.accession} {input.config_file} {output.metadata}
         echo "Past first perl"
