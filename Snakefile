@@ -11,6 +11,21 @@ def read_metadata_summary():
         with open(config['metadata_summary'], 'r') as fh:
             metadata_summary = yaml.safe_load(fh)
 
+def get_from_config_or_metadata_summary(label):
+    if label in config:
+        return config[label]
+    else:
+        return metadata_summary[label]
+
+def get_sdrf():
+    return get_from_config_or_metadata_summary('sdrf')
+
+def get_gff():
+    return get_from_config_or_metadata_summary('gff')
+
+def get_organism():
+    return get_from_config_or_metadata_summary('organism')
+
 def get_contrast_labels():
     if 'contrast_labels' in config:
         return f"{config['contrast_labels']}".split("&&")
@@ -177,7 +192,7 @@ rule differential_tracks:
     conda: "envs/irap.yaml"
     log: "logs/{accession}.{contrast_id}-differential_tracks.log"
     input:
-        gff=config['gff']
+        gff=get_gff()
         # analytics will be derived below since it could be either {accession}-{arraydesign}-analytics.tsv
         # or just {accession}-analytics.tsv for RNA-Seq
     params:
@@ -207,7 +222,7 @@ rule differential_gsea:
     conda: "envs/irap.yaml"
     log: "logs/{accession}.{contrast_id}.{ext_db}-differential_gsea.log"
     params:
-        organism=config['organism'],
+        organism=get_organism(),
         BIOENTITIES_PROPERTIES_PATH=config['bioentities_properties'],
         contrast_label=get_contrast_label,
         ext_db_label=get_ext_db_label
@@ -244,7 +259,7 @@ rule baseline_tracks:
     params:
         assay_label=get_assay_label
     input:
-        gff=config['gff'],
+        gff=get_gff(),
         analytics="{accession}-{metric}.tsv"
     output:
         bedGraph="{accession}.{assay_id}.genes.expressions_{metric}.bedGraph"
@@ -311,13 +326,15 @@ rule baseline_heatmap:
         mkdir -p logs
         exec &> "{log}"
         {workflow.basedir}/bin/generateBaselineHeatmap.R --configuration {wildcards.accession}-configuration.xml \
-		--input  input.expression \
-		--output output.heatmap
+		--input  {input.expression} \
+		--output {output.heatmap}
         """
 
 rule atlas_experiment_summary:
     conda: "envs/atlas-internal.yaml"
     log: "logs/{accession}-atlas_experiment_summary.log"
+    input:
+        sdrf=get_sdrf()
     output:
         rsummary="{accession}-atlasExperimentSummary.Rdata"
     shell:
@@ -325,6 +342,7 @@ rule atlas_experiment_summary:
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         mkdir -p logs
         exec &> "{log}"
+        export SDRF_PATH={input.sdrf}
         {workflow.basedir}/bin/createAtlasExperimentSummary.R \
 	          --source ./ \
 	          --accession {wildcards.accession} \

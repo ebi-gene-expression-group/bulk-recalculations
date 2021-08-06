@@ -90,7 +90,8 @@ rule get_experiment_metadata:
     log: "{accession}/logs/get_experiment_metadata.log"
     params:
         atlas_meta_config = config['atlas_meta_config'],
-        atlas_prod = config['atlas_prod']
+        atlas_prod = config['atlas_prod'],
+        atlas_exps = config['atlas_exps']
     input:
         config_file = "{accession}/{accession}-configuration.xml",
         gtf_dir = config['gtf_dir']
@@ -105,9 +106,9 @@ rule get_experiment_metadata:
         exec &> {log}
         export ATLAS_META_CONFIG={params.atlas_meta_config}
         export ATLAS_PROD={params.atlas_prod}
+        export ATLAS_EXPS={params.atlas_exps}
         source {workflow.basedir}/bin/metadata_retrieval_functions.sh
         perl {workflow.basedir}/bin/get_exptype_contrasts_assays.pl {wildcards.accession} {input.config_file} {output.metadata}
-        echo "Past first perl"
         if [ -e "{wildcards.accession}/{wildcards.accession}.condensed-sdrf.tsv" ]; then
            echo "Trying with condensed..."
            organism=$(get_organism_from_condensed_sdrf "{wildcards.accession}/{wildcards.accession}.condensed-sdrf.tsv")
@@ -119,9 +120,9 @@ rule get_experiment_metadata:
            >&2 echo "Can't retrieve organism: neither {wildcards.accession}/{wildcards.accession}.condensed-sdrf.tsv nor {wildcards.accession}/{wildcards.accession}-configuration.xml not found "
            exit 1
         fi
-        magetab_files=$( perl {workflow.basedir}/bin/get_experiment_info.pl --experiment {wildcards.accession} --xmlfile {wildcards.accession}/{wildcards.accession}-configuration.xml )
-        idf=$( echo $magetabfiles | awk -F',' '{ print $1 }' )
-        sdrf=$( echo $magetabfiles | awk -F',' '{ print $1 }' )
+        magetabfiles=$( perl {workflow.basedir}/bin/get_experiment_info.pl --experiment {wildcards.accession} --xmlfile {wildcards.accession}/{wildcards.accession}-configuration.xml --magetabfiles)
+        idf=$( echo $magetabfiles | awk -F',' '{{ print $1 }}' )
+        sdrf=$( echo $magetabfiles | awk -F',' '{{ print $2 }}' )
         gff_file=$( find {input.gtf_dir}/$organism -iname "$organism.*.gff3" | head -n1)
         echo "organism: $organism" >> {output.metadata}
         echo "gff: $gff_file" >> {output.metadata}
@@ -154,9 +155,7 @@ rule produce_recalculations_call:
         snakemake {config['sm_options']} --config \
             accession={wildcards.accession} \
             tool={get_tool(wildcards.accession)} \
-            {get_assay_contrast_line(wildcards.accession)} \
-            organism={get_organism(wildcards.accession)} \
-            gff={get_gff_path(wildcards.accession)} \
+            metadata_summary={input.metadata} \
             bioentities_properties={params.bioentities_properties} \
             -s {workflow.basedir}/Snakefile {get_log_handler_script()}
         popd

@@ -20,6 +20,9 @@ snakemake --use-conda --conda-frontend mamba \
         $CONDA_PREFIX_LINE \
         --keep-going \
         --config gtf_dir=$GTF \
+        atlas_prod=path/to/atlasprod \
+        atlas_exps=path/to/atlasexps \
+        atlas_meta_config=path/to/supporting_files \
           sm_options="--use-conda --conda-frontend mamba --keep-going -j 2 $CONDA_PREFIX_LINE " \
         bioentities_properties=$BIOENTITIES_PROPERTIES -j 1 -s $SORTING_HAT &> $USUAL_SM_ERR_OUT
 
