@@ -160,8 +160,8 @@ rule produce_recalculations_call:
             -s {workflow.basedir}/Snakefile {get_log_handler_script()}
         popd
         """
-        print(command_line)
-        #shell(command_line)
+        #print(command_line)
+        shell(command_line)
     #shell:
     #    """
     #    pushd {input.working_directory}
