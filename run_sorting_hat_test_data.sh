@@ -4,9 +4,9 @@ GTF=$( pwd )/test-data/gff
 BIOENTITIES_PROPERTIES=$( pwd )/test-data/bioentity_properties
 SORTING_HAT=$( pwd )/Snakefile-sorting-hat
 LOG_HANDLER=$( pwd )/log_handler.py
-CONDA_PREFIX=${CONDA_PREFIX:-$( pwd )/conda_installs}
+SN_CONDA_PREFIX=${SN_CONDA_PREFIX:-$( pwd )/conda_installs}
 
-CONDA_PREFIX_LINE="--conda-prefix $CONDA_PREFIX"
+CONDA_PREFIX_LINE="--conda-prefix $SN_CONDA_PREFIX"
 export LOG_PATH=${LOG_PATH:-$( pwd )/sorting.log}
 USUAL_SM_ERR_OUT=${USUAL_SM_ERR_OUT:-$( pwd )/snakemake.log}
 pushd $1
