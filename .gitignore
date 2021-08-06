@@ -1,1 +1,5 @@
 .snakemake
+__pycache__
+sandbox
+tmp_res
+test-data

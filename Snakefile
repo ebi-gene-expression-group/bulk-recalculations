@@ -145,12 +145,13 @@ rule all:
 
 rule percentile_ranks:
     conda: "envs/atlas-internal.yaml"
-    log: "log/{accession}-percentile_ranks.log"
+    log: "logs/{accession}-percentile_ranks.log"
     output:
         percentile_ranks_merged="{accession}-percentile-ranks.tsv"
     shell:
         """
-        mkdir -p log
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        mkdir -p logs
         exec &> "{log}"
         rm -f {wildcards.accession}*-percentile-ranks.tsv
         for analytics in $(ls {wildcards.accession}*-analytics.tsv.unrounded); do
@@ -174,7 +175,7 @@ rule percentile_ranks:
 
 rule differential_tracks:
     conda: "envs/irap.yaml"
-    log: "log/{accession}.{contrast_id}-differential_tracks.log"
+    log: "logs/{accession}.{contrast_id}-differential_tracks.log"
     input:
         gff=config['gff']
         # analytics will be derived below since it could be either {accession}-{arraydesign}-analytics.tsv
@@ -188,7 +189,8 @@ rule differential_tracks:
         log2fold="{accession}.{contrast_id}.genes.log2foldchange.bedGraph"
     shell:
         """
-        mkdir -p log
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        mkdir -p logs
         exec &> "{log}"
         source {workflow.basedir}/bin/tracks_functions.sh
         set +e
@@ -203,7 +205,7 @@ rule differential_tracks:
 
 rule differential_gsea:
     conda: "envs/irap.yaml"
-    log: "log/{accession}.{contrast_id}.{ext_db}-differential_gsea.log"
+    log: "logs/{accession}.{contrast_id}.{ext_db}-differential_gsea.log"
     params:
         organism=config['organism'],
         BIOENTITIES_PROPERTIES_PATH=config['bioentities_properties'],
@@ -214,7 +216,8 @@ rule differential_gsea:
         gsea_list="{accession}.{contrast_id}.{ext_db}.gsea_list.tsv"
     shell:
         """
-        mkdir -p log
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        mkdir -p logs
         exec &> "{log}"
         export BIOENTITIES_PROPERTIES_PATH={params.BIOENTITIES_PROPERTIES_PATH}
         source {workflow.basedir}/bin/gsea_functions.sh
@@ -237,7 +240,7 @@ rule differential_gsea:
 
 rule baseline_tracks:
     conda: "envs/irap.yaml"
-    log: "log/{accession}-{assay_id}-{metric}-baseline_tracks.log"
+    log: "logs/{accession}-{assay_id}-{metric}-baseline_tracks.log"
     params:
         assay_label=get_assay_label
     input:
@@ -247,7 +250,8 @@ rule baseline_tracks:
         bedGraph="{accession}.{assay_id}.genes.expressions_{metric}.bedGraph"
     shell:
         """
-        mkdir -p log
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        mkdir -p logs
         exec &> {log:q}
         source {workflow.basedir}/bin/tracks_functions.sh
         echo "Past sourcing"
@@ -256,14 +260,15 @@ rule baseline_tracks:
 
 rule baseline_coexpression:
     conda: "envs/clusterseq.yaml"
-    log: "log/{accession}-{metric}-baseline_coexpression.log"
+    log: "logs/{accession}-{metric}-baseline_coexpression.log"
     input:
         expression="{accession}-{metric}.tsv.undecorated.aggregated"
     output:
         coexpression_comp="{accession}-{metric}-coexpressions.tsv.gz"
     shell:
         """
-        mkdir -p log
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        mkdir -p logs
         exec &> "{log}"
         {workflow.basedir}/run_coexpression_for_experiment.R {input.expression} {output.coexpression_comp}
         """
@@ -279,7 +284,8 @@ rule link_baseline_coexpression:
         expand("{accession}-{metric}-coexpressions.tsv.gz", metric=get_metrics(), accession=["{accession}"])
     shell:
         """
-        mkdir -p log
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        mkdir -p logs
         exec &> "{log}"
         if [ -s {wildcards.accession}-tpm-coexpressions.tsv.gz ]; then
             ln -s {wildcards.accession}-tpm-coexpressions.tsv.gz {wildcards.accession}-coexpressions.tsv.gz
@@ -294,14 +300,15 @@ rule link_baseline_coexpression:
 
 rule baseline_heatmap:
     conda: "envs/atlas-internal.yaml"
-    log: "log/{accession}-{metric}-baseline_heatmap.log"
+    log: "logs/{accession}-{metric}-baseline_heatmap.log"
     input:
         expression="{accession}-{metric}.tsv"
     output:
         heatmap="{accession}-heatmap-{metric}.pdf"
     shell:
         """
-        mkdir -p log
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        mkdir -p logs
         exec &> "{log}"
         {workflow.basedir}/bin/generateBaselineHeatmap.R --configuration {wildcards.accession}-configuration.xml \
 		--input  input.expression \
@@ -310,12 +317,13 @@ rule baseline_heatmap:
 
 rule atlas_experiment_summary:
     conda: "envs/atlas-internal.yaml"
-    log: "log/{accession}-atlas_experiment_summary.log"
+    log: "logs/{accession}-atlas_experiment_summary.log"
     output:
         rsummary="{accession}-atlasExperimentSummary.Rdata"
     shell:
         """
-        mkdir -p log
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        mkdir -p logs
         exec &> "{log}"
         {workflow.basedir}/bin/createAtlasExperimentSummary.R \
 	          --source ./ \
