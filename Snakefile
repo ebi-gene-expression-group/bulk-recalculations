@@ -105,7 +105,7 @@ def get_outputs():
         # fake elements to mix contrasts labels and ids
         outputs.extend(expand(config['accession']+".{id}.{type}", id=get_contrast_ids(), type=["genes.pval.bedGraph", "genes.log2foldchange.bedGraph"]))
     if 'baseline-tracks' in config['tool'] or config['tool']=="all-baseline":
-        check_config_required(fields=['metadata_summary'], method='differential-tracks')
+        check_config_required(fields=['metadata_summary'], method='baseline-tracks')
         # combine metric (fpkm / tpm) with assay_id/assay_label (zip based)
         # in a product manner
         outputs.extend(expand(config['accession']+".{a_id}.genes.expressions_{metric}.bedGraph",
@@ -121,7 +121,7 @@ def get_outputs():
     if 'atlas-experiment-summary' in config['tool'] or 'all' in config['tool']:
         outputs.append(f"{config['accession']}-atlasExperimentSummary.Rdata")
     if 'baseline-heatmap' in config['tool'] or 'all-baseline' in config['tool']:
-        outputs.extend(expand(f"{config['accession']}"+"-{metric}.tsv", metric=get_metrics() ))
+        outputs.extend(expand(f"{config['accession']}"+"-heatmap-{metric}.pdf", metric=get_metrics() ))
     print(outputs)
     return outputs
 
