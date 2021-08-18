@@ -123,6 +123,14 @@ def get_outputs():
     if 'baseline-heatmap' in config['tool'] or 'all-baseline' in config['tool']:
         outputs.extend(expand(f"{config['accession']}"+"-heatmap-{metric}.pdf", metric=get_metrics() ))
     print(outputs)
+    print('Getting list of outputs.. done')
+    for x in outputs:
+        print('Trying to delete existing output: '+ x)
+        try:
+            os.remove(x)
+        except:
+            print("Output file ", x, " not found in ", os.getcwd())
+            
     return outputs
 
 def get_contrast_label(wildcards):
