@@ -122,6 +122,8 @@ def get_outputs():
         outputs.append(f"{config['accession']}-atlasExperimentSummary.Rdata")
     if 'baseline-heatmap' in config['tool'] or 'all-baseline' in config['tool']:
         outputs.extend(expand(f"{config['accession']}"+"-heatmap-{metric}.pdf", metric=get_metrics() ))
+    if 'baseline-coexpression' in config['tool'] or 'all-baseline' in config['tool']:   
+        outputs.extend(expand(f"{config['accession']}"+"-{metric}-coexpressions.tsv.gz", metric=get_metrics() )) 
     print(outputs)
     print('Getting list of outputs.. done')
     for x in outputs:
@@ -293,7 +295,7 @@ rule baseline_coexpression:
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         mkdir -p logs
         exec &> "{log}"
-        {workflow.basedir}/run_coexpression_for_experiment.R {input.expression} {output.coexpression_comp}
+        {workflow.basedir}/bin/run_coexpression_for_experiment.R {input.expression} {output.coexpression_comp}
         """
 
 rule link_baseline_coexpression:
