@@ -130,12 +130,9 @@ rule get_experiment_metadata:
         echo "sdrf: $sdrf" >> {output.metadata}
 
         gff_found=$( find {input.gtf_dir}/$organism -iname "$organism.*.gff3" | head -n1 | wc -l)
-        if [[ $gff_found -eq 1 ]]
-        then
-            echo "gff found"
-        else
-            echo "gff not found. removing yaml..."
-            rm {output.metadata}
+        if [ $(echo "$gff_found" | wc -l) -ne 1 ]; then
+            echo "gff not found." 1>&2
+            exit 1
         fi
         """
 
