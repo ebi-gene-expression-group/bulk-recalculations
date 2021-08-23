@@ -3,7 +3,7 @@ channels:
  - bioconda
  - ebi-gene-expression-group
 dependencies:
- - r-atlas-internal
+ - r-atlas-internal>=1.8
  - r-data.table
  - bioconductor-genefilter
  - r-gplots

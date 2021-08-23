@@ -24,6 +24,9 @@ args <- parse_args(OptionParser(option_list = list(
   )
 )))
 
+print('Searching $SDRF_PATH environment variable:')
+print(system('echo $SDRF_PATH', intern = TRUE))
+
 # Create experiment summary SimpleList.
 experiment_summary <- summarizeAtlasExperiment(
   args$accession,

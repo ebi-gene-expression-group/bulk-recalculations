@@ -65,6 +65,9 @@ def get_gff_path(acc):
 def get_bioentities_property_path():
     return config['bioentities_properties']
 
+def get_delete_previous_output():
+    return config['delete_previous_output']
+
 
 def get_outputs():
     ACC=[]
@@ -137,6 +140,7 @@ rule produce_recalculations_call:
     log: "{accession}/logs/produce_recalculations_call.log"
     params:
         bioentities_properties=get_bioentities_property_path(),
+        delete_previous_output=get_delete_previous_output(),
         log_handler_script=get_log_handler_script()
         # snakemake_opts=config["sm_options"],
         # tool=get_tool("{accession}"),
@@ -157,6 +161,7 @@ rule produce_recalculations_call:
             tool={get_tool(wildcards.accession)} \
             metadata_summary={input.metadata} \
             bioentities_properties={params.bioentities_properties} \
+            delete_previous_output={params.delete_previous_output} \
             -s {workflow.basedir}/Snakefile {get_log_handler_script()}
         popd
         """

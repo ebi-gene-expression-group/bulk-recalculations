@@ -105,7 +105,7 @@ def get_outputs():
         # fake elements to mix contrasts labels and ids
         outputs.extend(expand(config['accession']+".{id}.{type}", id=get_contrast_ids(), type=["genes.pval.bedGraph", "genes.log2foldchange.bedGraph"]))
     if 'baseline-tracks' in config['tool'] or config['tool']=="all-baseline":
-        check_config_required(fields=['metadata_summary'], method='differential-tracks')
+        check_config_required(fields=['metadata_summary'], method='baseline-tracks')
         # combine metric (fpkm / tpm) with assay_id/assay_label (zip based)
         # in a product manner
         outputs.extend(expand(config['accession']+".{a_id}.genes.expressions_{metric}.bedGraph",
@@ -121,8 +121,20 @@ def get_outputs():
     if 'atlas-experiment-summary' in config['tool'] or 'all' in config['tool']:
         outputs.append(f"{config['accession']}-atlasExperimentSummary.Rdata")
     if 'baseline-heatmap' in config['tool'] or 'all-baseline' in config['tool']:
-        outputs.extend(expand(f"{config['accession']}"+"-{metric}.tsv", metric=get_metrics() ))
+        outputs.extend(expand(f"{config['accession']}"+"-heatmap-{metric}.pdf", metric=get_metrics() ))
+    if 'baseline-coexpression' in config['tool'] or 'all-baseline' in config['tool']:   
+        outputs.extend(expand(f"{config['accession']}"+"-{metric}-coexpressions.tsv.gz", metric=get_metrics() )) 
     print(outputs)
+    print('Getting list of outputs.. done')
+    
+    if 'delete_previous_output' in config and config['delete_previous_output']==True:
+        for x in outputs:
+            print('Trying to delete existing output: '+ x)
+            try:
+                os.remove(x)
+            except:
+                print("Output file ", x, " not found in ", os.getcwd())
+            
     return outputs
 
 def get_contrast_label(wildcards):
@@ -285,7 +297,7 @@ rule baseline_coexpression:
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         mkdir -p logs
         exec &> "{log}"
-        {workflow.basedir}/run_coexpression_for_experiment.R {input.expression} {output.coexpression_comp}
+        {workflow.basedir}/bin/run_coexpression_for_experiment.R {input.expression} {output.coexpression_comp}
         """
 
 rule link_baseline_coexpression:
