@@ -127,7 +127,7 @@ def get_outputs():
     print(outputs)
     print('Getting list of outputs.. done')
     
-    if config['delete_previous_output']==True:
+    if 'delete_previous_output' in config and config['delete_previous_output']==True:
         for x in outputs:
             print('Trying to delete existing output: '+ x)
             try:
