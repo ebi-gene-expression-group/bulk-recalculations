@@ -110,8 +110,11 @@ rule get_experiment_metadata:
         source {workflow.basedir}/bin/metadata_retrieval_functions.sh
 
         gff_file=$( find {input.gtf_dir}/$organism -iname "$organism.*.gff3" | head -n1)
-        if [ -z "${gff_file}" ]; then
-            echo "gff not found. Yaml not created"  1>&2
+        magetabfiles=$( perl {workflow.basedir}/bin/get_experiment_info.pl --experiment {wildcards.accession} --xmlfile {wildcards.accession}/{wildcards.accession}-configuration.xml --magetabfiles)
+        idf=$( echo $magetabfiles | awk -F',' '{{ print $1 }}' )
+        sdrf=$( echo $magetabfiles | awk -F',' '{{ print $2 }}' )
+        if [ -z "${gff_file}" ] || [ -z "${idf}" ] || [ -z "${sdrf}" ]; then
+            echo "gff, idf or sdrf not found. Yaml not created"  1>&2
             exit 1
         else
             perl {workflow.basedir}/bin/get_exptype_contrasts_assays.pl {wildcards.accession} {input.config_file} {output.metadata}
@@ -126,9 +129,6 @@ rule get_experiment_metadata:
                 >&2 echo "Can't retrieve organism: neither {wildcards.accession}/{wildcards.accession}.condensed-sdrf.tsv nor {wildcards.accession}/{wildcards.accession}-configuration.xml not found "
                 exit 1
             fi
-            magetabfiles=$( perl {workflow.basedir}/bin/get_experiment_info.pl --experiment {wildcards.accession} --xmlfile {wildcards.accession}/{wildcards.accession}-configuration.xml --magetabfiles)
-            idf=$( echo $magetabfiles | awk -F',' '{{ print $1 }}' )
-            sdrf=$( echo $magetabfiles | awk -F',' '{{ print $2 }}' )
             echo "organism: $organism" >> {output.metadata}
             echo "gff: $gff_file" >> {output.metadata}
             echo "idf: $idf" >> {output.metadata}
