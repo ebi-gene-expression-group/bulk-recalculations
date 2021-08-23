@@ -117,7 +117,7 @@ rule get_experiment_metadata:
             echo "GFF: $gff_file"
             echo "IDF: $idf"
             echo "SDRF: $sdrf"
-            echo "GFF, IDF or SDRF not found. YAML not created"  1>&2
+            echo "GFF, IDF or SDRF not found. YAML not created"
             exit 1
         else
             perl {workflow.basedir}/bin/get_exptype_contrasts_assays.pl {wildcards.accession} {input.config_file} {output.metadata}
