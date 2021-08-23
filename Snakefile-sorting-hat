@@ -114,7 +114,10 @@ rule get_experiment_metadata:
         idf=$( echo $magetabfiles | awk -F',' '{{ print $1 }}' )
         sdrf=$( echo $magetabfiles | awk -F',' '{{ print $2 }}' )
         if [ -z "${gff_file}" ] || [ -z "${idf}" ] || [ -z "${sdrf}" ]; then
-            echo "gff, idf or sdrf not found. Yaml not created"  1>&2
+            echo "GFF: $gff_file"
+            echo "IDF: $idf"
+            echo "SDRF: $sdrf"
+            echo "GFF, IDF or SDRF not found. YAML not created"  1>&2
             exit 1
         else
             perl {workflow.basedir}/bin/get_exptype_contrasts_assays.pl {wildcards.accession} {input.config_file} {output.metadata}
