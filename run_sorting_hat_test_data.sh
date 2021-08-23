@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 GTF=$( pwd )/test-data/gff
+DELETE_PREV_OUTPUT=True
 BIOENTITIES_PROPERTIES=$( pwd )/test-data/bioentity_properties
 SORTING_HAT=$( pwd )/Snakefile-sorting-hat
 LOG_HANDLER=$( pwd )/log_handler.py
@@ -35,7 +36,8 @@ snakemake --use-conda --conda-frontend mamba \
         atlas_prod=path/to/atlasprod \
         atlas_exps=path/to/atlasexps \
         atlas_meta_config=path/to/supporting_files \
-          sm_options="--use-conda --conda-frontend mamba --keep-going -j 2 $CONDA_PREFIX_LINE " \
+        sm_options="--use-conda --conda-frontend mamba --keep-going -j 2 $CONDA_PREFIX_LINE " \
+        delete_previous_output=$DELETE_PREV_OUTPUT \  
         bioentities_properties=$BIOENTITIES_PROPERTIES -j 1 -s $SORTING_HAT &> $USUAL_SM_ERR_OUT
 
 sleep 5

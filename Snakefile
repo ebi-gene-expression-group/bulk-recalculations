@@ -126,12 +126,14 @@ def get_outputs():
         outputs.extend(expand(f"{config['accession']}"+"-{metric}-coexpressions.tsv.gz", metric=get_metrics() )) 
     print(outputs)
     print('Getting list of outputs.. done')
-    for x in outputs:
-        print('Trying to delete existing output: '+ x)
-        try:
-            os.remove(x)
-        except:
-            print("Output file ", x, " not found in ", os.getcwd())
+    
+    if config['delete_previous_output']==True:
+        for x in outputs:
+            print('Trying to delete existing output: '+ x)
+            try:
+                os.remove(x)
+            except:
+                print("Output file ", x, " not found in ", os.getcwd())
             
     return outputs
 
