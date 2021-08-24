@@ -60,10 +60,19 @@ def get_ext_db():
         return ["go", "reactome", "interpro"]
 
 def get_metrics():
+    import glob
     if 'metric' in config:
         return config['metric'].split(":")
     else:
-        return ['tpms', "fpkms"]
+        metric_types = ['tpms', 'fpkms'] 
+        metric_grabbed = []
+        for files in metric_types:
+            metric_len = len( glob.glob(f"{config['accession']}-"+files+".tsv") )
+            #print(metric_len)
+            if metric_len==1:
+                metric_grabbed.append(files)
+        print(metric_grabbed)
+        return metric_grabbed     # ideally: ['tpms', "fpkms"]
 
 plot_labels = {"go": "GO terms", "reactome": "Reactome Pathways", "interpro": "Interpro domains"}
 
