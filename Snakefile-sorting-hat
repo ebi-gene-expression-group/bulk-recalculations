@@ -121,6 +121,19 @@ rule get_experiment_metadata:
         export ATLAS_EXPS={params.atlas_exps}
         source {workflow.basedir}/bin/metadata_retrieval_functions.sh
 
+        perl {workflow.basedir}/bin/get_exptype_contrasts_assays.pl {wildcards.accession} {input.config_file} {output.metadata}
+        if [ -e "{wildcards.accession}/{wildcards.accession}.condensed-sdrf.tsv" ]; then
+            echo "Trying with condensed..."
+            organism=$(get_organism_from_condensed_sdrf "{wildcards.accession}/{wildcards.accession}.condensed-sdrf.tsv")
+        elif [ -e "{wildcards.accession}/{wildcards.accession}-configuration.xml" ]; then
+            echo "Trying with perl (produces organism with capitals and spaces)"
+            organism=$(perl {workflow.basedir}/bin/get_experiment_info.pl --experiment {wildcards.accession} --xmlfile {wildcards.accession}/{wildcards.accession}-configuration.xml --organism | sed 's/ /_/g' | tr '[:upper:]' '[:lower:]')
+        else
+            echo "Nothing worked..."
+            >&2 echo "Can't retrieve organism: neither {wildcards.accession}/{wildcards.accession}.condensed-sdrf.tsv nor {wildcards.accession}/{wildcards.accession}-configuration.xml not found "
+            exit 1
+        fi
+
         gff_file=$( find {input.gtf_dir}/$organism -iname "$organism.*.gff3" | head -n1)
         magetabfiles=$( perl {workflow.basedir}/bin/get_experiment_info.pl --experiment {wildcards.accession} --xmlfile {wildcards.accession}/{wildcards.accession}-configuration.xml --magetabfiles)
         idf=$( echo $magetabfiles | awk -F',' '{{ print $1 }}' )
@@ -132,18 +145,6 @@ rule get_experiment_metadata:
             echo "GFF, IDF or SDRF not found. YAML not created"
             exit 1
         else
-            perl {workflow.basedir}/bin/get_exptype_contrasts_assays.pl {wildcards.accession} {input.config_file} {output.metadata}
-            if [ -e "{wildcards.accession}/{wildcards.accession}.condensed-sdrf.tsv" ]; then
-                echo "Trying with condensed..."
-                organism=$(get_organism_from_condensed_sdrf "{wildcards.accession}/{wildcards.accession}.condensed-sdrf.tsv")
-            elif [ -e "{wildcards.accession}/{wildcards.accession}-configuration.xml" ]; then
-                echo "Trying with perl (produces organism with capitals and spaces)"
-                organism=$(perl {workflow.basedir}/bin/get_experiment_info.pl --experiment {wildcards.accession} --xmlfile {wildcards.accession}/{wildcards.accession}-configuration.xml --organism | sed 's/ /_/g' | tr '[:upper:]' '[:lower:]')
-            else
-                echo "Nothing worked..."
-                >&2 echo "Can't retrieve organism: neither {wildcards.accession}/{wildcards.accession}.condensed-sdrf.tsv nor {wildcards.accession}/{wildcards.accession}-configuration.xml not found "
-                exit 1
-            fi
             echo "organism: $organism" >> {output.metadata}
             echo "gff: $gff_file" >> {output.metadata}
             echo "idf: $idf" >> {output.metadata}
