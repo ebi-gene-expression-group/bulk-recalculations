@@ -64,14 +64,11 @@ def get_metrics():
     if 'metric' in config:
         return config['metric'].split(":")
     else:
-        metric_types = ['tpms', 'fpkms'] 
         metric_grabbed = []
-        for files in metric_types:
-            metric_len = len( glob.glob(f"{config['accession']}-"+files+".tsv") )
-            #print(metric_len)
-            if metric_len==1:
-                metric_grabbed.append(files)
-        print(metric_grabbed)
+        for metric in ['tpms', 'fpkms']:
+            # glob returns a list of matching paths, so if the metric is available a non-empty list is returned.
+            if glob.glob(f"{config['accession']}-{metric}.tsv"):
+                metric_grabbed.append(metric)
         return metric_grabbed     # ideally: ['tpms', "fpkms"]
 
 plot_labels = {"go": "GO terms", "reactome": "Reactome Pathways", "interpro": "Interpro domains"}
