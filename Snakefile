@@ -120,7 +120,7 @@ def get_outputs():
     # Read this now so that it is available for all other needs
     read_metadata_summary()
     global skip_accession
-    skip_accesion = read_skip_steps_file()
+    skip_accession = read_skip_steps_file()
     required_config=['tool']
     check_config_required(fields=required_config)
     if 'percentile-ranks' in config['tool'] or config['tool']=="all-diff" and skip(config['accession'],'percentile_ranks'):
