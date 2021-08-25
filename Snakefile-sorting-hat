@@ -68,6 +68,9 @@ def get_bioentities_property_path():
 def get_delete_previous_output():
     return config['delete_previous_output']
 
+def get_skip_steps_file():
+    return config['skip_steps_file']
+
 
 def get_outputs():
     ACC=[]
@@ -150,6 +153,7 @@ rule produce_recalculations_call:
     params:
         bioentities_properties=get_bioentities_property_path(),
         delete_previous_output=get_delete_previous_output(),
+        skip_steps_file=get_skip_steps_file(),
         log_handler_script=get_log_handler_script()
         # snakemake_opts=config["sm_options"],
         # tool=get_tool("{accession}"),
@@ -171,6 +175,7 @@ rule produce_recalculations_call:
             metadata_summary=../{input.metadata} \
             bioentities_properties={params.bioentities_properties} \
             delete_previous_output={params.delete_previous_output} \
+            skip_steps_file={params.skip_steps_file} \
             -s {workflow.basedir}/Snakefile {get_log_handler_script()}
         popd
         """
