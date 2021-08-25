@@ -68,13 +68,13 @@ def get_bioentities_property_path():
 def get_delete_previous_output():
     if 'delete_previous_output' in config:
         return config['delete_previous_output']
-    else
+    else:
         return None
 
 def get_skip_steps_file():
     if 'skip_steps_file' in config:
         return config['skip_steps_file']
-    else
+    else:
         return None 
 
 
