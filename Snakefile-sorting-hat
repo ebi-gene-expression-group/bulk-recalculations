@@ -125,7 +125,7 @@ rule get_experiment_metadata:
         magetabfiles=$( perl {workflow.basedir}/bin/get_experiment_info.pl --experiment {wildcards.accession} --xmlfile {wildcards.accession}/{wildcards.accession}-configuration.xml --magetabfiles)
         idf=$( echo $magetabfiles | awk -F',' '{{ print $1 }}' )
         sdrf=$( echo $magetabfiles | awk -F',' '{{ print $2 }}' )
-        if [ -z "${gff_file}" ] || [ -z "${idf}" ] || [ -z "${sdrf}" ]; then
+        if [ -z "$gff_file" ] || [ -z "$idf" ] || [ -z "$sdrf" ]; then
             echo "GFF: $gff_file"
             echo "IDF: $idf"
             echo "SDRF: $sdrf"
