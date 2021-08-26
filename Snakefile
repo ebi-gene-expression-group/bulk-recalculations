@@ -102,7 +102,7 @@ def check_config_required(fields, method=""):
         exit(2)
 
 def skip(acc, tool):
-    if acc in skip_accession['skips'][tool]:
+    if skip_accession != None and acc in skip_accession['skips'][tool]:
         return False
     else:
         return True
