@@ -79,12 +79,21 @@ def get_skip_steps_file():
 
 
 def get_outputs():
+    import os
     ACC=[]
     if 'accessions' in config:
         ACC=config['accessions'].split(":")
     else:
         ACC=glob.glob('E-*')
-    return expand("{accession}/{accession}.recalculations.done", accession=ACC)
+
+    if 'atlas_exps' in config:  
+        # filter out ACC based on accessions that are available in atlas_exps
+        valid_acc_dir = next(os.walk( config['atlas_exps'] ))[1]
+        # intersection of the two lists
+        pass_ACC = list(set(ACC) & set(valid_acc_dir))
+        return expand("{accession}/{accession}.recalculations.done", accession=pass_ACC)
+    else:
+        return expand("{accession}/{accession}.recalculations.done", accession=ACC)
 
 
 wildcard_constraints:
