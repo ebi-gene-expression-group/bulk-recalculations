@@ -165,12 +165,26 @@ rule produce_recalculations_call:
         mkdir -p {wildcards.accession}/logs
         exec &> {log}
         pushd {input.working_directory}
+
+        snakemake --dry-run --conda-create-envs-only {config['sm_options']} --config \
+            accession={wildcards.accession} \
+            tool={get_tool(wildcards.accession)} \
+            metadata_summary=../{input.metadata} \
+            bioentities_properties={params.bioentities_properties} \
+            delete_previous_output={params.delete_previous_output} \
+            skip_steps_file={params.skip_steps_file} \
+            -s {workflow.basedir}/Snakefile-create-conda-envs
+
+        echo 'Dry run completed - conda envs created.'
+        echo 'Starting bulk-recalculations...'
+
         snakemake {config['sm_options']} --config \
             accession={wildcards.accession} \
             tool={get_tool(wildcards.accession)} \
             metadata_summary=../{input.metadata} \
             bioentities_properties={params.bioentities_properties} \
             delete_previous_output={params.delete_previous_output} \
+            skip_steps_file={params.skip_steps_file} \
             -s {workflow.basedir}/Snakefile {get_log_handler_script()}
         popd
         """
