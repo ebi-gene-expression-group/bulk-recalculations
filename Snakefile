@@ -11,6 +11,17 @@ def read_metadata_summary():
         with open(config['metadata_summary'], 'r') as fh:
             metadata_summary = yaml.safe_load(fh)
 
+def read_skip_steps_file():
+    if 'skip_steps_file' in config:
+        global skip_steps
+        with open(config['skip_steps_file'], 'r') as stream:
+            try:
+                skip_steps=yaml.safe_load(stream)
+            except yaml.YAMLError as exc:
+                print(exc)
+        return skip_steps
+
+
 def get_from_config_or_metadata_summary(label):
     if label in config:
         return config[label]
@@ -90,6 +101,12 @@ def check_config_required(fields, method=""):
     if exit:
         exit(2)
 
+def skip(acc, tool):
+    if skip_accession != None and acc in skip_accession['skips'][tool]:
+        return False
+    else:
+        return True
+
 def get_outputs():
     """
     First method to be executed since it is run by rule all.
@@ -102,33 +119,35 @@ def get_outputs():
 
     # Read this now so that it is available for all other needs
     read_metadata_summary()
+    global skip_accession
+    skip_accession = read_skip_steps_file()
     required_config=['tool']
     check_config_required(fields=required_config)
-    if 'percentile-ranks' in config['tool'] or config['tool']=="all-diff":
+    if 'percentile-ranks' in config['tool'] or config['tool']=="all-diff" and skip(config['accession'],'percentile_ranks'):
         outputs.append(f"{config['accession']}-percentile-ranks.tsv")
-    if 'differential-tracks' in config['tool'] or config['tool']=="all-diff":
+    if 'differential-tracks' in config['tool'] or config['tool']=="all-diff" and skip(config['accession'],'differential-tracks'):
         check_config_required(fields=['contrast_ids', 'metadata_summary'], method='differential-tracks')
         # fake elements to mix contrasts labels and ids
         outputs.extend(expand(config['accession']+".{id}.{type}", id=get_contrast_ids(), type=["genes.pval.bedGraph", "genes.log2foldchange.bedGraph"]))
-    if 'baseline-tracks' in config['tool'] or config['tool']=="all-baseline":
+    if 'baseline-tracks' in config['tool'] or config['tool']=="all-baseline" and skip(config['accession'],'baseline-tracks'):
         check_config_required(fields=['metadata_summary'], method='baseline-tracks')
         # combine metric (fpkm / tpm) with assay_id/assay_label (zip based)
         # in a product manner
         outputs.extend(expand(config['accession']+".{a_id}.genes.expressions_{metric}.bedGraph",
                             a_id=get_assay_ids(),
                             metric=get_metrics()))
-    if 'differential-gsea' in config['tool'] or config['tool']=="all-diff":
+    if 'differential-gsea' in config['tool'] or config['tool']=="all-diff" and skip(config['accession'],'differential-gsea'):
         check_config_required(fields=['contrast_ids', 'organism', 'bioentities_properties'], method='differential-gsea')
         outputs.extend(
                 expand(config['accession']+".{c_id}.{ext_db}.{type}",
                         c_id=get_contrast_ids(),
                         ext_db=get_ext_db(),
                         type=["gsea.tsv", "gsea_list.tsv"]))
-    if 'atlas-experiment-summary' in config['tool'] or 'all' in config['tool']:
+    if 'atlas-experiment-summary' in config['tool'] or 'all' in config['tool'] and skip(config['accession'],'atlas_experiment_summary'):
         outputs.append(f"{config['accession']}-atlasExperimentSummary.Rdata")
-    if 'baseline-heatmap' in config['tool'] or 'all-baseline' in config['tool']:
+    if 'baseline-heatmap' in config['tool'] or 'all-baseline' in config['tool'] and skip(config['accession'],'baseline-heatmap'):
         outputs.extend(expand(f"{config['accession']}"+"-heatmap-{metric}.pdf", metric=get_metrics() ))
-    if 'baseline-coexpression' in config['tool'] or 'all-baseline' in config['tool']:   
+    if 'baseline-coexpression' in config['tool'] or 'all-baseline' in config['tool'] and skip(config['accession'],'baseline-coexpression'):   
         outputs.extend(expand(f"{config['accession']}"+"-{metric}-coexpressions.tsv.gz", metric=get_metrics() )) 
     print(outputs)
     print('Getting list of outputs.. done')
