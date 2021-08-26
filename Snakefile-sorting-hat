@@ -89,8 +89,9 @@ def get_outputs():
     if 'atlas_exps' in config:  
         # filter out ACC based on accessions that are available in atlas_exps
         pass_ACC = []
+        valid_acc_dir = next(os.walk( config['atlas_exps'] ))[1]
         for x in ACC:
-            if x in next(os.walk( config['atlas_exps'] ))[1]:
+            if x in valid_acc_dir:
                 pass_ACC.append(x)
         return expand("{accession}/{accession}.recalculations.done", accession=pass_ACC)
     else:
