@@ -91,6 +91,10 @@ def get_outputs():
         valid_acc_dir = next(os.walk( config['atlas_exps'] ))[1]
         # intersection of the two lists
         pass_ACC = list(set(ACC) & set(valid_acc_dir))
+        #save passing ACCs to file
+        with open('exps_tagged_for_processing.txt', 'w') as f:
+            for item in pass_ACC:
+                f.write("%s\n" % item)
         return expand("{accession}/{accession}.recalculations.done", accession=pass_ACC)
     else:
         return expand("{accession}/{accession}.recalculations.done", accession=ACC)
