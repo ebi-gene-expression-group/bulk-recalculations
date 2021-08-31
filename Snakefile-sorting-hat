@@ -142,6 +142,10 @@ rule get_experiment_metadata:
             >&2 echo "Can't retrieve organism: neither {wildcards.accession}/{wildcards.accession}.condensed-sdrf.tsv nor {wildcards.accession}/{wildcards.accession}-configuration.xml not found "
             exit 1
         fi
+        # fix species name
+        if [ "$organism" == "oryza_sativa_japonica_group" ]; then
+            organism="oryza_sativa"
+        fi
 
         gff_file=$( find {input.gtf_dir}/$organism -iname "$organism.*.gff3" | head -n1)
         magetabfiles=$( perl {workflow.basedir}/bin/get_experiment_info.pl --experiment {wildcards.accession} --xmlfile {wildcards.accession}/{wildcards.accession}-configuration.xml --magetabfiles)
