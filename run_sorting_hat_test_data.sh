@@ -26,6 +26,8 @@ rm -f $LOG_PATH
 touch $LOG_PATH
 tail -f $LOG_PATH &
 
+echo 'starting bulk-recalculations...'
+
 snakemake --use-conda --conda-frontend mamba \
         --log-handler-script $LOG_HANDLER \
         $CONDA_PREFIX_LINE \
