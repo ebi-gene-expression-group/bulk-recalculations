@@ -11,8 +11,18 @@ SN_CONDA_PREFIX=${SN_CONDA_PREFIX:-$( pwd )/conda_installs}
 CONDA_PREFIX_LINE="--conda-prefix $SN_CONDA_PREFIX"
 export LOG_PATH=${LOG_PATH:-$( pwd )/sorting.log}
 USUAL_SM_ERR_OUT=${USUAL_SM_ERR_OUT:-$( pwd )/snakemake.log}
-pushd $1
 
+#create conda envs only
+for yaml_file in $(ls $( pwd )/envs); do
+  echo $yaml_file
+  snakemake --use-conda --conda-create-envs-only $CONDA_PREFIX_LINE  \
+            --conda-frontend mamba \
+            --config \
+            yamlFile=$( pwd )/envs/$yaml_file \
+            -s Snakefile-create-conda-envs
+done
+
+pushd $1
 rm -f $LOG_PATH
 touch $LOG_PATH
 tail -f $LOG_PATH &

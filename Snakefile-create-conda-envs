@@ -1,0 +1,6 @@
+rule drun:
+    conda: config['yamlFile']
+    shell:
+        """
+        echo "creating conda env"
+        """
