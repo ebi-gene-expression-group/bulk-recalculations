@@ -145,6 +145,8 @@ rule get_experiment_metadata:
         # fix species name
         if [ "$organism" == "oryza_sativa_japonica_group" || "$organism" == "oryza_sativa_indica_group"  ]; then
             organism="oryza_sativa"
+        elif [ "$organism" == "hordeum_vulgare_subsp._vulgare" ]; then
+            organism="hordeum_vulgare"
         fi
 
         gff_file=$( find {input.gtf_dir}/$organism -iname "$organism.*.gff3" | head -n1)
