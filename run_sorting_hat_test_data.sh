@@ -14,7 +14,7 @@ USUAL_SM_ERR_OUT=${USUAL_SM_ERR_OUT:-$( pwd )/snakemake.log}
 #create conda envs only
 for yaml_file in $(ls $( pwd )/envs); do
   echo $yaml_file
-  snakemake --dry-run --use-conda --conda-create-envs-only $CONDA_PREFIX_LINE  \
+  snakemake --use-conda --conda-create-envs-only $CONDA_PREFIX_LINE  \
             --conda-frontend mamba \
             --config \
             yamlFile=$( pwd )/envs/$yaml_file \
