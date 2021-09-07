@@ -1,5 +1,5 @@
-rule all:
-    conda: "envs/"+config['yamlFile']
+rule drun:
+    conda: config['yamlFile']
     shell:
         """
         echo "creating conda env"

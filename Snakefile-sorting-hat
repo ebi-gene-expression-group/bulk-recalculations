@@ -166,16 +166,6 @@ rule produce_recalculations_call:
         exec &> {log}
         pushd {input.working_directory}
 
-        for yaml_file in $(ls {workflow.basedir}/envs); do
-    		echo $yaml_file
-    		snakemake --dry-run --conda-create-envs-only {config['sm_options']}  \
-        		--config \
-        		yamlFile=$yaml_file \
-        		-s {workflow.basedir}/Snakefile-create-conda-envs
-	    done
-
-	    echo 'Dry runs completed - Necessary conda envs created.'
-        echo 'Starting bulk-recalculations...'
 
         snakemake {config['sm_options']} --config \
             accession={wildcards.accession} \
