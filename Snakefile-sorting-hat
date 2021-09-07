@@ -167,7 +167,7 @@ rule produce_recalculations_call:
         pushd {input.working_directory}
 
 
-        snakemake {config['sm_options']} --config \
+        snakemake --latency-wait 100 {config['sm_options']} --config \
             accession={wildcards.accession} \
             tool={get_tool(wildcards.accession)} \
             metadata_summary=../{input.metadata} \
