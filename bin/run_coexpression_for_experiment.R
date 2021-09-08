@@ -3,6 +3,8 @@
 # Input: undecorated tsv file, first column gene identifier, subsequent columns
 
 # Load BiocParallel package
+library(BiocParallel)
+options(MulticoreParam=MulticoreParam(workers=2))
 suppressMessages(library(clusterSeq))
 
 # Get the commandline arguments
