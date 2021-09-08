@@ -315,7 +315,7 @@ rule baseline_coexpression:
         expression="{accession}-{metric}.tsv.undecorated.aggregated"
     output:
         coexpression_comp="{accession}-{metric}-coexpressions.tsv.gz"
-    threads: 2
+    threads: 1
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set

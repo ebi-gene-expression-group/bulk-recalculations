@@ -4,7 +4,7 @@
 
 # Load BiocParallel package
 library(BiocParallel)
-options(MulticoreParam=MulticoreParam(workers=2))
+options(MulticoreParam=MulticoreParam(workers=1))
 suppressMessages(library(clusterSeq))
 
 # Get the commandline arguments
