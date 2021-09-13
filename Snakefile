@@ -311,17 +311,18 @@ rule baseline_tracks:
 rule baseline_coexpression:
     conda: "envs/clusterseq.yaml"
     log: "logs/{accession}-{metric}-baseline_coexpression.log"
+    threads: 16
+    priority: 50
     input:
         expression="{accession}-{metric}.tsv.undecorated.aggregated"
     output:
         coexpression_comp="{accession}-{metric}-coexpressions.tsv.gz"
-    threads: 1
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         mkdir -p logs
         exec &> "{log}"
-        {workflow.basedir}/bin/run_coexpression_for_experiment.R {input.expression} {output.coexpression_comp}
+        {workflow.basedir}/bin/run_coexpression_for_experiment.R {input.expression} {output.coexpression_comp} {workflow.basedir}
         """
 
 rule link_baseline_coexpression:
