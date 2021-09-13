@@ -1,45 +1,28 @@
-# modification of clusterSeq function to include:
-#   BPPARAM = SnowParam( workers = as.integer(ncores), stop.on.error = TRUE )
+# modification of clusterSeq function to include 'ncores' parameters in:
+# BPPARAM = SnowParam( workers = as.integer(ncores), stop.on.error = TRUE )
 
-kCluster <-
-
-    function(cD, ncores, maxK = 100, matrixFile = NULL, replicates = NULL, algorithm = "Lloyd", B = 1000, sdm = 1)
-{
+kCluster <- function(cD, ncores, maxK = 100, matrixFile = NULL, replicates = NULL, algorithm = "Lloyd", B = 1000, sdm = 1) {
 
     kstats <- function(k, x, cx) {
         if(k > length(unique(x))) return(rep(NA, 3))
         if(k == length(x)) {
-                                        #if(is.null(replicates) || length(replicates) == length(unique(replicates))) {
             clustK <- list(centers = x, cluster = seq_along(x))
-                                        #} else return(c(NA, NA))
-        } else {
+        } 
+        else {
             clustK <- suppressWarnings(kmeans(x, k, iter.max = 1000, nstart = 100, algorithm = algorithm))
-            if(any(is.na(clustK$centers))) clustK <- suppressWarnings(kmeans(x, k, iter.max = 1000, nstart = 100, algorithm = algorithm))
-                                        #store the clustering and orderings as a string
-            
-                                        # the match bit makes sure that identical clusterings have identical numberings
-                                        #if(forceReplicates && any(sapply(lapply(split(clustK$cluster, replicates), unique), length) > 1)) return(rep(NA, 2))                
+            if(any(is.na(clustK$centers))) clustK <- suppressWarnings(kmeans(x, k, iter.max = 1000, nstart = 100, algorithm = algorithm))              
         }
-        if(forceReplicates) cluster <- clustK$cluster[match(replicates, levels(replicates))] else cluster <- clustK$cluster
+        if(forceReplicates) cluster <- clustK$cluster[match(replicates, levels(replicates))] 
+        else cluster <- clustK$cluster
         
         clusterings <- paste(match(cluster, (unique(cluster))), collapse = ":")
         orderings <- paste(order(clustK$centers[unique(cluster)]), collapse = "<")
         clusterOrder <- paste(clusterings, orderings, sep = "-")
-                                        # statistic gets stored as a string too, with marginal loss of precision. Could fix it, but who cares
-                                        #            stat <- max(sapply(seq_len(k), function(kk) {
-                                        #                mx <- suppressWarnings(max(abs(split(cx, factor(cluster, levels = seq_len(k)))[[kk]] - clustK$centers[kk]))#
-                                        #                mx
-                                        #            }))
-        
+     
         stat = max(sapply(split(cx, factor(cluster, levels = seq_len(k))), function(kx) diff(range(kx))))
-                                        #wss <- sum(sapply(split(cx, factor(cluster, levels = seq_len(k))), function(kx) sum((kx - mean(kx))^2)))
-        
-                                        #if(k > 1) dstat <- stat / min(diff(sort(clustK$centers))) else dstat <- NA
-                                        #W <- sum(clustK$withinss)
         dstat <- stat / diff(range(cx))
         c(clusterOrder, stat, dstat)
-    }
-    
+    }    
     
     if(inherits(cD, "countData")) {
         dat <- cD@data
