@@ -13,7 +13,7 @@ options(ports=sample(1024:49151,1)  )
 
 # Get the commandline arguments
 args <- commandArgs(TRUE)
-if (length(args) == 3) {
+if (length(args) == 5) {
   # Input file
   expressionsFile <- args[1]
 
@@ -22,11 +22,13 @@ if (length(args) == 3) {
   outputPath <- args[2]
   wdir <- as.character(args[3])
   source(paste0(wdir,'/bin/kcluster_parallel.R'))
+  cores <- as.numeric( args[4] )
+  retries <- as.numeric( args[5] )
 } else {
   # Print a usage message and exit.
   stop("\nUsage:
         \n\trun_coexpression_for_experiment.R
-        <expressions file: gene identifier with quartiles> <output path .gz> <workflow.basedir>\n")
+        <expressions file: gene identifier with quartiles> <output path .gz> <workflow.basedir> {number_cores} {number_retries}\n")
 }
 
 # read file
@@ -54,14 +56,13 @@ cD <- expL[rowSums(expL) > ncol(expL), ]  # Filter out non-expressed genes
 # run kCluster function to create coexpression matrices, set to use 16 cores.
 # It can be changed to use less or more
 
-cores <- 16
 max_avail_workers <- multicoreWorkers()
 
 use_cores <- max(1, min(cores, max_avail_workers -2) )
 
 # retrial mechanism
 # up to 5 retries in case of error/warning
-for (i in 1:5){
+for ( i in 1:retries ){
   print( paste0( 'kClust will run with ' , use_cores  , ' cores... Starting try number: ', i)  )
   out <- tryCatch(
       {
