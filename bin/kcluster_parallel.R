@@ -1,4 +1,4 @@
-# modification of clusterSeq function to include 'ncores' parameters in:
+# modification of kCLuster (clusterSeq package) to include 'ncores' parameter in bplapply:
 # BPPARAM = SnowParam( workers = as.integer(ncores), stop.on.error = TRUE )
 
 kCluster <- function(cD, ncores, maxK = 100, matrixFile = NULL, replicates = NULL, algorithm = "Lloyd", B = 1000, sdm = 1) {
@@ -6,7 +6,7 @@ kCluster <- function(cD, ncores, maxK = 100, matrixFile = NULL, replicates = NUL
     kstats <- function(k, x, cx) {
         if(k > length(unique(x))) return(rep(NA, 3))
         if(k == length(x)) {
-            clustK <- list(centers = x, cluster = seq_along(x))
+            clustK <- list( centers = x, cluster = seq_along(x) ) 
         } 
         else {
             clustK <- suppressWarnings(kmeans(x, k, iter.max = 1000, nstart = 100, algorithm = algorithm))
@@ -24,7 +24,7 @@ kCluster <- function(cD, ncores, maxK = 100, matrixFile = NULL, replicates = NUL
         c(clusterOrder, stat, dstat)
     }    
     
-    if(inherits(cD, "countData")) {
+    if( inherits(cD, "countData") ) {
         dat <- cD@data
         dat[dat == 0] <- 1
         dat <- log2(t(t(dat) / as.vector(libsizes(cD)) * mean(libsizes(cD))))
@@ -50,8 +50,7 @@ kCluster <- function(cD, ncores, maxK = 100, matrixFile = NULL, replicates = NUL
 
     # calculate kstats based on that uniform distribution
     message("Bootstrapping distributions...", appendLF = TRUE) 
-    pseudoW <- do.call("rbind", bplapply(seq_len(nrow(mx)), function(kk) 
-        do.call("cbind", lapply(seq_len(mpK), kstats, x = mxx[kk,], cx = mx[kk,]))[2,] , BPPARAM = SnowParam(workers = as.integer(ncores), stop.on.error = TRUE) ))
+    pseudoW <- do.call("rbind", bplapply(seq_len(nrow(mx)), function(kk) do.call("cbind", lapply(seq_len(mpK), kstats, x = mxx[kk,], cx = mx[kk,]))[2,] , BPPARAM = SnowParam(workers = as.integer(ncores), stop.on.error = TRUE) ))
     message("done!")
     
     message("K-means processing...", appendLF = FALSE)
@@ -104,8 +103,8 @@ kCluster <- function(cD, ncores, maxK = 100, matrixFile = NULL, replicates = NUL
 
     stats[1,monos] <- 0
 
-    if(!is.null(matrixFile)) {
-        if(substr(matrixFile, nchar(matrixFile) -2, nchar(matrixFile)) != ".gz") {
+    if( !is.null(matrixFile) ) {
+        if( substr(matrixFile, nchar(matrixFile) -2, nchar(matrixFile)) != ".gz" ) {
             message("Matrix file will be gzipped; appending '.gz' to filename supplied")
             matrixFile <- paste(matrixFile, ".gz", sep = "")
         }
@@ -116,7 +115,7 @@ kCluster <- function(cD, ncores, maxK = 100, matrixFile = NULL, replicates = NUL
     # write one by one the stats for each gene. 
     message("Comparing clusterings...", appendLF = FALSE)
 
-    if(!is.null(matrixFile)) {
+    if( !is.null(matrixFile) ) {
         lapplyFun <- lapply
         writeLines(paste(c("", rownames(dat)), collapse = "\t"), gzfile)
     } 
