@@ -188,6 +188,13 @@ def get_assay_label(wildcards):
     global metadata_summary
     return metadata_summary['assays'][wildcards['assay_id']]
 
+def get_mem_mb(wildcards, attempt):
+    """
+    To adjust resources in rule baseline_coexpression.
+    """
+    return (2**attempt) * 4000
+
+
 wildcard_constraints:
     accession="E-\D+-\d+"
 
@@ -313,6 +320,7 @@ rule baseline_coexpression:
     log: "logs/{accession}-{metric}-baseline_coexpression.log"
     threads: 16
     priority: 50
+    resources: mem_mb=get_mem_mb
     input:
         expression="{accession}-{metric}.tsv.undecorated.aggregated"
     output:

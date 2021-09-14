@@ -51,10 +51,10 @@ expL[is.na(expL)] <- 0  # turn any NAs to 0
 
 cD <- expL[rowSums(expL) > ncol(expL), ]  # Filter out non-expressed genes
 
-# run kCluster function to create coexpression matrices, set to use 8 cores.
+# run kCluster function to create coexpression matrices, set to use 16 cores.
 # It can be changed to use less or more
 
-cores <- 8
+cores <- 16
 max_avail_workers <- multicoreWorkers()
 
 use_cores <- max(1, min(cores, max_avail_workers -2) )
