@@ -50,7 +50,7 @@ kCluster <- function(cD, ncores, maxK = 100, matrixFile = NULL, replicates = NUL
 
     # calculate kstats based on that uniform distribution
     message("Bootstrapping distributions...", appendLF = TRUE) 
-    pseudoW <- do.call("rbind", bplapply(seq_len(nrow(mx)), function(kk) do.call("cbind", lapply(seq_len(mpK), kstats, x = mxx[kk,], cx = mx[kk,]))[2,] , BPPARAM = SnowParam(workers = as.integer(ncores), stop.on.error = TRUE) ))
+    pseudoW <- do.call("rbind", bplapply(seq_len(nrow(mx)), function(kk) do.call("cbind", lapply(seq_len(mpK), kstats, x = mxx[kk,], cx = mx[kk,]))[2,] , BPPARAM = SnowParam(workers = as.integer(ncores), stop.on.error = TRUE, log=TRUE, progressbar =TRUE ) ))
     message("done!")
     
     message("K-means processing...", appendLF = FALSE)
@@ -82,7 +82,7 @@ kCluster <- function(cD, ncores, maxK = 100, matrixFile = NULL, replicates = NUL
         list(gs = genestats, clustNum, clustNumM)
     }
     # this bit does all possible clusterings, parallelised
-    kgene <- do.call("cbind", bplapply(seq_len(nrow(dat)), koverk, maxK = maxK, forceReplicates = forceReplicates, replicates = replicates, BPPARAM = SnowParam( workers = as.integer(ncores), stop.on.error = TRUE ) ))
+    kgene <- do.call("cbind", bplapply(seq_len(nrow(dat)), koverk, maxK = maxK, forceReplicates = forceReplicates, replicates = replicates, BPPARAM = SnowParam( workers = as.integer(ncores), stop.on.error = TRUE, log=TRUE,progressbar =TRUE ) ))
 
     message(".done!")
 
