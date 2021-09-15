@@ -159,11 +159,6 @@ def get_outputs():
                 os.remove(x)
             except:
                 print("Output file ", x, " not found in ", os.getcwd())
-        # finally remove coexpressions file if it exists
-        try:
-            os.remove(f"{config['accession']}-coexpressions.tsv.gz")
-        except OSError:
-            pass
             
     return outputs
 
