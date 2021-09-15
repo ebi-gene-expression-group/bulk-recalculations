@@ -149,6 +149,7 @@ def get_outputs():
         outputs.extend(expand(f"{config['accession']}"+"-heatmap-{metric}.pdf", metric=get_metrics() ))
     if 'baseline-coexpression' in config['tool'] or 'all-baseline' in config['tool'] and skip(config['accession'],'baseline-coexpression'):   
         outputs.extend(expand(f"{config['accession']}"+"-{metric}-coexpressions.tsv.gz", metric=get_metrics() )) 
+        outputs.extend(expand(f"{config['accession']}"+"-coexpressions.tsv.gz" ))
     print(outputs)
     print('Getting list of outputs.. done')
     
@@ -329,22 +330,20 @@ rule link_baseline_coexpression:
     has less than 3 columns. In that case it might be that the input files for this
     never appear, not sure whether this will timeout without errors or not.
     """
-    log: "{accession}-{metric}-link_baseline_coexpression.log"
-    input:
-        expand("{accession}-{metric}-coexpressions.tsv.gz", metric=get_metrics(), accession=["{accession}"])
+    log: "logs/{accession}-link_baseline_coexpression.log"
+    input: lambda wildcards:f"{wildcards.accession}-tpms-coexpressions.tsv.gz" if os.path.exists(f"{wildcards.accession}-tpms-coexpressions.tsv.gz") and os.path.getsize(f"{wildcards.accession}-tpms-coexpressions.tsv.gz") > 0 else f"{wildcards.accession}-fpkms-coexpressions.tsv.gz"
+    output: "{accession}-coexpressions.tsv.gz"
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         mkdir -p logs
         exec &> "{log}"
-        if [ -s {wildcards.accession}-tpm-coexpressions.tsv.gz ]; then
-            ln -s {wildcards.accession}-tpm-coexpressions.tsv.gz {wildcards.accession}-coexpressions.tsv.gz
-        elif [ -s {wildcards.accession}-fpkm-coexpressions.tsv.gz ]; then
-            ln -s {wildcards.accession}-fpkm-coexpressions.tsv.gz {wildcards.accession}-coexpressions.tsv.gz
-        else
-            echo "Error: neither TPM nor FPKM coexpressions.tsv.gz file found"
+        if [ ! -s {input} ]; then
+		    echo "Error: neither TPM nor FPKM coexpressions.tsv.gz file found and nonempty for {wildcards.accession}" 1>&2
             exit 1
-        fi
+	    fi
+
+	    ln -s {input} {output}
         """
 
 
