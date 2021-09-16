@@ -341,11 +341,6 @@ rule link_baseline_coexpression:
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         mkdir -p logs
         exec &> "{log}"
-        if [ ! -s {input} ]; then
-		    echo "Error: neither TPM nor FPKM coexpressions.tsv.gz file found and nonempty for {wildcards.accession}" 1>&2
-            exit 1
-	    fi
-
 	    ln -s {input} {output}
         """
 
