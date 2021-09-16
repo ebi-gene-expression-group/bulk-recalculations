@@ -82,6 +82,7 @@ def get_metrics():
                 metric_grabbed.append(metric)
         return metric_grabbed     # ideally: ['tpms', "fpkms"]
 
+metrics = get_metrics()
 plot_labels = {"go": "GO terms", "reactome": "Reactome Pathways", "interpro": "Interpro domains"}
 
 def get_ext_db_labels():
@@ -135,7 +136,7 @@ def get_outputs():
         # in a product manner
         outputs.extend(expand(config['accession']+".{a_id}.genes.expressions_{metric}.bedGraph",
                             a_id=get_assay_ids(),
-                            metric=get_metrics()))
+                            metric=metrics))
     if 'differential-gsea' in config['tool'] or config['tool']=="all-diff" and skip(config['accession'],'differential-gsea'):
         check_config_required(fields=['contrast_ids', 'organism', 'bioentities_properties'], method='differential-gsea')
         outputs.extend(
@@ -146,9 +147,9 @@ def get_outputs():
     if 'atlas-experiment-summary' in config['tool'] or 'all' in config['tool'] and skip(config['accession'],'atlas_experiment_summary'):
         outputs.append(f"{config['accession']}-atlasExperimentSummary.Rdata")
     if 'baseline-heatmap' in config['tool'] or 'all-baseline' in config['tool'] and skip(config['accession'],'baseline-heatmap'):
-        outputs.extend(expand(f"{config['accession']}"+"-heatmap-{metric}.pdf", metric=get_metrics() ))
+        outputs.extend(expand(f"{config['accession']}"+"-heatmap-{metric}.pdf", metric=metrics ))
     if 'baseline-coexpression' in config['tool'] or 'all-baseline' in config['tool'] and skip(config['accession'],'baseline-coexpression'):   
-        outputs.extend(expand(f"{config['accession']}"+"-{metric}-coexpressions.tsv.gz", metric=get_metrics() )) 
+        outputs.extend(expand(f"{config['accession']}"+"-{metric}-coexpressions.tsv.gz", metric=metrics )) 
         outputs.extend(expand(f"{config['accession']}"+"-coexpressions.tsv.gz" ))
     print(outputs)
     print('Getting list of outputs.. done')
@@ -331,7 +332,9 @@ rule link_baseline_coexpression:
     never appear, not sure whether this will timeout without errors or not.
     """
     log: "logs/{accession}-link_baseline_coexpression.log"
-    input: lambda wildcards:f"{wildcards.accession}-tpms-coexpressions.tsv.gz" if os.path.exists(f"{wildcards.accession}-tpms-coexpressions.tsv.gz") and os.path.getsize(f"{wildcards.accession}-tpms-coexpressions.tsv.gz") > 0 else f"{wildcards.accession}-fpkms-coexpressions.tsv.gz"
+    
+
+    input: lambda wildcards: f"{wildcards.accession}-tpms-coexpressions.tsv.gz" if 'tpm' in metrics else f"{wildcards.accession}-tpms-coexpressions.tsv.gz" ]
     output: "{accession}-coexpressions.tsv.gz"
     shell:
         """
