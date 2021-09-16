@@ -309,7 +309,7 @@ rule baseline_tracks:
         generate_baseline_tracks {wildcards.accession} {wildcards.assay_id} {input.analytics} {input.gff} ./ {params.assay_label:q}
         """
 
-checkpoint baseline_coexpression:
+rule baseline_coexpression:
     conda: "envs/clusterseq.yaml"
     log: "logs/{accession}-{metric}-baseline_coexpression.log"
     input:
@@ -324,12 +324,6 @@ checkpoint baseline_coexpression:
         {workflow.basedir}/bin/run_coexpression_for_experiment.R {input.expression} {output.coexpression_comp}
         """
 
-
-def input_for_link(wildcards):
-    checkpoint_output = checkpoints.baseline_coexpression.get(**wildcards).output.coexpression_comp
-    #return fpkms if available, otherwise tpms
-    return 
-
 rule link_baseline_coexpression:
     """
     There is a case where coexpression might not be calculated, when the dataset
@@ -337,7 +331,7 @@ rule link_baseline_coexpression:
     never appear, not sure whether this will timeout without errors or not.
     """
     log: "logs/{accession}-link_baseline_coexpression.log"
-    input: input_for_link #lambda wildcards:f"{wildcards.accession}-tpms-coexpressions.tsv.gz" if os.path.exists(f"{wildcards.accession}-tpms-coexpressions.tsv.gz") and os.path.getsize(f"{wildcards.accession}-tpms-coexpressions.tsv.gz") > 0 else f"{wildcards.accession}-fpkms-coexpressions.tsv.gz"
+    input: lambda wildcards:f"{wildcards.accession}-tpms-coexpressions.tsv.gz" if os.path.exists(f"{wildcards.accession}-tpms-coexpressions.tsv.gz") and os.path.getsize(f"{wildcards.accession}-tpms-coexpressions.tsv.gz") > 0 else f"{wildcards.accession}-fpkms-coexpressions.tsv.gz"
     output: "{accession}-coexpressions.tsv.gz"
     shell:
         """
