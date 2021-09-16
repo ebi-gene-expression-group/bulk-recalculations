@@ -1,5 +1,8 @@
 from sys import exit
 import yaml
+import os
+
+os.makedirs('logs', exist_ok='True')
 
 # atom: set grammar=python:
 
@@ -205,7 +208,6 @@ rule percentile_ranks:
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
-        mkdir -p logs
         exec &> "{log}"
         rm -f {wildcards.accession}*-percentile-ranks.tsv
         for analytics in $(ls {wildcards.accession}*-analytics.tsv.unrounded); do
@@ -242,7 +244,6 @@ rule differential_tracks:
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
-        mkdir -p logs
         exec &> "{log}"
         source {workflow.basedir}/bin/tracks_functions.sh
         set +e
@@ -269,7 +270,6 @@ rule differential_gsea:
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
-        mkdir -p logs
         exec &> "{log}"
         export BIOENTITIES_PROPERTIES_PATH={params.BIOENTITIES_PROPERTIES_PATH}
         source {workflow.basedir}/bin/gsea_functions.sh
@@ -303,7 +303,6 @@ rule baseline_tracks:
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
-        mkdir -p logs
         exec &> {log:q}
         source {workflow.basedir}/bin/tracks_functions.sh
         echo "Past sourcing"
@@ -320,7 +319,6 @@ rule baseline_coexpression:
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
-        mkdir -p logs
         exec &> "{log}"
         {workflow.basedir}/bin/run_coexpression_for_experiment.R {input.expression} {output.coexpression_comp}
         """
@@ -332,14 +330,11 @@ rule link_baseline_coexpression:
     never appear, not sure whether this will timeout without errors or not.
     """
     log: "logs/{accession}-link_baseline_coexpression.log"
-    
-
     input: lambda wildcards: f"{wildcards.accession}-tpms-coexpressions.tsv.gz" if 'tpm' in metrics else f"{wildcards.accession}-tpms-coexpressions.tsv.gz" ]
     output: "{accession}-coexpressions.tsv.gz"
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
-        mkdir -p logs
         exec &> "{log}"
 	    ln -s {input} {output}
         """
@@ -355,7 +350,6 @@ rule baseline_heatmap:
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
-        mkdir -p logs
         exec &> "{log}"
         {workflow.basedir}/bin/generateBaselineHeatmap.R --configuration {wildcards.accession}-configuration.xml \
 		--input  {input.expression} \
@@ -372,7 +366,6 @@ rule atlas_experiment_summary:
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
-        mkdir -p logs
         exec &> "{log}"
         export SDRF_PATH={input.sdrf}
         {workflow.basedir}/bin/createAtlasExperimentSummary.R \
