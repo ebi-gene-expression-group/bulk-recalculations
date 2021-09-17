@@ -111,6 +111,15 @@ def skip(acc, tool):
     else:
         return True
 
+def get_number_columns(tsvfile):
+    import csv
+    with open(tsvfile) as file:
+        tsv_file = csv.reader(file, delimiter="\t")
+        num_cols = len(next(tsv_file))
+    # return number of columns in a tsv file
+    return num_cols
+
+
 def get_outputs():
     """
     First method to be executed since it is run by rule all.
@@ -152,8 +161,15 @@ def get_outputs():
     if 'baseline-heatmap' in config['tool'] or 'all-baseline' in config['tool'] and skip(config['accession'],'baseline-heatmap'):
         outputs.extend(expand(f"{config['accession']}"+"-heatmap-{metric}.pdf", metric=metrics ))
     if 'baseline-coexpression' in config['tool'] or 'all-baseline' in config['tool'] and skip(config['accession'],'baseline-coexpression'):   
-        outputs.extend(expand(f"{config['accession']}"+"-{metric}-coexpressions.tsv.gz", metric=metrics )) 
-        outputs.extend(expand(f"{config['accession']}"+"-coexpressions.tsv.gz" ))
+        metric_link_coexp=False
+        for m in metrics:
+            if os.path.getsize(f"{config['accession']}"+"-"+m+".tsv") > 0 and get_number_columns(f"{config['accession']}"+"-"+m+".tsv")>4:
+                metric_link_coexp=True
+                outputs.extend(expand(f"{config['accession']}"+"-"+m+"-coexpressions.tsv.gz"))
+
+        if metric_link_coexp == True:
+            outputs.extend(expand(f"{config['accession']}"+"-coexpressions.tsv.gz" ))
+
     print(outputs)
     print('Getting list of outputs.. done')
     
@@ -330,7 +346,7 @@ rule link_baseline_coexpression:
     never appear, not sure whether this will timeout without errors or not.
     """
     log: "logs/{accession}-link_baseline_coexpression.log"
-    input: lambda wildcards: f"{wildcards.accession}-tpms-coexpressions.tsv.gz" if 'tpm' in metrics else f"{wildcards.accession}-tpms-coexpressions.tsv.gz" ]
+    input: lambda wildcards: f"{wildcards.accession}-tpms-coexpressions.tsv.gz" if 'tpms' in metrics else f"{wildcards.accession}-fpkms-coexpressions.tsv.gz" 
     output: "{accession}-coexpressions.tsv.gz"
     shell:
         """
