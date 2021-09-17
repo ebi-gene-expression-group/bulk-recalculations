@@ -95,14 +95,14 @@ def get_ext_db_labels():
     return output
 
 def check_config_required(fields, method=""):
-    exit=False
+    ex=False
     for f in fields:
         if f not in config:
             print(f"{f} required to be set in config")
             ex=True
             if method:
                 print(f" for method {method}")
-    if exit:
+    if ex:
         exit(2)
 
 def skip(acc, tool):
