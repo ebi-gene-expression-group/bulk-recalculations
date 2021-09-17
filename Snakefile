@@ -83,7 +83,10 @@ def get_metrics():
             # glob returns a list of matching paths, so if the metric is available a non-empty list is returned.
             if glob.glob(f"{config['accession']}-{metric}.tsv"):
                 metric_grabbed.append(metric)
-        return metric_grabbed     # ideally: ['tpms', "fpkms"]
+        if (len(metric_grabbed )>0):
+            return metric_grabbed     # ideally: ['tpms', "fpkms"]
+        else:
+            sys.exit("No metric available.") 
 
 metrics = get_metrics()
 plot_labels = {"go": "GO terms", "reactome": "Reactome Pathways", "interpro": "Interpro domains"}
