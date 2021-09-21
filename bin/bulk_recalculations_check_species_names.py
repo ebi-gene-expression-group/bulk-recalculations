@@ -1,11 +1,11 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import sys
 import yaml
 
 if len(sys.argv) == 3:
     input_sp = str(sys.argv[1])
-    YAML_file = sys.argv[2]
+    YAML_file = str(sys.argv[2])
 else:
     print('Incorrect number of arguments passed')
     sys.exit(0)
@@ -25,5 +25,6 @@ def check_sp(input):
             print(exc)
 
 output_sp = check_sp(input_sp)
+
 print(output_sp)
 
