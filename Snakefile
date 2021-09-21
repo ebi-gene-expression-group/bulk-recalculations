@@ -166,16 +166,20 @@ def get_outputs():
     if 'baseline-coexpression' in config['tool'] or 'all-baseline' in config['tool'] and skip(config['accession'],'baseline-coexpression'):   
         metric_link_coexp=False
         for m in metrics:
-            if os.path.getsize(f"{config['accession']}"+"-"+m+".tsv") > 0 and get_number_columns(f"{config['accession']}"+"-"+m+".tsv")>4:
+            expression_file=f"{config['accession']}-{m}.tsv"
+            print(f"Checking file size for {expression_file} and number of columns")
+            if os.path.getsize(expression_file) > 0 and get_number_columns(expression_file)>4:
                 metric_link_coexp=True
-                outputs.extend(expand(f"{config['accession']}"+"-"+m+"-coexpressions.tsv.gz"))
+                outputs.extend(expand(f"{config['accession']}-{m}-coexpressions.tsv.gz"))
 
         if metric_link_coexp == True:
-            outputs.extend(expand(f"{config['accession']}"+"-coexpressions.tsv.gz" ))
+            outputs.extend(expand(f"{config['accession']}-coexpressions.tsv.gz" ))
 
     print(outputs)
+    import datetime
+    print(datetime.datetime.now())
     print('Getting list of outputs.. done')
-    
+    print(datetime.datetime.now())
     if 'delete_previous_output' in config and config['delete_previous_output']==True:
         for x in outputs:
             print('Trying to delete existing output: '+ x)
@@ -183,7 +187,8 @@ def get_outputs():
                 os.remove(x)
             except:
                 print("Output file ", x, " not found in ", os.getcwd())
-            
+        #Disable this flag
+        config['delete_previous_output']=False   
     return outputs
 
 def get_contrast_label(wildcards):
@@ -349,13 +354,16 @@ rule link_baseline_coexpression:
     never appear, not sure whether this will timeout without errors or not.
     """
     log: "logs/{accession}-link_baseline_coexpression.log"
-    input: lambda wildcards: f"{wildcards.accession}-tpms-coexpressions.tsv.gz" if 'tpms' in metrics else f"{wildcards.accession}-fpkms-coexpressions.tsv.gz" 
+    input: "{accession}-tpms-coexpressions.tsv.gz" if 'tpms' in metrics else "{accession}-fpkms-coexpressions.tsv.gz"
     output: "{accession}-coexpressions.tsv.gz"
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
-	    ln -s {input} {output}
+        ls -l {input}
+        ln -s {input} {output}
+        ls -l {input}
+        ls -l {output}
         """
 
 
