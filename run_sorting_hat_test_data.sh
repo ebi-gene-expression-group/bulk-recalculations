@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 GTF=$( pwd )/test-data/gff
-DELETE_PREV_OUTPUT=True
+DELETE_PREV_OUTPUT=False
 SKIP_STEPS=$( pwd )/step_skip.yaml
 BIOENTITIES_PROPERTIES=$( pwd )/test-data/bioentity_properties
 SORTING_HAT=$( pwd )/Snakefile-sorting-hat
