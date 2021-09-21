@@ -144,6 +144,9 @@ rule get_experiment_metadata:
         fi
 
         gff_file=$( find {input.gtf_dir}/$organism -iname "$organism.*.gff3" | head -n1)
+        if [ -z "$gff_file" ]; then
+            gff_file=$( find {input.gtf_dir}/$organism -iname "$organism_*.gff3" | head -n1)
+        fi
         magetabfiles=$( perl {workflow.basedir}/bin/get_experiment_info.pl --experiment {wildcards.accession} --xmlfile {wildcards.accession}/{wildcards.accession}-configuration.xml --magetabfiles)
         idf=$( echo $magetabfiles | awk -F',' '{{ print $1 }}' )
         sdrf=$( echo $magetabfiles | awk -F',' '{{ print $2 }}' )
