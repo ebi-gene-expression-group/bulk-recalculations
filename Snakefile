@@ -126,7 +126,7 @@ def get_outputs():
     if 'percentile-ranks' in config['tool'] or config['tool']=="all-diff" and skip(config['accession'],'percentile_ranks'):
         outputs.append(f"{config['accession']}-percentile-ranks.tsv")
     if 'differential-tracks' in config['tool'] or config['tool']=="all-diff" and skip(config['accession'],'differential-tracks'):
-        check_config_required(fields=['contrast_ids', 'metadata_summary'], method='differential-tracks')
+        check_config_required(fields=['metadata_summary'], method='differential-tracks')
         # fake elements to mix contrasts labels and ids
         outputs.extend(expand(config['accession']+".{id}.{type}", id=get_contrast_ids(), type=["genes.pval.bedGraph", "genes.log2foldchange.bedGraph"]))
     if 'baseline-tracks' in config['tool'] or config['tool']=="all-baseline" and skip(config['accession'],'baseline-tracks'):
@@ -137,7 +137,7 @@ def get_outputs():
                             a_id=get_assay_ids(),
                             metric=get_metrics()))
     if 'differential-gsea' in config['tool'] or config['tool']=="all-diff" and skip(config['accession'],'differential-gsea'):
-        check_config_required(fields=['contrast_ids', 'organism', 'bioentities_properties'], method='differential-gsea')
+        check_config_required(fields=['bioentities_properties'], method='differential-gsea')
         outputs.extend(
                 expand(config['accession']+".{c_id}.{ext_db}.{type}",
                         c_id=get_contrast_ids(),
