@@ -92,9 +92,9 @@ def get_metrics():
         if (len(metric_grabbed )>0):
             return metric_grabbed     # ideally: ['tpms', "fpkms"]
         else:
-            sys.exit("No metric available.") 
+            sys.exit("No metric available for baseline analyses.") 
 
-metrics = get_metrics()
+#metrics = get_metrics()
 plot_labels = {"go": "GO terms", "reactome": "Reactome Pathways", "interpro": "Interpro domains"}
 
 def get_ext_db_labels():
@@ -134,10 +134,16 @@ def get_outputs():
     First method to be executed since it is run by rule all.
     """
     import os.path
+    import datetime
+    print('Starting getting list of outputs..' + str(datetime.datetime.now()))
 
     tool_outputs = {}
     tool_outputs['percentile-ranks'] = f"{config['accession']}-percentile-ranks.tsv"
     outputs = []
+    #get metrics only for baseline
+    global metrics
+    if config['tool']=="all-baseline" or 'baseline-tracks' in config['tool'] or 'baseline-heatmap' in config['tool'] or 'baseline-coexpression' in config['tool']:
+        metrics = get_metrics()
 
     # Read this now so that it is available for all other needs
     read_metadata_summary()
@@ -182,8 +188,6 @@ def get_outputs():
             outputs.extend(expand(f"{config['accession']}-coexpressions.tsv.gz" ))
 
     print(outputs)
-    import datetime
-    print(datetime.datetime.now())
     print('Getting list of outputs.. done')
     print(datetime.datetime.now())
     if read_delete_previous_output():
@@ -193,8 +197,7 @@ def get_outputs():
                 os.remove(x)
             except:
                 print("Output file ", x, " not found in ", os.getcwd())
-        #Disable this flag
-        config['delete_previous_output']=False   
+
     return outputs
 
 def get_contrast_label(wildcards):
@@ -360,7 +363,7 @@ rule link_baseline_coexpression:
     never appear, not sure whether this will timeout without errors or not.
     """
     log: "logs/{accession}-link_baseline_coexpression.log"
-    input: "{accession}-tpms-coexpressions.tsv.gz" if 'tpms' in metrics else "{accession}-fpkms-coexpressions.tsv.gz"
+    input: lambda wildcards: f"{wildcards.accession}-tpms-coexpressions.tsv.gz" if 'tpms' in metrics else f"{wildcards.accession}-fpkms-coexpressions.tsv.gz"
     output: "{accession}-coexpressions.tsv.gz"
     shell:
         """
