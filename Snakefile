@@ -188,6 +188,13 @@ def get_assay_label(wildcards):
     global metadata_summary
     return metadata_summary['assays'][wildcards['assay_id']]
 
+def get_mem_mb(wildcards, attempt):
+    """
+    To adjust resources in rule baseline_coexpression.
+    """
+    return (2**attempt) * 4000
+
+
 wildcard_constraints:
     accession="E-\D+-\d+"
 
@@ -311,8 +318,11 @@ rule baseline_tracks:
 rule baseline_coexpression:
     conda: "envs/clusterseq.yaml"
     log: "logs/{accession}-{metric}-baseline_coexpression.log"
+    resources: mem_mb=get_mem_mb
+    params: num_retries=5
     input:
         expression="{accession}-{metric}.tsv.undecorated.aggregated"
+    threads: 16
     output:
         coexpression_comp="{accession}-{metric}-coexpressions.tsv.gz"
     shell:
@@ -320,7 +330,7 @@ rule baseline_coexpression:
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         mkdir -p logs
         exec &> "{log}"
-        {workflow.basedir}/bin/run_coexpression_for_experiment.R {input.expression} {output.coexpression_comp}
+        {workflow.basedir}/bin/run_coexpression_for_experiment.R {input.expression} {output.coexpression_comp} {workflow.basedir} {threads} {params.num_retries}
         """
 
 rule link_baseline_coexpression:
