@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 GTF=$( pwd )/test-data/gff
-DELETE_PREV_OUTPUT=False
+#FORCEALL=$true
 SKIP_STEPS=$( pwd )/step_skip.yaml
 BIOENTITIES_PROPERTIES=$( pwd )/test-data/bioentity_properties
 SORTING_HAT=$( pwd )/Snakefile-sorting-hat
@@ -38,7 +38,6 @@ snakemake --use-conda --conda-frontend mamba \
         atlas_exps=path/to/atlasexps \
         atlas_meta_config=path/to/supporting_files \
         sm_options="--use-conda --conda-frontend mamba --keep-going -j 2 $CONDA_PREFIX_LINE " \
-        delete_previous_output=$DELETE_PREV_OUTPUT \ 
         skip_steps_file=$SKIP_STEPS \  
         bioentities_properties=$BIOENTITIES_PROPERTIES -j 1 -s $SORTING_HAT &> $USUAL_SM_ERR_OUT
 
