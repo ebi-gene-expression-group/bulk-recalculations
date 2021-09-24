@@ -148,7 +148,7 @@ def get_outputs():
     if 'percentile-ranks' in config['tool'] or config['tool']=="all-diff" and skip(config['accession'],'percentile_ranks'):
         outputs.append(f"{config['accession']}-percentile-ranks.tsv")
     if 'differential-tracks' in config['tool'] or config['tool']=="all-diff" and skip(config['accession'],'differential-tracks'):
-        check_config_required(fields=['contrast_ids', 'metadata_summary'], method='differential-tracks')
+        check_config_required(fields=['metadata_summary'], method='differential-tracks')
         # fake elements to mix contrasts labels and ids
         outputs.extend(expand(config['accession']+".{id}.{type}", id=get_contrast_ids(), type=["genes.pval.bedGraph", "genes.log2foldchange.bedGraph"]))
     if 'baseline-tracks' in config['tool'] or config['tool']=="all-baseline" and skip(config['accession'],'baseline-tracks'):
@@ -159,7 +159,7 @@ def get_outputs():
                             a_id=get_assay_ids(),
                             metric=metrics))
     if 'differential-gsea' in config['tool'] or config['tool']=="all-diff" and skip(config['accession'],'differential-gsea'):
-        check_config_required(fields=['contrast_ids', 'organism', 'bioentities_properties'], method='differential-gsea')
+        check_config_required(fields=['bioentities_properties'], method='differential-gsea')
         outputs.extend(
                 expand(config['accession']+".{c_id}.{ext_db}.{type}",
                         c_id=get_contrast_ids(),
@@ -213,6 +213,13 @@ def get_assay_label(wildcards):
     global metadata_summary
     return metadata_summary['assays'][wildcards['assay_id']]
 
+def get_mem_mb(wildcards, attempt):
+    """
+    To adjust resources in rule baseline_coexpression.
+    """
+    return (2**attempt) * 4000
+
+
 wildcard_constraints:
     accession="E-\D+-\d+"
 
@@ -244,6 +251,11 @@ rule percentile_ranks:
             # remove only microarray derived multiple percentile ranks
             # (per array design <accession>_<arraydesign>-percentile-ranks.tsv)
             rm -f {wildcards.accession}_*-percentile-ranks.tsv
+        else
+            if [[ "${{percentile_ranks[0]}}" != "{output.percentile_ranks_merged}" ]]; then
+                echo "microarray experiment"
+                mv ${{percentile_ranks[0]}} {output.percentile_ranks_merged}
+            fi
         fi
         """
 
@@ -332,15 +344,18 @@ rule baseline_tracks:
 rule baseline_coexpression:
     conda: "envs/clusterseq.yaml"
     log: "logs/{accession}-{metric}-baseline_coexpression.log"
+    resources: mem_mb=get_mem_mb
+    params: num_retries=5
     input:
         expression="{accession}-{metric}.tsv.undecorated.aggregated"
+    threads: 16
     output:
         coexpression_comp="{accession}-{metric}-coexpressions.tsv.gz"
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
-        {workflow.basedir}/bin/run_coexpression_for_experiment.R {input.expression} {output.coexpression_comp}
+        {workflow.basedir}/bin/run_coexpression_for_experiment.R {input.expression} {output.coexpression_comp} {workflow.basedir} {threads} {params.num_retries}
         """
 
 rule link_baseline_coexpression:
