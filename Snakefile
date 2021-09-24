@@ -369,10 +369,7 @@ rule link_baseline_coexpression:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
-        ls -l {input}
         ln -s {input} {output}
-        ls -l {input}
-        ls -l {output}
         """
 
 
