@@ -24,12 +24,6 @@ def read_skip_steps_file():
                 print(exc)
         return skip_steps
 
-def read_delete_previous_output():
-    if 'delete_previous_output' in config and config['delete_previous_output']==True:
-        return True
-    else:
-        return False
-
 
 def get_from_config_or_metadata_summary(label):
     if label in config:
