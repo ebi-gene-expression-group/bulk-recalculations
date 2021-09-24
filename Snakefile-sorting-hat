@@ -162,7 +162,6 @@ rule produce_recalculations_call:
     log: "{accession}/logs/produce_recalculations_call.log"
     params:
         bioentities_properties=get_bioentities_property_path(),
-        delete_previous_output=get_delete_previous_output(),
         skip_steps_file=get_skip_steps_file(),
         log_handler_script=get_log_handler_script()
         # snakemake_opts=config["sm_options"],
@@ -181,12 +180,11 @@ rule produce_recalculations_call:
         pushd {input.working_directory}
 
 
-        snakemake --forceall --latency-wait 150 {config['sm_options']} --config \
+        snakemake --latency-wait 150 {config['sm_options']} --config \
             accession={wildcards.accession} \
             tool={get_tool(wildcards.accession)} \
             metadata_summary=../{input.metadata} \
             bioentities_properties={params.bioentities_properties} \
-            delete_previous_output={params.delete_previous_output} \
             skip_steps_file={params.skip_steps_file} \
             -s {workflow.basedir}/Snakefile {get_log_handler_script()}
         popd
