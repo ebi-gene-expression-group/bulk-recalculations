@@ -227,6 +227,11 @@ rule percentile_ranks:
             # remove only microarray derived multiple percentile ranks
             # (per array design <accession>_<arraydesign>-percentile-ranks.tsv)
             rm -f {wildcards.accession}_*-percentile-ranks.tsv
+        else
+            if [[ "${{percentile_ranks[0]}}" != "{output.percentile_ranks_merged}" ]]; then
+                echo "microarray experiment"
+                mv ${{percentile_ranks[0]}} {output.percentile_ranks_merged}
+            fi
         fi
         """
 
