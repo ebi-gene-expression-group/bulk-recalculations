@@ -190,13 +190,6 @@ def get_outputs():
     print(outputs)
     print('Getting list of outputs.. done')
     print(datetime.datetime.now())
-    if read_delete_previous_output():
-        for x in outputs:
-            print('Trying to delete existing output: '+ x)
-            try:
-                os.remove(x)
-            except:
-                print("Output file ", x, " not found in ", os.getcwd())
 
     return outputs
 
