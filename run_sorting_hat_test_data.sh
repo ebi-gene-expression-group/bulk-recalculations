@@ -9,12 +9,9 @@ BIOENTITIES_PROPERTIES=$( pwd )/test-data/bioentity_properties
 SORTING_HAT=$( pwd )/Snakefile-sorting-hat
 LOG_HANDLER=$( pwd )/log_handler.py
 SN_CONDA_PREFIX=${SN_CONDA_PREFIX:-$( pwd )/conda_installs}
-if [ $FORCEALL ]
-then
-  PROFILE_LINE="--profile profilename --restart-times "$RESTART_TIMES
-else
-  PROFILE_LINE="--profile profilename --forceall --restart-times "$RESTART_TIMES
-fi
+PROFILE_LINE="--profile profilename"
+
+if [ $FORCEALL ]; then FORCE_ALL="--forceall"; else FORCE_ALL=""; fi
 
 CONDA_PREFIX_LINE="--conda-prefix $SN_CONDA_PREFIX"
 export LOG_PATH=${LOG_PATH:-$( pwd )/sorting.log}
@@ -49,7 +46,7 @@ snakemake --use-conda --conda-frontend mamba \
         atlas_meta_config=path/to/supporting_files \
         skip_steps_file=$SKIP_STEPS \
         check_sp_file=$CHECK_SPECIES \
-        sm_options="--use-conda --conda-frontend mamba --keep-going $PROFILE_LINE -j 2 $CONDA_PREFIX_LINE " \
+        sm_options="--use-conda --conda-frontend mamba --keep-going $PROFILE_LINE -j 2 $CONDA_PREFIX_LINE $FORCE_ALL --restart-times $RESTART_TIMES " \
         bioentities_properties=$BIOENTITIES_PROPERTIES -j 1 -s $SORTING_HAT &> $USUAL_SM_ERR_OUT
 
 sleep 5
