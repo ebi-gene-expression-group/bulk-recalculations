@@ -224,8 +224,6 @@ rule percentile_ranks:
             if [[ "${{percentile_ranks[0]}}" != "{output.percentile_ranks_merged}" ]]; then
                 echo "microarray experiment"
                 mv ${{percentile_ranks[0]}} {output.percentile_ranks_merged}
-            else
-                echo "rna-seq experiment"
             fi
         fi
         """
