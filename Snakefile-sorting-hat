@@ -151,7 +151,13 @@ rule get_experiment_metadata:
             exit 1
         fi
         # fix species name
-        organism_check=$( python3  {workflow.basedir}/bin/bulk_recalculations_check_species_names.py $(echo $organism) {params.check_species_file} )
+        #organism_check=$( python3  {workflow.basedir}/bin/bulk_recalculations_check_species_names.py $(echo $organism) {params.check_species_file} )
+        while read line; do
+        echo "$line"
+        DIR=$line
+        done < <(perl {workflow.basedir}/bin/bulk_recalculations_check_species_names.pl $(echo $organism) {params.check_species_file}  )
+	    organism_check=$(echo $DIR)
+
         organism=$organism_check
         echo $organism "check->"$organism_check  >> organisms.txt
 
