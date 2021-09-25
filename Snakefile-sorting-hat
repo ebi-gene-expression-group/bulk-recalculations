@@ -156,7 +156,7 @@ rule get_experiment_metadata:
         echo "$line"
         DIR=$line
         done < <(perl {workflow.basedir}/bin/bulk_recalculations_check_species_names.pl $(echo $organism) {params.check_species_file}  )
-	    organism_check=$(echo $DIR)
+	organism_check=$(echo $DIR)
 
         organism=$organism_check
         echo $organism "check->"$organism_check  >> organisms.txt
