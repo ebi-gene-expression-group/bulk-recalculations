@@ -190,7 +190,7 @@ def get_assay_label(wildcards):
 
 def get_mem_mb(wildcards, attempt):
     """
-    To adjust resources in rule baseline_coexpression.
+    To adjust resources in rule baseline_coexpression and rule differential_gsea.
     """
     return (2**attempt) * 4000
 
