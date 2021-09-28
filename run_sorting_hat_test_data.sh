@@ -4,7 +4,7 @@ GTF=$( pwd )/test-data/gff
 DELETE_PREV_OUTPUT=True
 SKIP_STEPS=$( pwd )/step_skip.yaml
 # CHECK_SPECIES file should come from a clone of the atlas-config repo in Jenkins:
-CHECK_SPECIES=$( pwd )/Bulk_recalculations_check_species_names.yaml
+CHECK_SPECIES=$( pwd )/atlas-species-name-mapping.yaml
 BIOENTITIES_PROPERTIES=$( pwd )/test-data/bioentity_properties
 SORTING_HAT=$( pwd )/Snakefile-sorting-hat
 LOG_HANDLER=$( pwd )/log_handler.py
