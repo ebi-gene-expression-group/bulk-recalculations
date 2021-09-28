@@ -159,7 +159,7 @@ rule get_experiment_metadata:
 	    organism_check=$(echo $DIR)
 
         organism=$organism_check
-        echo $organism "check->"$organism_check  >> organisms.txt
+        echo $organism "check-> "$organism_check  >> organisms.txt
 
         gff_file=$( find {input.gtf_dir}/$organism -iname "$organism.*.gff3" | head -n1)
         magetabfiles=$( perl {workflow.basedir}/bin/get_experiment_info.pl --experiment {wildcards.accession} --xmlfile {wildcards.accession}/{wildcards.accession}-configuration.xml --magetabfiles)
