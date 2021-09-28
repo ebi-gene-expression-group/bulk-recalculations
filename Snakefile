@@ -268,6 +268,8 @@ rule differential_tracks:
 rule differential_gsea:
     conda: "envs/irap.yaml"
     log: "logs/{accession}.{contrast_id}.{ext_db}-differential_gsea.log"
+    resources: mem_mb=get_mem_mb
+    threads: 8
     params:
         organism=get_organism(),
         BIOENTITIES_PROPERTIES_PATH=config['bioentities_properties'],
@@ -297,7 +299,7 @@ rule differential_gsea:
         {params.contrast_label}
         (Fisher-exact, FDR < 0.1)"
         annotationFile=$(find_properties_file {params.organism} {wildcards.ext_db})
-        {workflow.basedir}/bin/gxa_calculate_gsea.sh {wildcards.accession} $annotationFile $analyticsFile $pvalColNum $log2foldchangeColNum ./ {wildcards.contrast_id} "$plotTitle" {params.organism} {wildcards.ext_db}
+        {workflow.basedir}/bin/gxa_calculate_gsea.sh {wildcards.accession} $annotationFile $analyticsFile $pvalColNum $log2foldchangeColNum ./ {wildcards.contrast_id} "$plotTitle" {params.organism} {wildcards.ext_db} {threads}
         """
 
 rule baseline_tracks:
