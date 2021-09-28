@@ -21,7 +21,7 @@ my $data = LoadFile($YAML_file);
 
 #Search
 my $found = 0;
-my $output = ' ';
+my $output_sp = ' ';
 
 for my $k1 (keys %{$data}) {
     for my $k2 (keys %{$data->{$k1}}) {
@@ -37,7 +37,7 @@ for my $k1 (keys %{$data}) {
         if ($string1 eq $input_sp){
           print "MATCH ! \n";
           $found +=1;
-          $output = $string2 ;
+          $output_sp = $string2 ;
         }
     }
 }
@@ -47,7 +47,7 @@ print " Number of occurences: $found \n ";
 if ($found eq 0){
   print " $input_sp \n ";
 } else {
-  print "$output \n ";
+  print "$output_sp \n ";
 }
 
 
