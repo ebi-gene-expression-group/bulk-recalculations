@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 GTF=$( pwd )/test-data/gff
-FORCEALL=$true
+FORCEALL=true
 RESTART_TIMES=1
 SKIP_STEPS=$( pwd )/step_skip.yaml
 CHECK_SPECIES=$( pwd )/atlas-species-name-mapping.yaml
@@ -11,7 +11,7 @@ LOG_HANDLER=$( pwd )/log_handler.py
 SN_CONDA_PREFIX=${SN_CONDA_PREFIX:-$( pwd )/conda_installs}
 PROFILE_LINE="--profile profilename"
 
-if [ $FORCEALL ]; then FORCE_ALL="--forceall"; else FORCE_ALL=""; fi
+if [ "$FORCEALL" = true ]; then FORCE_ALL="--forceall"; else FORCE_ALL=""; fi
 
 CONDA_PREFIX_LINE="--conda-prefix $SN_CONDA_PREFIX"
 export LOG_PATH=${LOG_PATH:-$( pwd )/sorting.log}
