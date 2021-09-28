@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Calculate gsea for $expAcc and contrast in col nums $pvalColNum and $log2foldchnageColNum respectively, and output the result to ${expPath}/$analyticsFileRoot.<geneSetType>.gsea.tsv
 
-if [ $# -ne 10 ]; then
-        echo "Usage: $0 expAcc geneSetFile analyticsFile pvalColNum log2foldchangeColNum expPath contrastId plotTitle organism geneSetType"
+if [ $# -ne 11 ]; then
+        echo "Usage: $0 expAcc geneSetFile analyticsFile pvalColNum log2foldchangeColNum expPath contrastId plotTitle organism geneSetType numberCores"
         echo "e.g. $0 "
         exit 1
 fi
@@ -20,6 +20,7 @@ contrastId=$7
 plotTitle=$8
 organism=$9
 geneSetType=${10}
+numberCores=${11}
 
 outputFile=${expPath}/${expAcc}.${contrastId}.${geneSetType}.gsea
 
@@ -50,9 +51,9 @@ if [ $? -eq 0 ]; then
    fi
 
    set -v
-   irap_GSE_piano --tsv=$analyticsFile --pvalue-col=$pvalColNum --foldchange-col=$log2foldchangeColNum --title="$plotTitle" --pvalue=0.05 --gs_fdr=0.1 --method=fisher-exact --dup-use-best --plot-annot-only --top=10 --minsize 5 --maxsize 100 --descr $mappingFile --go=$geneSetFilePath --out=$outputFile 2>&1
+   irap_GSE_piano --tsv=$analyticsFile --pvalue-col=$pvalColNum --foldchange-col=$log2foldchangeColNum --title="$plotTitle" --pvalue=0.05 --gs_fdr=0.1 --method=fisher-exact --dup-use-best --plot-annot-only --top=10 --minsize 5 --maxsize 100 --descr $mappingFile --go=$geneSetFilePath --cores=$numberCores --out=$outputFile 2>&1
    if [ $? -ne 0 ]; then
-	echo "ERROR: Command: 'irap_GSE_piano --tsv=$analyticsFile --pvalue-col=$pvalColNum --foldchange-col=$log2foldchangeColNum --title=\"$plotTitle\" --pvalue=0.05 --gs_fdr=0.1 --method=fisher-exact --dup-use-best --plot-annot-only --top=10 --minsize 5 --maxsize 100 --descr $mappingFile --go=$geneSetFilePath --out=$outputFile' failed" >&2
+	echo "ERROR: Command: 'irap_GSE_piano --tsv=$analyticsFile --pvalue-col=$pvalColNum --foldchange-col=$log2foldchangeColNum --title=\"$plotTitle\" --pvalue=0.05 --gs_fdr=0.1 --method=fisher-exact --dup-use-best --plot-annot-only --top=10 --minsize 5 --maxsize 100 --descr $mappingFile --go=$geneSetFilePath --cores=$numberCores --out=$outputFile' failed" >&2
 	exit 1
    fi
    unset -v
