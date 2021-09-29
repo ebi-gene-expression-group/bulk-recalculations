@@ -32,6 +32,7 @@ rm -f $LOG_PATH
 touch $LOG_PATH
 tail -f $LOG_PATH &
 
+start=`date +%s`
 echo 'starting bulk-recalculations...'
 
 snakemake --use-conda --conda-frontend mamba \
@@ -48,6 +49,9 @@ snakemake --use-conda --conda-frontend mamba \
         check_sp_file=$CHECK_SPECIES \
         sm_options="--use-conda --conda-frontend mamba --keep-going $PROFILE_LINE -j 2 $CONDA_PREFIX_LINE $FORCE_ALL --restart-times $RESTART_TIMES " \
         bioentities_properties=$BIOENTITIES_PROPERTIES -j 1 -s $SORTING_HAT &> $USUAL_SM_ERR_OUT
+
+end=`date +%s`
+echo "bulk-recalculations took: "`expr $end - $start`" s"
 
 sleep 5
 # remove tail process
