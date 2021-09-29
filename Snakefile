@@ -292,14 +292,21 @@ rule differential_gsea:
             analyticsFile={wildcards.accession}-analytics.tsv
         fi
         set -e
-        pvalColNum=$(get_contrast_colnum $analyticsFile {wildcards.contrast_id} "p-value")
-        log2foldchangeColNum=$(get_contrast_colnum $analyticsFile {wildcards.contrast_id} "log2foldchange")
-        plotTitle="
-        Top 10 {params.ext_db_label} enriched in
-        {params.contrast_label}
-        (Fisher-exact, FDR < 0.1)"
         annotationFile=$(find_properties_file {params.organism} {wildcards.ext_db})
-        {workflow.basedir}/bin/gxa_calculate_gsea.sh {wildcards.accession} $annotationFile $analyticsFile $pvalColNum $log2foldchangeColNum ./ {wildcards.contrast_id} "$plotTitle" {params.organism} {wildcards.ext_db} {threads}
+        if [ -s "$annotationFile" ]; then
+            pvalColNum=$(get_contrast_colnum $analyticsFile {wildcards.contrast_id} "p-value")
+            log2foldchangeColNum=$(get_contrast_colnum $analyticsFile {wildcards.contrast_id} "log2foldchange")
+            plotTitle="
+            Top 10 {params.ext_db_label} enriched in
+            {params.contrast_label}
+            (Fisher-exact, FDR < 0.1)"
+            {workflow.basedir}/bin/gxa_calculate_gsea.sh {wildcards.accession} $annotationFile $analyticsFile $pvalColNum $log2foldchangeColNum ./ {wildcards.contrast_id} "$plotTitle" {params.organism} {wildcards.ext_db} {threads}
+        else
+            touch {wildcards.accession}.{wildcards.contrast_id}.{wildcards.ext_db}.gsea.tsv
+            touch {wildcards.accession}.{wildcards.contrast_id}.{wildcards.ext_db}.gsea_list.tsv
+            touch {wildcards.accession}.{wildcards.contrast_id}.{wildcards.ext_db}.gsea.tsv_WARNING_not_computed
+            touch {wildcards.accession}.{wildcards.contrast_id}.{wildcards.ext_db}.gsea_list.tsv_WARNING_not_computed
+        fi
         """
 
 rule baseline_tracks:
