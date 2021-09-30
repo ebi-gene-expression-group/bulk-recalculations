@@ -194,6 +194,14 @@ def get_mem_mb(wildcards, attempt):
     """
     return (2**attempt) * 4000
 
+def get_mem_mb_baseline(wildcards, attempt):
+    """
+    To adjust resources in rules baseline_tracks, baseline_heatmaps and  atlas_experiment_summary
+    """
+    return (attempt) * 2000
+
+
+
 
 wildcard_constraints:
     accession="E-\D+-\d+"
