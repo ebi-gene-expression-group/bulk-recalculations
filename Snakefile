@@ -202,7 +202,6 @@ def get_mem_mb_baseline(wildcards, attempt):
 
 
 
-
 wildcard_constraints:
     accession="E-\D+-\d+"
 
@@ -311,6 +310,7 @@ rule differential_gsea:
 rule baseline_tracks:
     conda: "envs/irap.yaml"
     log: "logs/{accession}-{assay_id}-{metric}-baseline_tracks.log"
+    resources: mem_mb=get_mem_mb_baseline
     params:
         assay_label=get_assay_label
     input:
@@ -374,6 +374,7 @@ rule link_baseline_coexpression:
 rule baseline_heatmap:
     conda: "envs/atlas-internal.yaml"
     log: "logs/{accession}-{metric}-baseline_heatmap.log"
+    resources: mem_mb=get_mem_mb_baseline
     input:
         expression="{accession}-{metric}.tsv"
     output:
@@ -391,6 +392,7 @@ rule baseline_heatmap:
 rule atlas_experiment_summary:
     conda: "envs/atlas-internal.yaml"
     log: "logs/{accession}-atlas_experiment_summary.log"
+    resources: mem_mb=get_mem_mb_baseline
     input:
         sdrf=get_sdrf()
     output:
