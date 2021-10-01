@@ -25,9 +25,6 @@ my $output_sp = ' ';
 
 for my $k1 (keys %{$data}) {
     for my $k2 (keys %{$data->{$k1}}) {
-        #print "Key:    $k2 => @{$data->{$k1}{$k2}}\n";
-        #print "$k2\n";
-        #print "@{$data->{$k1}{$k2}} \n";
         # transform arrays into strings
         my $string1 = join('-' ,$k2);
         my $string2 = join( '-', @{$data->{$k1}{$k2}} );
