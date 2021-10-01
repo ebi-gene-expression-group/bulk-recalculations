@@ -157,7 +157,7 @@ rule get_experiment_metadata:
         done < <(perl {workflow.basedir}/bin/bulk_recalculations_check_species_names.pl $(echo $organism) {params.check_species_file}  )
 	    organism_check=$(echo $DIR)
 
-        echo $organism "check-> "$organism_check >> organisms.txt
+        ##echo $organism "check-> "$organism_check >> organisms.txt
         organism=$organism_check
 
         gff_file=$( find {input.gtf_dir}/$organism -iname "$organism.*.gff3" | head -n1)
