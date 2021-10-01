@@ -188,7 +188,7 @@ def get_assay_label(wildcards):
     global metadata_summary
     return metadata_summary['assays'][wildcards['assay_id']]
 
-def get_mem_mb(wildcards, attempt):
+def get_mem_mb_8000(wildcards, attempt):
     """
     To adjust resources in rule baseline_coexpression and rule differential_gsea.
     """
@@ -268,7 +268,7 @@ rule differential_tracks:
 rule differential_gsea:
     conda: "envs/irap.yaml"
     log: "logs/{accession}.{contrast_id}.{ext_db}-differential_gsea.log"
-    resources: mem_mb=get_mem_mb
+    resources: mem_mb=get_mem_mb_8000
     threads: 8
     params:
         organism=get_organism(),
@@ -332,7 +332,7 @@ rule baseline_tracks:
 rule baseline_coexpression:
     conda: "envs/clusterseq.yaml"
     log: "logs/{accession}-{metric}-baseline_coexpression.log"
-    resources: mem_mb=get_mem_mb
+    resources: mem_mb=get_mem_mb_8000
     params: num_retries=5
     input:
         expression="{accession}-{metric}.tsv.undecorated.aggregated"
