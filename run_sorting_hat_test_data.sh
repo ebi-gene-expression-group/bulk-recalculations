@@ -4,6 +4,7 @@ GTF=$( pwd )/test-data/gff
 FORCEALL=true
 RESTART_TIMES=1
 SKIP_STEPS=$( pwd )/step_skip.yaml
+# CHECK_SPECIES file should come from a clone of the atlas-config repo in Jenkins:
 CHECK_SPECIES=$( pwd )/atlas-species-name-mapping.yaml
 BIOENTITIES_PROPERTIES=$( pwd )/test-data/bioentity_properties
 SORTING_HAT=$( pwd )/Snakefile-sorting-hat

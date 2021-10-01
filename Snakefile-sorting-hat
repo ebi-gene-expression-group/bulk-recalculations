@@ -71,6 +71,13 @@ def get_skip_steps_file():
     else:
         return None 
 
+def get_check_sp_file():
+  if 'check_sp_file' in config:
+    return config['check_sp_file']
+  else:
+    return None
+
+
 
 def get_outputs():
     import os
@@ -106,7 +113,8 @@ rule get_experiment_metadata:
     params:
         atlas_meta_config = config['atlas_meta_config'],
         atlas_prod = config['atlas_prod'],
-        atlas_exps = config['atlas_exps']
+        atlas_exps = config['atlas_exps'],
+        check_species_file=get_check_sp_file()
     input:
         config_file = "{accession}/{accession}-configuration.xml",
         gtf_dir = config['gtf_dir']
@@ -125,17 +133,29 @@ rule get_experiment_metadata:
         source {workflow.basedir}/bin/metadata_retrieval_functions.sh
 
         perl {workflow.basedir}/bin/get_exptype_contrasts_assays.pl {wildcards.accession} {input.config_file} {output.metadata}
-        if [ -e "{wildcards.accession}/{wildcards.accession}.condensed-sdrf.tsv" ]; then
-            echo "Trying with condensed..."
+        if [ -e "{params.atlas_exps}/{wildcards.accession}/{wildcards.accession}.condensed-sdrf.tsv" ]; then
+            echo "Trying with condensed in atlas_exps..."
+            organism=$(get_organism_from_condensed_sdrf "{params.atlas_exps}/{wildcards.accession}/{wildcards.accession}.condensed-sdrf.tsv")
+        elif [ -e "{wildcards.accession}/{wildcards.accession}.condensed-sdrf.tsv" ]; then
+            echo "Trying with condensed in local experiment dir..."
             organism=$(get_organism_from_condensed_sdrf "{wildcards.accession}/{wildcards.accession}.condensed-sdrf.tsv")
         elif [ -e "{wildcards.accession}/{wildcards.accession}-configuration.xml" ]; then
             echo "Trying with perl (produces organism with capitals and spaces)"
             organism=$(perl {workflow.basedir}/bin/get_experiment_info.pl --experiment {wildcards.accession} --xmlfile {wildcards.accession}/{wildcards.accession}-configuration.xml --organism | sed 's/ /_/g' | tr '[:upper:]' '[:lower:]')
         else
             echo "Nothing worked..."
-            >&2 echo "Can't retrieve organism: neither {wildcards.accession}/{wildcards.accession}.condensed-sdrf.tsv nor {wildcards.accession}/{wildcards.accession}-configuration.xml not found "
+            >&2 echo "Can't retrieve organism: neither {wildcards.accession}.condensed-sdrf.tsv nor {wildcards.accession}/{wildcards.accession}-configuration.xml not found "
             exit 1
         fi
+        # fix species name
+        while read line; do
+        echo "$line"
+        DIR=$line
+        done < <(perl {workflow.basedir}/bin/bulk_recalculations_check_species_names.pl $(echo $organism) {params.check_species_file}  )
+	    organism_check=$(echo $DIR)
+
+        ##echo $organism "check-> "$organism_check >> organisms.txt
+        organism=$organism_check
 
         gff_file=$( find {input.gtf_dir}/$organism -iname "$organism.*.gff3" | head -n1)
         if [ -z "$gff_file" ]; then
