@@ -135,7 +135,7 @@ rule get_experiment_metadata:
             echo "Trying with condensed in atlas_exps..."
             organism=$(get_organism_from_condensed_sdrf "{params.atlas_exps}/{wildcards.accession}/{wildcards.accession}.condensed-sdrf.tsv")
         elif [ -e "{wildcards.accession}/{wildcards.accession}.condensed-sdrf.tsv" ]; then
-            echo "Trying with condensed in atlas_prod..."
+            echo "Trying with condensed in local experiment dir..."
             organism=$(get_organism_from_condensed_sdrf "{wildcards.accession}/{wildcards.accession}.condensed-sdrf.tsv")
         elif [ -e "{wildcards.accession}/{wildcards.accession}-configuration.xml" ]; then
             echo "Trying with perl (produces organism with capitals and spaces)"
