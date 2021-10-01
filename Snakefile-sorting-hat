@@ -131,15 +131,18 @@ rule get_experiment_metadata:
         source {workflow.basedir}/bin/metadata_retrieval_functions.sh
 
         perl {workflow.basedir}/bin/get_exptype_contrasts_assays.pl {wildcards.accession} {input.config_file} {output.metadata}
-        if [ -e "{wildcards.accession}/{wildcards.accession}.condensed-sdrf.tsv" ]; then
-            echo "Trying with condensed..."
+        if [ -e "{params.atlas_exps}/{wildcards.accession}/{wildcards.accession}.condensed-sdrf.tsv" ]; then
+            echo "Trying with condensed in atlas_exps..."
+            organism=$(get_organism_from_condensed_sdrf "{params.atlas_exps}/{wildcards.accession}/{wildcards.accession}.condensed-sdrf.tsv")
+        elif [ -e "{wildcards.accession}/{wildcards.accession}.condensed-sdrf.tsv" ]; then
+            echo "Trying with condensed in atlas_prod..."
             organism=$(get_organism_from_condensed_sdrf "{wildcards.accession}/{wildcards.accession}.condensed-sdrf.tsv")
         elif [ -e "{wildcards.accession}/{wildcards.accession}-configuration.xml" ]; then
             echo "Trying with perl (produces organism with capitals and spaces)"
             organism=$(perl {workflow.basedir}/bin/get_experiment_info.pl --experiment {wildcards.accession} --xmlfile {wildcards.accession}/{wildcards.accession}-configuration.xml --organism | sed 's/ /_/g' | tr '[:upper:]' '[:lower:]')
         else
             echo "Nothing worked..."
-            >&2 echo "Can't retrieve organism: neither {wildcards.accession}/{wildcards.accession}.condensed-sdrf.tsv nor {wildcards.accession}/{wildcards.accession}-configuration.xml not found "
+            >&2 echo "Can't retrieve organism: neither {wildcards.accession}.condensed-sdrf.tsv nor {wildcards.accession}/{wildcards.accession}-configuration.xml not found "
             exit 1
         fi
 
