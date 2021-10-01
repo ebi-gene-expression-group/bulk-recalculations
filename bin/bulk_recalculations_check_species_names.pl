@@ -29,7 +29,6 @@ for my $k1 (keys %{$data}) {
         my $string1 = join('-' ,$k2);
         my $string2 = join( '-', @{$data->{$k1}{$k2}} );
         print "Key:  '$string1' -> '$string2' \n";
-        #print "Input $input_sp \n";
 
         if ($string1 eq $input_sp){
           print "MATCH ! \n";
