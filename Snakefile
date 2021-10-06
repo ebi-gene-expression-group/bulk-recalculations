@@ -307,6 +307,48 @@ rule differential_gsea:
         fi
         """
 
+
+rule check_differential_gsea:
+    """
+    Whether there is a lack of annotation for 'ext_db' in rule differential_gsea, or the
+    analysis produces no results passing significance cutoff, gsea output files could be empty.
+    Here we aim to delete those empty files.
+    """
+    log: "logs/{accession}.{contrast_id}.{ext_db}-check-differential_gsea.log"
+    input:
+	    gsea="{accession}.{contrast_id}.{ext_db}.gsea.tsv",
+        gsea_list="{accession}.{contrast_id}.{ext_db}.gsea_list.tsv"
+    output:
+	    log1="logs/{accession}.{contrast_id}.{ext_db}.gsea.tsv",
+        log2="logs/{accession}.{contrast_id}.{ext_db}.gsea_list.tsv"
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+        if [ -e {input.gsea} ]; then
+            if ! [ -s {input.gsea} ] || [ $(sed -n '$=' {input.gsea} ) -lt 2 ] ; then
+                echo "Deleting empty file "{input.gsea}  >> {output.log1}
+                rm {input.gsea}
+            else
+                echo "File "{input.gsea}" is ok"  >> {output.log1}
+            fi
+        else
+            echo "File "{input.gsea}" does not exist"  >> {output.log1}
+        fi
+
+        if [ -e {input.gsea_list} ]; then
+            if ! [ -s {input.gsea_list} ] || [ $(sed -n '$=' {input.gsea_list} ) -lt 2 ] ; then
+                echo "Deleting empty file "{input.gsea_list}  >> {output.log2}
+                rm {input.gsea_list}
+            else
+                echo "File "{input.gsea_list}" is ok"  >> {output.log2}
+            fi
+        else
+            echo "File "{input.gsea_list}" does not exist"  >> {output.log2}
+        fi
+        """
+
+
 rule baseline_tracks:
     conda: "envs/irap.yaml"
     log: "logs/{accession}-{assay_id}-{metric}-baseline_tracks.log"
