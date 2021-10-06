@@ -139,9 +139,10 @@ def get_outputs():
     if 'differential-gsea' in config['tool'] or config['tool']=="all-diff" and skip(config['accession'],'differential-gsea'):
         check_config_required(fields=['bioentities_properties'], method='differential-gsea')
         outputs.extend(
-                expand(config['accession']+".{c_id}.{ext_db}.{type}",
+                expand("{pref}"+config['accession']+".{c_id}.{ext_db}.{type}",
                         c_id=get_contrast_ids(),
                         ext_db=get_ext_db(),
+                        pref=["", "logs/"],
                         type=["gsea.tsv", "gsea_list.tsv"]))
     if 'atlas-experiment-summary' in config['tool'] or 'all' in config['tool'] and skip(config['accession'],'atlas_experiment_summary'):
         outputs.append(f"{config['accession']}-atlasExperimentSummary.Rdata")
