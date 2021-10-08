@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+NEXPS=${NEXPS:-30}
+NJOBS=${NJOBS:-10}
 GTF=$( pwd )/test-data/gff
 FORCEALL=true
 RESTART_TIMES=1
@@ -48,8 +50,8 @@ snakemake --use-conda --conda-frontend mamba \
         atlas_meta_config=path/to/supporting_files \
         skip_steps_file=$SKIP_STEPS \
         check_sp_file=$CHECK_SPECIES \
-        sm_options="--use-conda --conda-frontend mamba --keep-going $PROFILE_LINE -j 2 $CONDA_PREFIX_LINE $FORCE_ALL --restart-times $RESTART_TIMES " \
-        bioentities_properties=$BIOENTITIES_PROPERTIES -j 1 -s $SORTING_HAT &> $USUAL_SM_ERR_OUT
+        sm_options="--use-conda --conda-frontend mamba --keep-going $PROFILE_LINE -j $NJOBS $CONDA_PREFIX_LINE $FORCE_ALL --restart-times $RESTART_TIMES " \
+        bioentities_properties=$BIOENTITIES_PROPERTIES -j $NEXPS -s $SORTING_HAT &> $USUAL_SM_ERR_OUT
 
 end=`date +%s`
 echo "bulk-recalculations took: "`expr $end - $start`" s"
