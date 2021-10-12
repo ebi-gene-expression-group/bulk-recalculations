@@ -69,7 +69,7 @@ def get_skip_steps_file():
     if 'skip_steps_file' in config:
         return config['skip_steps_file']
     else:
-        return None 
+        return None
 
 def get_check_sp_file():
   if 'check_sp_file' in config:
@@ -87,7 +87,7 @@ def get_outputs():
     else:
         ACC=glob.glob('E-*')
 
-    if 'atlas_exps' in config:  
+    if 'atlas_exps' in config:
         # filter out ACC based on accessions that are available in atlas_exps
         valid_acc_dir = next(os.walk( config['atlas_exps'] ))[1]
         # intersection of the two lists
@@ -178,6 +178,40 @@ rule get_experiment_metadata:
         fi
         """
 
+rule produce_reprocess_call:
+    input:
+        metadata = "{accession}/{accession}.metadata_summary.yaml",
+        working_directory = "{accession}"
+    log: "{accession}/logs/produce_reprocess_call.log"
+    params:
+        bioentities_properties=get_bioentities_property_path(),
+        delete_previous_output=get_delete_previous_output(),
+        skip_steps_file=get_skip_steps_file(),
+        log_handler_script=get_log_handler_script()
+    output:
+        touch("{accession}/{accession}.reprocess.done")
+    run:
+        command_line=f"""
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        mkdir -p {wildcards.accession}/logs
+        exec &> {log}
+        pushd {input.working_directory}
+
+
+        snakemake --latency-wait 100 {config['sm_options']} --config \
+            accession={wildcards.accession} \
+            tool={get_tool(wildcards.accession)} \
+            metadata_summary=../{input.metadata} \
+            bioentities_properties={params.bioentities_properties} \
+            delete_previous_output={params.delete_previous_output} \
+            skip_steps_file={params.skip_steps_file} \
+            -s {workflow.basedir}/Snakefile-reprocess {params.log_handler_script}
+        popd
+        """
+        #print(command_line)
+        shell(command_line)
+
+
 rule produce_recalculations_call:
     input:
         metadata = "{accession}/{accession}.metadata_summary.yaml",
@@ -187,12 +221,6 @@ rule produce_recalculations_call:
         bioentities_properties=get_bioentities_property_path(),
         skip_steps_file=get_skip_steps_file(),
         log_handler_script=get_log_handler_script()
-        # snakemake_opts=config["sm_options"],
-        # tool=get_tool("{accession}"),
-        # organism=get_organism("{accession}"),
-        # type=get_exp_type("{accession}"),
-        # gff_path=get_gff_path("{accession}"),
-        # assay_contrast_line = get_assay_contrast_line("{accession}")
     output:
         touch("{accession}/{accession}.recalculations.done")
     run:
@@ -209,14 +237,8 @@ rule produce_recalculations_call:
             metadata_summary=../{input.metadata} \
             bioentities_properties={params.bioentities_properties} \
             skip_steps_file={params.skip_steps_file} \
-            -s {workflow.basedir}/Snakefile {get_log_handler_script()}
+            -s {workflow.basedir}/Snakefile-recalculations {get_log_handler_script()}
         popd
         """
         #print(command_line)
         shell(command_line)
-    #shell:
-    #    """
-    #    pushd {input.working_directory}
-    #    echo ""
-    #    popd
-    #    """

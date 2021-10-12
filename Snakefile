@@ -86,7 +86,7 @@ def get_metrics():
         if (len(metric_grabbed )>0):
             return metric_grabbed     # ideally: ['tpms', "fpkms"]
         else:
-            sys.exit("No metric available for baseline analyses.") 
+            sys.exit("No metric available for baseline analyses.")
 
 #metrics = get_metrics()
 plot_labels = {"go": "GO terms", "reactome": "Reactome Pathways", "interpro": "Interpro domains"}
@@ -174,7 +174,7 @@ def get_outputs():
         outputs.append(f"{config['accession']}-atlasExperimentSummary.Rdata")
     if 'baseline-heatmap' in config['tool'] or 'all-baseline' in config['tool'] and skip(config['accession'],'baseline-heatmap'):
         outputs.extend(expand(f"{config['accession']}"+"-heatmap-{metric}.pdf", metric=metrics ))
-    if 'baseline-coexpression' in config['tool'] or 'all-baseline' in config['tool'] and skip(config['accession'],'baseline-coexpression'):   
+    if 'baseline-coexpression' in config['tool'] or 'all-baseline' in config['tool'] and skip(config['accession'],'baseline-coexpression'):
         metric_link_coexp=False
         for m in metrics:
             expression_file=f"{config['accession']}-{m}.tsv"
@@ -234,10 +234,6 @@ def get_mem_mb_2000(wildcards, attempt):
 
 wildcard_constraints:
     accession="E-\D+-\d+"
-
-rule all:
-    input:
-        required_outputs=get_outputs()
 
 rule percentile_ranks:
     conda: "envs/atlas-internal.yaml"
@@ -474,4 +470,94 @@ rule atlas_experiment_summary:
 	          --source ./ \
 	          --accession {wildcards.accession} \
 	          --output {output.rsummary}
+        """
+
+rule copy_raw_gene_counts_from_isl:
+    params:
+        exp_isl_dir=get_isl_dir()
+    output:
+        raw_counts_undecorated="{accession}-raw-counts.tsv.undecorated"
+    shell:
+        """
+        export expIslDir={params.exp_isl_dir}
+        export expTargetDir=./
+        [ ! -z $expIslDir+x} ] || (echo "snakemake param exp_isl_dir needs to defined in rule" && exit 1)
+        if [ -s "$expIslDir/genes.raw.htseq2.tsv" ]; then
+            cp $expIslDir/genes.raw.htseq2.tsv {output.raw_counts_undecorated}
+        elif [ -s "$expIslDir/genes.raw.featurecounts.tsv" ]; then
+            cp $expIslDir/genes.raw.featurecounts.tsv {output.raw_counts_undecorated}
+        else
+            echo "Neither genes.raw.htseq2.tsv nor genes.raw.featurecounts.tsv found on $expIslDir"
+            exit 1
+        fi
+        """
+
+rule copy_normalised_counts_from_isl:
+    params:
+        exp_isl_dir=get_isl_dir()
+    output:
+        normalised_counts_undecorated="{accession}-{metric}s.tsv.undecorated"
+    shell:
+        """
+        # replaces copy_unit_matrices_from_isl in experiment_loading_routines.sh
+        export expIslDir={params.exp_isl_dir}
+
+        [ ! -z $expIslDir+x} ] || (echo "snakemake param exp_isl_dir needs to defined in rule" && exit 1)
+
+        if [ -s "$expIslDir/genes.{wildcards.metric}.htseq2.tsv" ]; then
+            # maybe rsync could be better here?
+            cp $expIslDir/genes.{wildcards.metric}.htseq2.tsv {output.normalised_counts_undecorated}
+        elif [ -s "$expIslDir/genes.{wildcards.metric}.featurecounts.tsv" ]; then
+            cp $expIslDir/genes.{wildcards.metric}.featurecounts.tsv {output.normalised_counts_undecorated}
+        else
+            echo "$expIslDir/genes.{wildcards.metric}.htseqORfeaturecounts.tsv not found"
+            exit 1
+        fi
+        """
+
+
+rule copy_transcript_files_from_isl:
+    params:
+        exp_isl_dir=get_isl_dir()
+    output:
+        transcripts="{accession}-transcripts-{metric}s.tsv.undecorated"
+    shell:
+        """
+        if [ -s "{params.exp_isl_dir}/transcripts.{wildcards.metric}.kallisto.tsv" ] ; then
+            # maybe rsync could be better here?
+        	cp {params.exp_isl_dir}/transcripts.{wildcards.metric}.kallisto.tsv {output.transcripts}
+        else
+        	echo "{params.exp_isl_dir}/transcripts.{wildcards.metric}.kallisto.tsv not found - skipping"
+        fi
+        """
+
+rule copy_transcript_relative_isoforms:
+    params:
+        exp_isl_dir=get_isl_dir()
+    output:
+        transcripts_relative_isoforms="{accession}-transcripts.riu.tsv"
+    shell:
+        """
+        if [ -s "$expIslDir/transcripts.riu.kallisto.tsv" ] ; then
+            cp $expIslDir/transcripts.riu.kallisto.tsv {output.transcripts_relative_isoforms}
+        else
+            echo "$expIslDir/transcripts.riu.kallisto.tsv not found for {wildcards.accession} - skipping"
+        fi
+        """
+
+rule rnaseq_qc:
+    params:
+    output:
+    shell:
+        """
+        $projectRoot/analysis/qc/rnaseqQC.sh $expAcc $expTargetDir
+        qcExitCode=$?
+
+        if [ "$qcExitCode" -eq 2 ]; then
+        	echo "Experiment $expAcc has been disqualified due to insufficient quality, exiting"
+            exit 0
+        elif [ "$qcExitCode" -ne 0 ]; then
+        	echo "ERROR: QC for ${expAcc} failed" >&2
+            exit "$qcExitCode"
+        fi
         """
