@@ -321,7 +321,7 @@ rule check_differential_gsea:
     """
     log: "logs/{accession}.{contrast_id}.{ext_db}-check-differential_gsea.log"
     input:
-	    gsea="{accession}.{contrast_id}.{ext_db}.gsea.tsv",
+        gsea="{accession}.{contrast_id}.{ext_db}.gsea.tsv",
         gsea_list="{accession}.{contrast_id}.{ext_db}.gsea_list.tsv"
     output:
         temp_gsea=temp("logs/{accession}.{contrast_id}.{ext_db}.check_differential_gsea.done"),
