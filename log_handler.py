@@ -38,14 +38,13 @@ def log_handler(msg):
                 wdir = os.getcwd()
                 log_path = wdir+"/"+log
                 errorInfo = "Status: "
-                tail_e="(check log file(s) for error message)"
-
+                #report log status
                 if j_cont['status']== "job_finished":
                     errorInfo+="OK"
+                    l.info(f"{j_cont['accession']}\t{j_cont['name']}\t{errorInfo}" )
                 else:
                     errorInfo+="ERROR"
-                #report log
-                l.info(f"{j_cont['accession']}\t{j_cont['name']}\t{j_cont['status']}\t{log_path}\t {errorInfo}" )
+                    l.info(f"{j_cont['accession']}\t{j_cont['name']}\t{errorInfo}\t{log_path}" )
 
                 if j_cont['status']== "job_error":
                     if j_cont['name']== "get_experiment_metadata":
@@ -56,9 +55,9 @@ def log_handler(msg):
                                 if re.search("error", line, re.IGNORECASE):                                                                                                                                              
                                     err.append(line.strip())                                                                                                                                                               
                             if len(err)>0:                                                                                                                                                                                 
-                                l.info(f"-- error/s found get_experiment_metadata: {len(err)}" )                                                                                                                           
+                                l.info(f"-- error/s found in get_experiment_metadata log: {len(err)}" )                                                                                                                           
                                 for i in range(len(err)):                                                                                                                                                                  
-                                    l.info(f"---{i}\t{j_cont['accession']}\t{err[i]}" )                                                                                                                                    
+                                    l.info(f"---{i+1}\t{j_cont['accession']}\t{err[i]}" )                                                                                                                                    
                                                                                                                                                                                                                          
                     if j_cont['name']== "produce_recalculations_call":                                                                                                                                                   
                         if os.path.isfile(log_path):                                                                                                                                                                     
@@ -73,10 +72,11 @@ def log_handler(msg):
                             if len(err0)>0:                                                                                                                                                                                 
                                 l.info(f"-- error in rules: {len(err0)}" )                                                                                                                                                  
                                 l.info(f"-- error messages: {len(err1)}" )                                                                                                                                                  
-                                l.info(f"-- restart-times: {(len(err1)/len(set(err1)))-1 } ")                                                                                                                                  
-                                for i in range(len(err0)):                                                                                                                                                                  
-                                    err=err1[i].replace(tail_e,"")                                                                                                                                                            
-                                    l.info(f"---{i}\t{j_cont['accession']}\t{err0[i]}\t{err} ")                                                                                                                               
+                                seen=[]                                                                                                                                  
+                                for i in range(len(err1)):
+                                    seen.append(err1[i])                                                                                                                                                                  
+                                    err=err1[i].replace("(check log file(s) for error message)","")                                                                                                                                                            
+                                    l.info(f"---{i+1}\t{j_cont['accession']}\t{err0[i]}\t{err}\tattempt: {seen.count(err1[i])} ")                                                                                                                               
                                                                                                                                                                                                                                                       
                 jobs_to_remove.append(j_id)
                 #sys.stdout.flush()
