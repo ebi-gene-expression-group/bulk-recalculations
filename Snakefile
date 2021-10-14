@@ -1,5 +1,8 @@
 from sys import exit
 import yaml
+import os
+
+os.makedirs('logs', exist_ok='True')
 
 # atom: set grammar=python:
 
@@ -80,8 +83,12 @@ def get_metrics():
             # glob returns a list of matching paths, so if the metric is available a non-empty list is returned.
             if glob.glob(f"{config['accession']}-{metric}.tsv"):
                 metric_grabbed.append(metric)
-        return metric_grabbed     # ideally: ['tpms', "fpkms"]
+        if (len(metric_grabbed )>0):
+            return metric_grabbed     # ideally: ['tpms', "fpkms"]
+        else:
+            sys.exit("No metric available for baseline analyses.") 
 
+#metrics = get_metrics()
 plot_labels = {"go": "GO terms", "reactome": "Reactome Pathways", "interpro": "Interpro domains"}
 
 def get_ext_db_labels():
@@ -91,14 +98,14 @@ def get_ext_db_labels():
     return output
 
 def check_config_required(fields, method=""):
-    exit=False
+    ex=False
     for f in fields:
         if f not in config:
             print(f"{f} required to be set in config")
             ex=True
             if method:
                 print(f" for method {method}")
-    if exit:
+    if ex:
         exit(2)
 
 def skip(acc, tool):
@@ -107,15 +114,30 @@ def skip(acc, tool):
     else:
         return True
 
+def get_number_columns(tsvfile):
+    import csv
+    with open(tsvfile) as file:
+        tsv_file = csv.reader(file, delimiter="\t")
+        num_cols = len(next(tsv_file))
+    # return number of columns in a tsv file
+    return num_cols
+
+
 def get_outputs():
     """
     First method to be executed since it is run by rule all.
     """
     import os.path
+    import datetime
+    print('Starting getting list of outputs..' + str(datetime.datetime.now()))
 
     tool_outputs = {}
     tool_outputs['percentile-ranks'] = f"{config['accession']}-percentile-ranks.tsv"
     outputs = []
+    #get metrics only for baseline
+    global metrics
+    if config['tool']=="all-baseline" or 'baseline-tracks' in config['tool'] or 'baseline-heatmap' in config['tool'] or 'baseline-coexpression' in config['tool']:
+        metrics = get_metrics()
 
     # Read this now so that it is available for all other needs
     read_metadata_summary()
@@ -135,7 +157,7 @@ def get_outputs():
         # in a product manner
         outputs.extend(expand(config['accession']+".{a_id}.genes.expressions_{metric}.bedGraph",
                             a_id=get_assay_ids(),
-                            metric=get_metrics()))
+                            metric=metrics))
     if 'differential-gsea' in config['tool'] or config['tool']=="all-diff" and skip(config['accession'],'differential-gsea'):
         check_config_required(fields=['bioentities_properties'], method='differential-gsea')
         outputs.extend(
@@ -151,20 +173,23 @@ def get_outputs():
     if 'atlas-experiment-summary' in config['tool'] or 'all' in config['tool'] and skip(config['accession'],'atlas_experiment_summary'):
         outputs.append(f"{config['accession']}-atlasExperimentSummary.Rdata")
     if 'baseline-heatmap' in config['tool'] or 'all-baseline' in config['tool'] and skip(config['accession'],'baseline-heatmap'):
-        outputs.extend(expand(f"{config['accession']}"+"-heatmap-{metric}.pdf", metric=get_metrics() ))
+        outputs.extend(expand(f"{config['accession']}"+"-heatmap-{metric}.pdf", metric=metrics ))
     if 'baseline-coexpression' in config['tool'] or 'all-baseline' in config['tool'] and skip(config['accession'],'baseline-coexpression'):   
-        outputs.extend(expand(f"{config['accession']}"+"-{metric}-coexpressions.tsv.gz", metric=get_metrics() )) 
+        metric_link_coexp=False
+        for m in metrics:
+            expression_file=f"{config['accession']}-{m}.tsv"
+            print(f"Checking file size for {expression_file} and number of columns")
+            if os.path.getsize(expression_file) > 0 and get_number_columns(expression_file)>4:
+                metric_link_coexp=True
+                outputs.extend(expand(f"{config['accession']}-{m}-coexpressions.tsv.gz"))
+
+        if metric_link_coexp == True:
+            outputs.extend(expand(f"{config['accession']}-coexpressions.tsv.gz" ))
+
     print(outputs)
     print('Getting list of outputs.. done')
-    
-    if 'delete_previous_output' in config and config['delete_previous_output']==True:
-        for x in outputs:
-            print('Trying to delete existing output: '+ x)
-            try:
-                os.remove(x)
-            except:
-                print("Output file ", x, " not found in ", os.getcwd())
-            
+    print(datetime.datetime.now())
+
     return outputs
 
 def get_contrast_label(wildcards):
@@ -199,6 +224,13 @@ def get_mem_mb_8000(wildcards, attempt):
     """
     return (2**attempt) * 4000
 
+def get_mem_mb_2000(wildcards, attempt):
+    """
+    To adjust resources in rules baseline_tracks, baseline_heatmaps, differential_tracks and  atlas_experiment_summary
+    """
+    return (attempt) * 2000
+
+
 
 wildcard_constraints:
     accession="E-\D+-\d+"
@@ -215,7 +247,6 @@ rule percentile_ranks:
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
-        mkdir -p logs
         exec &> "{log}"
         rm -f {wildcards.accession}*-percentile-ranks.tsv
         for analytics in $(ls {wildcards.accession}*-analytics.tsv.unrounded); do
@@ -243,6 +274,7 @@ rule percentile_ranks:
 rule differential_tracks:
     conda: "envs/irap.yaml"
     log: "logs/{accession}.{contrast_id}-differential_tracks.log"
+    resources: mem_mb=get_mem_mb_2000
     input:
         gff=get_gff()
         # analytics will be derived below since it could be either {accession}-{arraydesign}-analytics.tsv
@@ -257,7 +289,6 @@ rule differential_tracks:
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
-        mkdir -p logs
         exec &> "{log}"
         source {workflow.basedir}/bin/tracks_functions.sh
         set +e
@@ -286,7 +317,6 @@ rule differential_gsea:
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
-        mkdir -p logs
         exec &> "{log}"
         export BIOENTITIES_PROPERTIES_PATH={params.BIOENTITIES_PROPERTIES_PATH}
         source {workflow.basedir}/bin/gsea_functions.sh
@@ -359,6 +389,7 @@ rule check_differential_gsea:
 rule baseline_tracks:
     conda: "envs/irap.yaml"
     log: "logs/{accession}-{assay_id}-{metric}-baseline_tracks.log"
+    resources: mem_mb=get_mem_mb_2000
     params:
         assay_label=get_assay_label
     input:
@@ -369,7 +400,6 @@ rule baseline_tracks:
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
-        mkdir -p logs
         exec &> {log:q}
         source {workflow.basedir}/bin/tracks_functions.sh
         echo "Past sourcing"
@@ -389,7 +419,6 @@ rule baseline_coexpression:
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
-        mkdir -p logs
         exec &> "{log}"
         {workflow.basedir}/bin/run_coexpression_for_experiment.R {input.expression} {output.coexpression_comp} {workflow.basedir} {threads} {params.num_retries}
         """
@@ -400,28 +429,21 @@ rule link_baseline_coexpression:
     has less than 3 columns. In that case it might be that the input files for this
     never appear, not sure whether this will timeout without errors or not.
     """
-    log: "{accession}-{metric}-link_baseline_coexpression.log"
-    input:
-        expand("{accession}-{metric}-coexpressions.tsv.gz", metric=get_metrics(), accession=["{accession}"])
+    log: "logs/{accession}-link_baseline_coexpression.log"
+    input: lambda wildcards: f"{wildcards.accession}-tpms-coexpressions.tsv.gz" if 'tpms' in metrics else f"{wildcards.accession}-fpkms-coexpressions.tsv.gz"
+    output: "{accession}-coexpressions.tsv.gz"
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
-        mkdir -p logs
         exec &> "{log}"
-        if [ -s {wildcards.accession}-tpm-coexpressions.tsv.gz ]; then
-            ln -s {wildcards.accession}-tpm-coexpressions.tsv.gz {wildcards.accession}-coexpressions.tsv.gz
-        elif [ -s {wildcards.accession}-fpkm-coexpressions.tsv.gz ]; then
-            ln -s {wildcards.accession}-fpkm-coexpressions.tsv.gz {wildcards.accession}-coexpressions.tsv.gz
-        else
-            echo "Error: neither TPM nor FPKM coexpressions.tsv.gz file found"
-            exit 1
-        fi
+        ln -s {input} {output}
         """
 
 
 rule baseline_heatmap:
     conda: "envs/atlas-internal.yaml"
     log: "logs/{accession}-{metric}-baseline_heatmap.log"
+    resources: mem_mb=get_mem_mb_2000
     input:
         expression="{accession}-{metric}.tsv"
     output:
@@ -429,7 +451,6 @@ rule baseline_heatmap:
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
-        mkdir -p logs
         exec &> "{log}"
         {workflow.basedir}/bin/generateBaselineHeatmap.R --configuration {wildcards.accession}-configuration.xml \
 		--input  {input.expression} \
@@ -439,6 +460,7 @@ rule baseline_heatmap:
 rule atlas_experiment_summary:
     conda: "envs/atlas-internal.yaml"
     log: "logs/{accession}-atlas_experiment_summary.log"
+    resources: mem_mb=get_mem_mb_2000
     input:
         sdrf=get_sdrf()
     output:
@@ -446,7 +468,6 @@ rule atlas_experiment_summary:
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
-        mkdir -p logs
         exec &> "{log}"
         export SDRF_PATH={input.sdrf}
         {workflow.basedir}/bin/createAtlasExperimentSummary.R \
