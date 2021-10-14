@@ -139,11 +139,15 @@ def get_outputs():
     if 'differential-gsea' in config['tool'] or config['tool']=="all-diff" and skip(config['accession'],'differential-gsea'):
         check_config_required(fields=['bioentities_properties'], method='differential-gsea')
         outputs.extend(
-                expand("{pref}"+config['accession']+".{c_id}.{ext_db}.{type}",
+                expand( config['accession']+".{c_id}.{ext_db}.{type}",
                         c_id=get_contrast_ids(),
                         ext_db=get_ext_db(),
-                        pref=["", "logs/"],
                         type=["gsea.tsv", "gsea_list.tsv"]))
+        outputs.extend(
+                expand("logs/"+config['accession']+".{c_id}.{ext_db}.{type}",
+                        c_id=get_contrast_ids(),
+                        ext_db=get_ext_db(),
+                        type=["check_differential_gsea.done", "check_differential_gsea_list.done"]))
     if 'atlas-experiment-summary' in config['tool'] or 'all' in config['tool'] and skip(config['accession'],'atlas_experiment_summary'):
         outputs.append(f"{config['accession']}-atlasExperimentSummary.Rdata")
     if 'baseline-heatmap' in config['tool'] or 'all-baseline' in config['tool'] and skip(config['accession'],'baseline-heatmap'):
@@ -320,33 +324,35 @@ rule check_differential_gsea:
 	    gsea="{accession}.{contrast_id}.{ext_db}.gsea.tsv",
         gsea_list="{accession}.{contrast_id}.{ext_db}.gsea_list.tsv"
     output:
-	    log1="logs/{accession}.{contrast_id}.{ext_db}.gsea.tsv",
-        log2="logs/{accession}.{contrast_id}.{ext_db}.gsea_list.tsv"
+        temp_gsea=temp("logs/{accession}.{contrast_id}.{ext_db}.check_differential_gsea.done"),
+        temp_gsea_list=temp("logs/{accession}.{contrast_id}.{ext_db}.check_differential_gsea_list.done")
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
         if [ -e {input.gsea} ]; then
             if ! [ -s {input.gsea} ] || [ $(sed -n '$=' {input.gsea} ) -lt 2 ] ; then
-                echo "Deleting empty file "{input.gsea}  >> {output.log1}
+                echo "Deleting empty file "{input.gsea}  >> {log}
                 rm {input.gsea}
             else
-                echo "File "{input.gsea}" is ok"  >> {output.log1}
+                echo "File "{input.gsea}" is ok"  >> {log}
             fi
         else
-            echo "File "{input.gsea}" does not exist"  >> {output.log1}
+            echo "File "{input.gsea}" does not exist"  >> {log}
         fi
 
         if [ -e {input.gsea_list} ]; then
             if ! [ -s {input.gsea_list} ] || [ $(sed -n '$=' {input.gsea_list} ) -lt 2 ] ; then
-                echo "Deleting empty file "{input.gsea_list}  >> {output.log2}
+                echo "Deleting empty file "{input.gsea_list}  >> {log}
                 rm {input.gsea_list}
             else
-                echo "File "{input.gsea_list}" is ok"  >> {output.log2}
+                echo "File "{input.gsea_list}" is ok"  >> {log}
             fi
         else
-            echo "File "{input.gsea_list}" does not exist"  >> {output.log2}
+            echo "File "{input.gsea_list}" does not exist"  >> {log}
         fi
+        touch {output.temp_gsea}
+        touch {output.temp_gsea_list}
         """
 
 
