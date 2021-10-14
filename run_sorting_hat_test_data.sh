@@ -3,7 +3,7 @@
 NEXPS=${NEXPS:-30}
 NJOBS=${NJOBS:-10}
 GTF=$( pwd )/test-data/gff
-FORCEALL=true
+FORCEALL=${FORCEALL:-true}
 RESTART_TIMES=1
 SKIP_STEPS=$( pwd )/step_skip.yaml
 # CHECK_SPECIES file should come from a clone of the atlas-config repo in Jenkins:
