@@ -317,10 +317,10 @@ rule check_differential_gsea:
     """
     log: "logs/{accession}.{contrast_id}.{ext_db}-check-differential_gsea.log"
     input:
-	    gsea="{accession}.{contrast_id}.{ext_db}.gsea.tsv",
+        gsea="{accession}.{contrast_id}.{ext_db}.gsea.tsv",
         gsea_list="{accession}.{contrast_id}.{ext_db}.gsea_list.tsv"
     output:
-	    log1="logs/{accession}.{contrast_id}.{ext_db}.gsea.tsv",
+        log1="logs/{accession}.{contrast_id}.{ext_db}.gsea.tsv",
         log2="logs/{accession}.{contrast_id}.{ext_db}.gsea_list.tsv"
     shell:
         """
