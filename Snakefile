@@ -161,10 +161,15 @@ def get_outputs():
     if 'differential-gsea' in config['tool'] or config['tool']=="all-diff" and skip(config['accession'],'differential-gsea'):
         check_config_required(fields=['bioentities_properties'], method='differential-gsea')
         outputs.extend(
-                expand(config['accession']+".{c_id}.{ext_db}.{type}",
+                expand( config['accession']+".{c_id}.{ext_db}.{type}",
                         c_id=get_contrast_ids(),
                         ext_db=get_ext_db(),
                         type=["gsea.tsv", "gsea_list.tsv"]))
+        outputs.extend(
+                expand("logs/"+config['accession']+".{c_id}.{ext_db}.{type}",
+                        c_id=get_contrast_ids(),
+                        ext_db=get_ext_db(),
+                        type=["check_differential_gsea.done", "check_differential_gsea_list.done"]))
     if 'atlas-experiment-summary' in config['tool'] or 'all' in config['tool'] and skip(config['accession'],'atlas_experiment_summary'):
         outputs.append(f"{config['accession']}-atlasExperimentSummary.Rdata")
     if 'baseline-heatmap' in config['tool'] or 'all-baseline' in config['tool'] and skip(config['accession'],'baseline-heatmap'):
@@ -215,7 +220,7 @@ def get_assay_label(wildcards):
 
 def get_mem_mb_8000(wildcards, attempt):
     """
-    To adjust resources in rule baseline_coexpression.
+    To adjust resources in rule baseline_coexpression and rule differential_gsea.
     """
     return (2**attempt) * 4000
 
@@ -299,6 +304,8 @@ rule differential_tracks:
 rule differential_gsea:
     conda: "envs/irap.yaml"
     log: "logs/{accession}.{contrast_id}.{ext_db}-differential_gsea.log"
+    resources: mem_mb=get_mem_mb_8000
+    threads: 8
     params:
         organism=get_organism(),
         BIOENTITIES_PROPERTIES_PATH=config['bioentities_properties'],
@@ -320,15 +327,64 @@ rule differential_gsea:
             analyticsFile={wildcards.accession}-analytics.tsv
         fi
         set -e
-        pvalColNum=$(get_contrast_colnum $analyticsFile {wildcards.contrast_id} "p-value")
-        log2foldchangeColNum=$(get_contrast_colnum $analyticsFile {wildcards.contrast_id} "log2foldchange")
-        plotTitle="
-        Top 10 {params.ext_db_label} enriched in
-        {params.contrast_label}
-        (Fisher-exact, FDR < 0.1)"
         annotationFile=$(find_properties_file {params.organism} {wildcards.ext_db})
-        {workflow.basedir}/bin/gxa_calculate_gsea.sh {wildcards.accession} $annotationFile $analyticsFile $pvalColNum $log2foldchangeColNum ./ {wildcards.contrast_id} "$plotTitle" {params.organism} {wildcards.ext_db}
+        if [ -s "$annotationFile" ]; then
+            pvalColNum=$(get_contrast_colnum $analyticsFile {wildcards.contrast_id} "p-value")
+            log2foldchangeColNum=$(get_contrast_colnum $analyticsFile {wildcards.contrast_id} "log2foldchange")
+            plotTitle="
+            Top 10 {params.ext_db_label} enriched in
+            {params.contrast_label}
+            (Fisher-exact, FDR < 0.1)"
+            {workflow.basedir}/bin/gxa_calculate_gsea.sh {wildcards.accession} $annotationFile $analyticsFile $pvalColNum $log2foldchangeColNum ./ {wildcards.contrast_id} "$plotTitle" {params.organism} {wildcards.ext_db} {threads}
+        else
+            touch {wildcards.accession}.{wildcards.contrast_id}.{wildcards.ext_db}.gsea.tsv
+            touch {wildcards.accession}.{wildcards.contrast_id}.{wildcards.ext_db}.gsea_list.tsv
+        fi
         """
+
+
+rule check_differential_gsea:
+    """
+    Whether there is a lack of annotation for 'ext_db' in rule differential_gsea, or the
+    analysis produces no results passing significance cutoff, gsea output files could be empty.
+    Here we aim to delete those empty files.
+    """
+    log: "logs/{accession}.{contrast_id}.{ext_db}-check-differential_gsea.log"
+    input:
+        gsea="{accession}.{contrast_id}.{ext_db}.gsea.tsv",
+        gsea_list="{accession}.{contrast_id}.{ext_db}.gsea_list.tsv"
+    output:
+        temp_gsea=temp("logs/{accession}.{contrast_id}.{ext_db}.check_differential_gsea.done"),
+        temp_gsea_list=temp("logs/{accession}.{contrast_id}.{ext_db}.check_differential_gsea_list.done")
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+        if [ -e {input.gsea} ]; then
+            if ! [ -s {input.gsea} ] || [ $(sed -n '$=' {input.gsea} ) -lt 2 ] ; then
+                echo "Deleting empty file "{input.gsea}  >> {log}
+                rm {input.gsea}
+            else
+                echo "File "{input.gsea}" is ok"  >> {log}
+            fi
+        else
+            echo "File "{input.gsea}" does not exist"  >> {log}
+        fi
+
+        if [ -e {input.gsea_list} ]; then
+            if ! [ -s {input.gsea_list} ] || [ $(sed -n '$=' {input.gsea_list} ) -lt 2 ] ; then
+                echo "Deleting empty file "{input.gsea_list}  >> {log}
+                rm {input.gsea_list}
+            else
+                echo "File "{input.gsea_list}" is ok"  >> {log}
+            fi
+        else
+            echo "File "{input.gsea_list}" does not exist"  >> {log}
+        fi
+        touch {output.temp_gsea}
+        touch {output.temp_gsea_list}
+        """
+
 
 rule baseline_tracks:
     conda: "envs/irap.yaml"
