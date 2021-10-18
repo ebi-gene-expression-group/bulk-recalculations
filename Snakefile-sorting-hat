@@ -203,7 +203,7 @@ rule produce_recalculations_call:
         pushd {input.working_directory}
 
 
-        snakemake --restart-times 4 --latency-wait 150 --delete-temp-output {config['sm_options']} --config \
+        snakemake --restart-times 4 --latency-wait 150 {config['sm_options']} --config \
             accession={wildcards.accession} \
             tool={get_tool(wildcards.accession)} \
             metadata_summary=../{input.metadata} \
