@@ -6,8 +6,8 @@ SKIP_STEPS=$( pwd )/step_skip.yaml
 # CHECK_SPECIES file should come from a clone of the atlas-config repo in Jenkins:
 CHECK_SPECIES=$( pwd )/atlas-species-name-mapping.yaml
 BIOENTITIES_PROPERTIES=$( pwd )/test-data/bioentity_properties
-SORTING_HAT=$( pwd )/Snakefile-sorting-hat
-LOG_HANDLER=$( pwd )/log_handler.py
+SORTING_HAT=${SORTING_HAT:-$( pwd )/Snakefile-sorting-hat}
+LOG_HANDLER=${LOG_HANDLER:-$( pwd )/log_handler.py}
 SN_CONDA_PREFIX=${SN_CONDA_PREFIX:-$( pwd )/conda_installs}
 
 CONDA_PREFIX_LINE="--conda-prefix $SN_CONDA_PREFIX"
