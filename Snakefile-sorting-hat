@@ -143,7 +143,7 @@ rule get_experiment_metadata:
             echo "Trying with perl (produces organism with capitals and spaces)"
             organism=$(perl {workflow.basedir}/bin/get_experiment_info.pl --experiment {wildcards.accession} --xmlfile {wildcards.accession}/{wildcards.accession}-configuration.xml --organism | sed 's/ /_/g' | tr '[:upper:]' '[:lower:]')
         else
-            echo "Nothing worked..."
+            echo "Nothing worked...Exiting with error"
             >&2 echo "Can't retrieve organism: neither {wildcards.accession}.condensed-sdrf.tsv nor {wildcards.accession}/{wildcards.accession}-configuration.xml not found "
             exit 1
         fi
@@ -168,7 +168,7 @@ rule get_experiment_metadata:
             echo "GFF: $gff_file"
             echo "IDF: $idf"
             echo "SDRF: $sdrf"
-            echo "GFF, IDF or SDRF not found. YAML not created"
+            echo "GFF, IDF or SDRF not found. YAML not created...Exiting with error"
             exit 1
         else
             echo "organism: $organism" >> {output.metadata}
