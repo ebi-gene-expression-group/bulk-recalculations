@@ -174,6 +174,7 @@ def get_outputs():
         outputs.append(f"{config['accession']}-atlasExperimentSummary.Rdata")
     if 'baseline-heatmap' in config['tool'] or 'all-baseline' in config['tool'] and skip(config['accession'],'baseline-heatmap'):
         outputs.extend(expand(f"{config['accession']}"+"-heatmap-{metric}.pdf", metric=metrics ))
+        outputs.append(f"{config['accession']}-heatmap.pdf")
     if 'baseline-coexpression' in config['tool'] or 'all-baseline' in config['tool'] and skip(config['accession'],'baseline-coexpression'):   
         metric_link_coexp=False
         for m in metrics:
@@ -259,7 +260,7 @@ rule percentile_ranks:
         percentile_ranks=( $(ls {wildcards.accession}*-percentile-ranks.tsv) )
         if [ ${{#percentile_ranks[@]}} -gt 1 ]; then
             # more than one file, requires merging by Gene.ID
-            {workflow.basedir}/bin/merge_by_gene_id.R {output.percentile_ranks_merged} {wildcards.accession}_*-percentile-ranks.tsv
+            {workflow.basedir}/bin/merge_by_gene_id.R ../{output.percentile_ranks_merged} {wildcards.accession}_*-percentile-ranks.tsv
             # remove only microarray derived multiple percentile ranks
             # (per array design <accession>_<arraydesign>-percentile-ranks.tsv)
             rm -f {wildcards.accession}_*-percentile-ranks.tsv
@@ -439,7 +440,6 @@ rule link_baseline_coexpression:
         ln -s {input} {output}
         """
 
-
 rule baseline_heatmap:
     conda: "envs/atlas-internal.yaml"
     log: "logs/{accession}-{metric}-baseline_heatmap.log"
@@ -455,6 +455,17 @@ rule baseline_heatmap:
         {workflow.basedir}/bin/generateBaselineHeatmap.R --configuration {wildcards.accession}-configuration.xml \
 		--input  {input.expression} \
 		--output {output.heatmap}
+        """
+
+rule link_baseline_heatmap:
+    log: "logs/{accession}-link_baseline_heatmap.log"
+    input: lambda wildcards: f"{wildcards.accession}-heatmap-tpms.pdf" if 'tpms' in metrics else f"{wildcards.accession}-heatmap-fpkms.pdf"
+    output: "{accession}-heatmap.pdf"
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+        ln -s {input} {output}
         """
 
 rule atlas_experiment_summary:
