@@ -2,6 +2,7 @@ include: "Snakefile"
 
 # atom: set grammar=python:
 
+
 def get_outputs():
     """
     First method to be executed since it is run by rule all.
@@ -53,7 +54,8 @@ def get_outputs():
         outputs.append(f"{config['accession']}-atlasExperimentSummary.Rdata")
     if 'baseline-heatmap' in config['tool'] or 'all-baseline' in config['tool'] and skip(config['accession'],'baseline-heatmap'):
         outputs.extend(expand(f"{config['accession']}"+"-heatmap-{metric}.pdf", metric=metrics ))
-    if 'baseline-coexpression' in config['tool'] or 'all-baseline' in config['tool'] and skip(config['accession'],'baseline-coexpression'):
+        outputs.append(f"{config['accession']}-heatmap.pdf")
+    if 'baseline-coexpression' in config['tool'] or 'all-baseline' in config['tool'] and skip(config['accession'],'baseline-coexpression'):   
         metric_link_coexp=False
         for m in metrics:
             expression_file=f"{config['accession']}-{m}.tsv"
@@ -70,6 +72,8 @@ def get_outputs():
     print(datetime.datetime.now())
 
     return outputs
+
+
 rule all:
     input:
         required_outputs=get_outputs()
