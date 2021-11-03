@@ -119,7 +119,8 @@ rule get_experiment_metadata:
         config_file = "{accession}/{accession}-configuration.xml",
         gtf_dir = config['gtf_dir']
     output:
-        metadata = "{accession}/{accession}.metadata_summary.yaml"
+        metadata = "{accession}/{accession}.metadata_summary.yaml",
+        archivedir=directory("{accession}/archive")
     shell:
         """
         # needed for container conda env activation
@@ -175,6 +176,12 @@ rule get_experiment_metadata:
             echo "gff: $gff_file" >> {output.metadata}
             echo "idf: $idf" >> {output.metadata}
             echo "sdrf: $sdrf" >> {output.metadata}
+            # remove archive dir if exists                                                                                                                                                                     
+            rm -rf {output.archivedir}                                                                                                                                                                         
+            mkdir {output.archivedir}                                                                                                                                                                          
+            # rsync current contents to the folder and add timestamp                                                                                                                                             
+            rsync -a --exclude archive {wildcards.accession}/ {output.archivedir}/                                                                                                                             
+            echo $(date) > {output.archivedir}/archive_timestamp     
         fi
         """
 
