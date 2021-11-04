@@ -185,7 +185,6 @@ rule produce_reprocess_call:
     log: "{accession}/logs/produce_reprocess_call.log"
     params:
         bioentities_properties=get_bioentities_property_path(),
-        delete_previous_output=get_delete_previous_output(),
         skip_steps_file=get_skip_steps_file(),
         log_handler_script=get_log_handler_script()
     output:
@@ -197,13 +196,11 @@ rule produce_reprocess_call:
         exec &> {log}
         pushd {input.working_directory}
 
-
-        snakemake --latency-wait 100 {config['sm_options']} --config \
+        snakemake --restart-times 1 --latency-wait 100 {config['sm_options']} --config \
             accession={wildcards.accession} \
             tool={get_tool(wildcards.accession)} \
             metadata_summary=../{input.metadata} \
             bioentities_properties={params.bioentities_properties} \
-            delete_previous_output={params.delete_previous_output} \
             skip_steps_file={params.skip_steps_file} \
             -s {workflow.basedir}/Snakefile-reprocess {params.log_handler_script}
         popd
