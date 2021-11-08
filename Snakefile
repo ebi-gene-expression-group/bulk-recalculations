@@ -14,6 +14,12 @@ def read_metadata_summary():
         with open(config['metadata_summary'], 'r') as fh:
             metadata_summary = yaml.safe_load(fh)
 
+read_metadata_summary()
+
+#to be implemented
+def get_isl_dir():
+    return None
+
 def read_skip_steps_file():
     if 'skip_steps_file' in config:
         global skip_steps
