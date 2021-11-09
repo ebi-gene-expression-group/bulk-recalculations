@@ -89,6 +89,7 @@ def get_outputs():
 
     if 'goal' in config:
         if config['goal'] == 'recalculations':
+
             if 'atlas_exps' in config:
                 # filter out ACC based on accessions that are available in atlas_exps
                 valid_acc_dir = next(os.walk( config['atlas_exps'] ))[1]
@@ -97,12 +98,14 @@ def get_outputs():
                 return expand("{accession}/{accession}.recalculations.done", accession=pass_ACC)
             else:
                 return expand("{accession}/{accession}.recalculations.done", accession=ACC)
-
-        else:
+        elif config['goal'] == 'reprocess':   
             return expand("{accession}/{accession}.reprocess.done", accession=ACC)
+        elif config['goal'] == 'proteomics': 
+            return expand("{accession}/{accession}.proteomics.done", accession=ACC)
+        else:
+            return None
     else:
         return None
-
 
 
 wildcard_constraints:
