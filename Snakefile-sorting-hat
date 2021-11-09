@@ -87,14 +87,22 @@ def get_outputs():
     else:
         ACC=glob.glob('E-*')
 
-    if 'atlas_exps' in config:
-        # filter out ACC based on accessions that are available in atlas_exps
-        valid_acc_dir = next(os.walk( config['atlas_exps'] ))[1]
-        # intersection of the two lists
-        pass_ACC = list(set(ACC) & set(valid_acc_dir))
-        return expand("{accession}/{accession}.recalculations.done", accession=pass_ACC)
+    if 'goal' in config:
+        if config['goal'] == 'recalculations':
+            if 'atlas_exps' in config:
+                # filter out ACC based on accessions that are available in atlas_exps
+                valid_acc_dir = next(os.walk( config['atlas_exps'] ))[1]
+                # intersection of the two lists
+                pass_ACC = list(set(ACC) & set(valid_acc_dir))
+                return expand("{accession}/{accession}.recalculations.done", accession=pass_ACC)
+            else:
+                return expand("{accession}/{accession}.recalculations.done", accession=ACC)
+
+        else:
+            return expand("{accession}/{accession}.reprocess.done", accession=ACC)
     else:
-        return expand("{accession}/{accession}.recalculations.done", accession=ACC)
+        return None
+
 
 
 wildcard_constraints:
@@ -103,6 +111,7 @@ wildcard_constraints:
 rule all:
     input:
         required_outputs=get_outputs()
+
 
 rule get_experiment_metadata:
     container:
