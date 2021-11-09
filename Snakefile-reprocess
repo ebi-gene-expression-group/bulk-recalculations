@@ -1,1 +1,26 @@
 include: "Snakefile"
+
+# atom: set grammar=python:
+
+def get_outputs():
+     """
+     First method to be executed since it is run by rule all.
+     """
+     import os.path
+     import datetime
+     print('Starting getting list of outputs..' + str(datetime.datetime.now()))
+
+     outputs = []
+     # collect output for reprocessing
+     outputs.append('TBD')
+
+     print(outputs)
+     print('Getting list of outputs.. done')
+     print(datetime.datetime.now())
+
+     return outputs
+
+
+ rule all:
+    input:
+        required_outputs=get_outputs()
