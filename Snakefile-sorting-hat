@@ -243,7 +243,7 @@ rule produce_recalculations_call:
             metadata_summary=../{input.metadata} \
             bioentities_properties={params.bioentities_properties} \
             skip_steps_file={params.skip_steps_file} \
-            -s {workflow.basedir}/Snakefile-recalculations {get_log_handler_script()}
+            -s {workflow.basedir}/Snakefile-recalculations {params.log_handler_script}
         popd
         """
         #print(command_line)
