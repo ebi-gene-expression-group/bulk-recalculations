@@ -191,7 +191,7 @@ rule percentile_ranks:
         percentile_ranks=( $(ls {wildcards.accession}*-percentile-ranks.tsv) )
         if [ ${{#percentile_ranks[@]}} -gt 1 ]; then
             # more than one file, requires merging by Gene.ID
-            {workflow.basedir}/bin/merge_by_gene_id.R ../{output.percentile_ranks_merged} {wildcards.accession}_*-percentile-ranks.tsv
+            {workflow.basedir}/bin/merge_by_gene_id.R {output.percentile_ranks_merged} {wildcards.accession}_*-percentile-ranks.tsv
             # remove only microarray derived multiple percentile ranks
             # (per array design <accession>_<arraydesign>-percentile-ranks.tsv)
             rm -f {wildcards.accession}_*-percentile-ranks.tsv
