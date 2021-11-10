@@ -1,11 +1,14 @@
 # Atlas Bulk Recalculations
 
-This set of snakemake workflows aims to replace the Atlas recalculations operations done from Atlas-Prod codebase which had direct involvement of the LSF CLI and could only run on the original cluster. Recalculations are the operations that need to happen on load or after an E! Update.
+This set of Snakemake workflows aims to replace the Atlas recalculations operations done from Atlas-Prod codebase which had direct involvement of the LSF CLI and could only run on the original cluster. Recalculations are the operations that need to happen on load or after an E! Update.
 
 It deals with:
 - Microarray recalculations
 - RNA-Seq differential recalculations
 - RNA-Seq baseline recalculations
+
+Ongoing features to handle Reprocessing. Reprocess RNA-seq experiments (baseline or differential), to be used when the experiment has been reprocessed in iRAP Single Lib (ISL), for instance due to a change in assembly or annotation.
+
 
 ## Temporary comments
 

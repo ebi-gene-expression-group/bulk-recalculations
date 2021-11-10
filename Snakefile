@@ -14,6 +14,12 @@ def read_metadata_summary():
         with open(config['metadata_summary'], 'r') as fh:
             metadata_summary = yaml.safe_load(fh)
 
+read_metadata_summary()
+
+#to be implemented
+def get_isl_dir():
+    return None
+
 def read_skip_steps_file():
     if 'skip_steps_file' in config:
         global skip_steps
@@ -86,7 +92,7 @@ def get_metrics():
         if (len(metric_grabbed )>0):
             return metric_grabbed     # ideally: ['tpms', "fpkms"]
         else:
-            sys.exit("No metric available for baseline analyses.") 
+            sys.exit("No metric available for baseline analyses.")
 
 #metrics = get_metrics()
 plot_labels = {"go": "GO terms", "reactome": "Reactome Pathways", "interpro": "Interpro domains"}
@@ -121,77 +127,6 @@ def get_number_columns(tsvfile):
         num_cols = len(next(tsv_file))
     # return number of columns in a tsv file
     return num_cols
-
-
-def get_outputs():
-    """
-    First method to be executed since it is run by rule all.
-    """
-    import os.path
-    import datetime
-    print('Starting getting list of outputs..' + str(datetime.datetime.now()))
-
-    tool_outputs = {}
-    tool_outputs['percentile-ranks'] = f"{config['accession']}-percentile-ranks.tsv"
-    outputs = []
-    #get metrics only for baseline
-    global metrics
-    if config['tool']=="all-baseline" or 'baseline-tracks' in config['tool'] or 'baseline-heatmap' in config['tool'] or 'baseline-coexpression' in config['tool']:
-        metrics = get_metrics()
-
-    # Read this now so that it is available for all other needs
-    read_metadata_summary()
-    global skip_accession
-    skip_accession = read_skip_steps_file()
-    required_config=['tool']
-    check_config_required(fields=required_config)
-    if 'percentile-ranks' in config['tool'] or config['tool']=="all-diff" and skip(config['accession'],'percentile_ranks'):
-        outputs.append(f"{config['accession']}-percentile-ranks.tsv")
-    if 'differential-tracks' in config['tool'] or config['tool']=="all-diff" and skip(config['accession'],'differential-tracks'):
-        check_config_required(fields=['metadata_summary'], method='differential-tracks')
-        # fake elements to mix contrasts labels and ids
-        outputs.extend(expand(config['accession']+".{id}.{type}", id=get_contrast_ids(), type=["genes.pval.bedGraph", "genes.log2foldchange.bedGraph"]))
-    if 'baseline-tracks' in config['tool'] or config['tool']=="all-baseline" and skip(config['accession'],'baseline-tracks'):
-        check_config_required(fields=['metadata_summary'], method='baseline-tracks')
-        # combine metric (fpkm / tpm) with assay_id/assay_label (zip based)
-        # in a product manner
-        outputs.extend(expand(config['accession']+".{a_id}.genes.expressions_{metric}.bedGraph",
-                            a_id=get_assay_ids(),
-                            metric=metrics))
-    if 'differential-gsea' in config['tool'] or config['tool']=="all-diff" and skip(config['accession'],'differential-gsea'):
-        check_config_required(fields=['bioentities_properties'], method='differential-gsea')
-        outputs.extend(
-                expand( config['accession']+".{c_id}.{ext_db}.{type}",
-                        c_id=get_contrast_ids(),
-                        ext_db=get_ext_db(),
-                        type=["gsea.tsv", "gsea_list.tsv"]))
-        outputs.extend(
-                expand("logs/"+config['accession']+".{c_id}.{ext_db}.{type}",
-                        c_id=get_contrast_ids(),
-                        ext_db=get_ext_db(),
-                        type=["check_differential_gsea.done", "check_differential_gsea_list.done"]))
-    if 'atlas-experiment-summary' in config['tool'] or 'all' in config['tool'] and skip(config['accession'],'atlas_experiment_summary'):
-        outputs.append(f"{config['accession']}-atlasExperimentSummary.Rdata")
-    if 'baseline-heatmap' in config['tool'] or 'all-baseline' in config['tool'] and skip(config['accession'],'baseline-heatmap'):
-        outputs.extend(expand(f"{config['accession']}"+"-heatmap-{metric}.pdf", metric=metrics ))
-        outputs.append(f"{config['accession']}-heatmap.pdf")
-    if 'baseline-coexpression' in config['tool'] or 'all-baseline' in config['tool'] and skip(config['accession'],'baseline-coexpression'):   
-        metric_link_coexp=False
-        for m in metrics:
-            expression_file=f"{config['accession']}-{m}.tsv"
-            print(f"Checking file size for {expression_file} and number of columns")
-            if os.path.getsize(expression_file) > 0 and get_number_columns(expression_file)>4:
-                metric_link_coexp=True
-                outputs.extend(expand(f"{config['accession']}-{m}-coexpressions.tsv.gz"))
-
-        if metric_link_coexp == True:
-            outputs.extend(expand(f"{config['accession']}-coexpressions.tsv.gz" ))
-
-    print(outputs)
-    print('Getting list of outputs.. done')
-    print(datetime.datetime.now())
-
-    return outputs
 
 def get_contrast_label(wildcards):
     """
@@ -235,10 +170,6 @@ def get_mem_mb_2000(wildcards, attempt):
 
 wildcard_constraints:
     accession="E-\D+-\d+"
-
-rule all:
-    input:
-        required_outputs=get_outputs()
 
 rule percentile_ranks:
     conda: "envs/atlas-internal.yaml"
@@ -485,4 +416,94 @@ rule atlas_experiment_summary:
 	          --source ./ \
 	          --accession {wildcards.accession} \
 	          --output {output.rsummary}
+        """
+
+rule copy_raw_gene_counts_from_isl:
+    params:
+        exp_isl_dir=get_isl_dir()
+    output:
+        raw_counts_undecorated="{accession}-raw-counts.tsv.undecorated"
+    shell:
+        """
+        export expIslDir={params.exp_isl_dir}
+        export expTargetDir=./
+        [ ! -z $expIslDir+x} ] || (echo "snakemake param exp_isl_dir needs to defined in rule" && exit 1)
+        if [ -s "$expIslDir/genes.raw.htseq2.tsv" ]; then
+            cp $expIslDir/genes.raw.htseq2.tsv {output.raw_counts_undecorated}
+        elif [ -s "$expIslDir/genes.raw.featurecounts.tsv" ]; then
+            cp $expIslDir/genes.raw.featurecounts.tsv {output.raw_counts_undecorated}
+        else
+            echo "Neither genes.raw.htseq2.tsv nor genes.raw.featurecounts.tsv found on $expIslDir"
+            exit 1
+        fi
+        """
+
+rule copy_normalised_counts_from_isl:
+    params:
+        exp_isl_dir=get_isl_dir()
+    output:
+        normalised_counts_undecorated="{accession}-{metric}s.tsv.undecorated"
+    shell:
+        """
+        # replaces copy_unit_matrices_from_isl in experiment_loading_routines.sh
+        export expIslDir={params.exp_isl_dir}
+
+        [ ! -z $expIslDir+x} ] || (echo "snakemake param exp_isl_dir needs to defined in rule" && exit 1)
+
+        if [ -s "$expIslDir/genes.{wildcards.metric}.htseq2.tsv" ]; then
+            # maybe rsync could be better here?
+            cp $expIslDir/genes.{wildcards.metric}.htseq2.tsv {output.normalised_counts_undecorated}
+        elif [ -s "$expIslDir/genes.{wildcards.metric}.featurecounts.tsv" ]; then
+            cp $expIslDir/genes.{wildcards.metric}.featurecounts.tsv {output.normalised_counts_undecorated}
+        else
+            echo "$expIslDir/genes.{wildcards.metric}.htseqORfeaturecounts.tsv not found"
+            exit 1
+        fi
+        """
+
+
+rule copy_transcript_files_from_isl:
+    params:
+        exp_isl_dir=get_isl_dir()
+    output:
+        transcripts="{accession}-transcripts-{metric}s.tsv.undecorated"
+    shell:
+        """
+        if [ -s "{params.exp_isl_dir}/transcripts.{wildcards.metric}.kallisto.tsv" ] ; then
+            # maybe rsync could be better here?
+        	cp {params.exp_isl_dir}/transcripts.{wildcards.metric}.kallisto.tsv {output.transcripts}
+        else
+        	echo "{params.exp_isl_dir}/transcripts.{wildcards.metric}.kallisto.tsv not found - skipping"
+        fi
+        """
+
+rule copy_transcript_relative_isoforms:
+    params:
+        exp_isl_dir=get_isl_dir()
+    output:
+        transcripts_relative_isoforms="{accession}-transcripts.riu.tsv"
+    shell:
+        """
+        if [ -s "$expIslDir/transcripts.riu.kallisto.tsv" ] ; then
+            cp $expIslDir/transcripts.riu.kallisto.tsv {output.transcripts_relative_isoforms}
+        else
+            echo "$expIslDir/transcripts.riu.kallisto.tsv not found for {wildcards.accession} - skipping"
+        fi
+        """
+
+rule rnaseq_qc:
+    params:
+    output:
+    shell:
+        """
+        $projectRoot/analysis/qc/rnaseqQC.sh $expAcc $expTargetDir
+        qcExitCode=$?
+
+        if [ "$qcExitCode" -eq 2 ]; then
+        	echo "Experiment $expAcc has been disqualified due to insufficient quality, exiting"
+            exit 0
+        elif [ "$qcExitCode" -ne 0 ]; then
+        	echo "ERROR: QC for ${expAcc} failed" >&2
+            exit "$qcExitCode"
+        fi
         """

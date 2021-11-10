@@ -1,0 +1,79 @@
+include: "Snakefile"
+
+# atom: set grammar=python:
+
+
+def get_outputs():
+    """
+    First method to be executed since it is run by rule all.
+    """
+    import os.path
+    import datetime
+    print('Starting getting list of outputs..' + str(datetime.datetime.now()))
+
+    tool_outputs = {}
+    tool_outputs['percentile-ranks'] = f"{config['accession']}-percentile-ranks.tsv"
+    outputs = []
+    #get metrics only for baseline
+    global metrics
+    if config['tool']=="all-baseline" or 'baseline-tracks' in config['tool'] or 'baseline-heatmap' in config['tool'] or 'baseline-coexpression' in config['tool']:
+        metrics = get_metrics()
+
+    # Read this now so that it is available for all other needs
+    read_metadata_summary()
+    global skip_accession
+    skip_accession = read_skip_steps_file()
+    required_config=['tool']
+    check_config_required(fields=required_config)
+    if 'percentile-ranks' in config['tool'] or config['tool']=="all-diff" and skip(config['accession'],'percentile_ranks'):
+        outputs.append(f"{config['accession']}-percentile-ranks.tsv")
+    if 'differential-tracks' in config['tool'] or config['tool']=="all-diff" and skip(config['accession'],'differential-tracks'):
+        check_config_required(fields=['metadata_summary'], method='differential-tracks')
+        # fake elements to mix contrasts labels and ids
+        outputs.extend(expand(config['accession']+".{id}.{type}", id=get_contrast_ids(), type=["genes.pval.bedGraph", "genes.log2foldchange.bedGraph"]))
+    if 'baseline-tracks' in config['tool'] or config['tool']=="all-baseline" and skip(config['accession'],'baseline-tracks'):
+        check_config_required(fields=['metadata_summary'], method='baseline-tracks')
+        # combine metric (fpkm / tpm) with assay_id/assay_label (zip based)
+        # in a product manner
+        outputs.extend(expand(config['accession']+".{a_id}.genes.expressions_{metric}.bedGraph",
+                            a_id=get_assay_ids(),
+                            metric=metrics))
+    if 'differential-gsea' in config['tool'] or config['tool']=="all-diff" and skip(config['accession'],'differential-gsea'):
+        check_config_required(fields=['bioentities_properties'], method='differential-gsea')
+        outputs.extend(
+                expand( config['accession']+".{c_id}.{ext_db}.{type}",
+                        c_id=get_contrast_ids(),
+                        ext_db=get_ext_db(),
+                        type=["gsea.tsv", "gsea_list.tsv"]))
+        outputs.extend(
+                expand("logs/"+config['accession']+".{c_id}.{ext_db}.{type}",
+                        c_id=get_contrast_ids(),
+                        ext_db=get_ext_db(),
+                        type=["check_differential_gsea.done", "check_differential_gsea_list.done"]))
+    if 'atlas-experiment-summary' in config['tool'] or 'all' in config['tool'] and skip(config['accession'],'atlas_experiment_summary'):
+        outputs.append(f"{config['accession']}-atlasExperimentSummary.Rdata")
+    if 'baseline-heatmap' in config['tool'] or 'all-baseline' in config['tool'] and skip(config['accession'],'baseline-heatmap'):
+        outputs.extend(expand(f"{config['accession']}"+"-heatmap-{metric}.pdf", metric=metrics ))
+        outputs.append(f"{config['accession']}-heatmap.pdf")
+    if 'baseline-coexpression' in config['tool'] or 'all-baseline' in config['tool'] and skip(config['accession'],'baseline-coexpression'):   
+        metric_link_coexp=False
+        for m in metrics:
+            expression_file=f"{config['accession']}-{m}.tsv"
+            print(f"Checking file size for {expression_file} and number of columns")
+            if os.path.getsize(expression_file) > 0 and get_number_columns(expression_file)>4:
+                metric_link_coexp=True
+                outputs.extend(expand(f"{config['accession']}-{m}-coexpressions.tsv.gz"))
+
+        if metric_link_coexp == True:
+            outputs.extend(expand(f"{config['accession']}-coexpressions.tsv.gz" ))
+
+    print(outputs)
+    print('Getting list of outputs.. done')
+    print(datetime.datetime.now())
+
+    return outputs
+
+
+rule all:
+    input:
+        required_outputs=get_outputs()
