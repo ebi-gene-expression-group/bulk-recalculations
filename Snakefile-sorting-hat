@@ -100,8 +100,6 @@ def get_outputs():
                 return expand("{accession}/{accession}.recalculations.done", accession=ACC)
         elif config['goal'] == 'reprocess':   
             return expand("{accession}/{accession}.reprocess.done", accession=ACC)
-        elif config['goal'] == 'proteomics': 
-            return expand("{accession}/{accession}.proteomics.done", accession=ACC)
         else:
             return None
     else:
