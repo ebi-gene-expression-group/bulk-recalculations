@@ -106,7 +106,7 @@ def get_outputs():
         return None
 
 
-localrules: all, get_experiment_metadata
+localrules: all
 
 wildcard_constraints:
     accession = "E-\D+-\d+"
@@ -240,7 +240,7 @@ rule produce_recalculations_call:
         pushd {input.working_directory}
 
 
-        snakemake --restart-times 4 --latency-wait 150 {config['sm_options']} --config \
+        snakemake --restart-times 4 --latency-wait 200 {config['sm_options']} --config \
             accession={wildcards.accession} \
             tool={get_tool(wildcards.accession)} \
             metadata_summary=../{input.metadata} \
