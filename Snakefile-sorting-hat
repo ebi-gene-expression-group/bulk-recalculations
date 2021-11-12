@@ -106,6 +106,8 @@ def get_outputs():
         return None
 
 
+localrules: all, get_experiment_metadata
+
 wildcard_constraints:
     accession = "E-\D+-\d+"
 
