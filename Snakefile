@@ -168,6 +168,9 @@ def get_mem_mb_2000(wildcards, attempt):
 
 
 
+localrules: check_differential_gsea, link_baseline_coexpression, link_baseline_heatmap
+
+
 wildcard_constraints:
     accession="E-\D+-\d+"
 
