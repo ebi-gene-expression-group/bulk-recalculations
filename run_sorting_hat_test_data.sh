@@ -4,7 +4,7 @@ NEXPS=${NEXPS:-30}
 NJOBS=${NJOBS:-10}
 GTF=$( pwd )/test-data/gff
 FORCEALL=${FORCEALL:-true}
-RESTART_TIMES=1
+RESTART_TIMES=3
 SKIP_STEPS=$( pwd )/step_skip.yaml
 # CHECK_SPECIES file should come from a clone of the atlas-config repo in Jenkins:
 CHECK_SPECIES=$( pwd )/atlas-species-name-mapping.yaml
@@ -13,6 +13,7 @@ SORTING_HAT=${SORTING_HAT:-$( pwd )/Snakefile-sorting-hat}
 LOG_HANDLER=${LOG_HANDLER:-$( pwd )/log_handler.py}
 SN_CONDA_PREFIX=${SN_CONDA_PREFIX:-$( pwd )/conda_installs}
 PROFILE_LINE="--profile profilename"
+LSF_CONFIG=${LSF_CONFIG:-$( pwd )/lsf.yaml}
 
 if [ "$FORCEALL" = true ]; then FORCE_ALL="--forceall"; else FORCE_ALL=""; fi
 
@@ -47,6 +48,8 @@ snakemake --use-conda --conda-frontend mamba \
         --config gtf_dir=$GTF \
         atlas_prod=path/to/atlasprod \
         atlas_exps=path/to/atlasexps \
+        lsf_config=$LSF_CONFIG \
+        goal='recalculations' \
         atlas_meta_config=path/to/supporting_files \
         skip_steps_file=$SKIP_STEPS \
         check_sp_file=$CHECK_SPECIES \
