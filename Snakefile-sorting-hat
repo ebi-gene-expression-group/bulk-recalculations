@@ -5,6 +5,15 @@ import glob
 
 metadata = {}
 
+def get_lsf_config_file():
+    """
+    Returns the rule-specific LSF resource settings file to be copied to
+    acc working directory before the snakemake call
+    """
+    if 'lsf_config' in config:
+        return config['lsf_config']
+
+
 def fill_metadata(acc):
     with open(f"{acc}/{acc}.metadata_summary.yaml", 'r') as meta:
         metadata[acc] = yaml.load(meta, Loader=yaml.FullLoader)
@@ -198,6 +207,7 @@ rule produce_reprocess_call:
     params:
         bioentities_properties=get_bioentities_property_path(),
         skip_steps_file=get_skip_steps_file(),
+        lsf_config = get_lsf_config_file(),
         log_handler_script=get_log_handler_script()
     output:
         touch("{accession}/{accession}.reprocess.done")
@@ -207,6 +217,7 @@ rule produce_reprocess_call:
         mkdir -p {wildcards.accession}/logs
         exec &> {log}
         pushd {input.working_directory}
+        cp {params.lsf_config} {input.working_directory}
 
         snakemake --restart-times 1 --latency-wait 100 {config['sm_options']} --config \
             accession={wildcards.accession} \
@@ -229,6 +240,7 @@ rule produce_recalculations_call:
     params:
         bioentities_properties=get_bioentities_property_path(),
         skip_steps_file=get_skip_steps_file(),
+        lsf_config = get_lsf_config_file(),
         log_handler_script=get_log_handler_script()
     output:
         touch("{accession}/{accession}.recalculations.done")
@@ -238,6 +250,7 @@ rule produce_recalculations_call:
         mkdir -p {wildcards.accession}/logs
         exec &> {log}
         pushd {input.working_directory}
+        cp {params.lsf_config} {input.working_directory}
 
 
         snakemake --restart-times 4 --latency-wait 250 {config['sm_options']} --config \
