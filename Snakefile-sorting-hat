@@ -12,7 +12,9 @@ def get_lsf_config_file():
     """
     if 'lsf_config' in config:
         return config['lsf_config']
-
+    else:
+        return None
+	
 
 def fill_metadata(acc):
     with open(f"{acc}/{acc}.metadata_summary.yaml", 'r') as meta:
