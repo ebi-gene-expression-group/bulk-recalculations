@@ -219,7 +219,7 @@ rule produce_reprocess_call:
         mkdir -p {wildcards.accession}/logs
         exec &> {log}
         pushd {input.working_directory}
-        cp {params.lsf_config} {wildcards.accession}/lsf.yaml
+        cp {params.lsf_config} lsf.yaml
 
         snakemake --restart-times 1 --latency-wait 100 {config['sm_options']} --config \
             accession={wildcards.accession} \
@@ -252,7 +252,7 @@ rule produce_recalculations_call:
         mkdir -p {wildcards.accession}/logs
         exec &> {log}
         pushd {input.working_directory}
-        cp {params.lsf_config} {wildcards.accession}/lsf.yaml
+        cp {params.lsf_config} lsf.yaml
 
 
         snakemake --restart-times 4 --latency-wait 250 {config['sm_options']} --config \
