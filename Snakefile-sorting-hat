@@ -14,7 +14,7 @@ def get_lsf_config_file():
         return config['lsf_config']
     else:
         return None
-	
+
 
 def fill_metadata(acc):
     with open(f"{acc}/{acc}.metadata_summary.yaml", 'r') as meta:
@@ -109,7 +109,7 @@ def get_outputs():
                 return expand("{accession}/{accession}.recalculations.done", accession=pass_ACC)
             else:
                 return expand("{accession}/{accession}.recalculations.done", accession=ACC)
-        elif config['goal'] == 'reprocess':   
+        elif config['goal'] == 'reprocess':
             return expand("{accession}/{accession}.reprocess.done", accession=ACC)
         else:
             return None
@@ -252,12 +252,12 @@ rule produce_recalculations_call:
         mkdir -p {wildcards.accession}/logs
         exec &> {log}
         pushd {input.working_directory}
-	    if ! [ -z {params.lsf_config} ]; then
+        if ! [ -z {params.lsf_config} ]; then
             if [ -f "lsf.yaml" ]; then
                 rm -f lsf.yaml
             fi
             ln -s {params.lsf_config} lsf.yaml
-	    fi
+        fi
 
         snakemake --restart-times 4 --latency-wait 250 {config['sm_options']} --config \
             accession={wildcards.accession} \
