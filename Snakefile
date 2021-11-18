@@ -177,6 +177,7 @@ wildcard_constraints:
 rule percentile_ranks:
     conda: "envs/atlas-internal.yaml"
     log: "logs/{accession}-percentile_ranks.log"
+    resources: mem_mb=get_mem_mb_8000
     output:
         percentile_ranks_merged="{accession}-percentile-ranks.tsv"
     shell:
