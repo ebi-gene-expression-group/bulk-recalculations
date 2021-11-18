@@ -252,9 +252,12 @@ rule produce_recalculations_call:
         mkdir -p {wildcards.accession}/logs
         exec &> {log}
         pushd {input.working_directory}
-	if ! [ -z {params.lsf_config} ]; then 
+	    if ! [ -z {params.lsf_config} ]; then
+            if [ -f "lsf.yaml" ]; then
+                rm -f lsf.yaml
+            fi
             ln -s {params.lsf_config} lsf.yaml
-	fi
+	    fi
 
         snakemake --restart-times 4 --latency-wait 250 {config['sm_options']} --config \
             accession={wildcards.accession} \
