@@ -154,17 +154,15 @@ def get_assay_label(wildcards):
     global metadata_summary
     return metadata_summary['assays'][wildcards['assay_id']]
 
-def get_mem_mb_8000(wildcards, attempt):
-    """
-    To adjust resources in rule baseline_coexpression and rule differential_gsea.
-    """
-    return (2**attempt) * 4000
 
-def get_mem_mb_2000(wildcards, attempt):
+def get_mem_mb(wildcards, attempt):
     """
-    To adjust resources in rules baseline_tracks, baseline_heatmaps, differential_tracks and  atlas_experiment_summary
+    To adjust resources in the rules 
+    attemps = reiterations + 1
+    Max number attemps = 8
     """
-    return (attempt) * 2000
+    mem_avail = [ 2, 2, 4, 8, 16, 64, 128, 256 ]  
+    return mem_avail[attempt-1] * 1000
 
 
 
@@ -177,7 +175,7 @@ wildcard_constraints:
 rule percentile_ranks:
     conda: "envs/atlas-internal.yaml"
     log: "logs/{accession}-percentile_ranks.log"
-    resources: mem_mb=get_mem_mb_8000
+    resources: mem_mb=get_mem_mb
     output:
         percentile_ranks_merged="{accession}-percentile-ranks.tsv"
     shell:
@@ -210,7 +208,7 @@ rule percentile_ranks:
 rule differential_tracks:
     conda: "envs/irap.yaml"
     log: "logs/{accession}.{contrast_id}-differential_tracks.log"
-    resources: mem_mb=get_mem_mb_2000
+    resources: mem_mb=get_mem_mb
     input:
         gff=get_gff()
         # analytics will be derived below since it could be either {accession}-{arraydesign}-analytics.tsv
@@ -240,7 +238,7 @@ rule differential_tracks:
 rule differential_gsea:
     conda: "envs/irap.yaml"
     log: "logs/{accession}.{contrast_id}.{ext_db}-differential_gsea.log"
-    resources: mem_mb=get_mem_mb_8000
+    resources: mem_mb=get_mem_mb
     threads: 8
     params:
         organism=get_organism(),
@@ -325,7 +323,7 @@ rule check_differential_gsea:
 rule baseline_tracks:
     conda: "envs/irap.yaml"
     log: "logs/{accession}-{assay_id}-{metric}-baseline_tracks.log"
-    resources: mem_mb=get_mem_mb_2000
+    resources: mem_mb=get_mem_mb
     params:
         assay_label=get_assay_label
     input:
@@ -345,7 +343,7 @@ rule baseline_tracks:
 rule baseline_coexpression:
     conda: "envs/clusterseq.yaml"
     log: "logs/{accession}-{metric}-baseline_coexpression.log"
-    resources: mem_mb=get_mem_mb_8000
+    resources: mem_mb=get_mem_mb
     params: num_retries=5
     input:
         expression="{accession}-{metric}.tsv.undecorated.aggregated"
@@ -378,7 +376,7 @@ rule link_baseline_coexpression:
 rule baseline_heatmap:
     conda: "envs/atlas-internal.yaml"
     log: "logs/{accession}-{metric}-baseline_heatmap.log"
-    resources: mem_mb=get_mem_mb_2000
+    resources: mem_mb=get_mem_mb
     input:
         expression="{accession}-{metric}.tsv"
     output:
@@ -406,7 +404,7 @@ rule link_baseline_heatmap:
 rule atlas_experiment_summary:
     conda: "envs/atlas-internal.yaml"
     log: "logs/{accession}-atlas_experiment_summary.log"
-    resources: mem_mb=get_mem_mb_2000
+    resources: mem_mb=get_mem_mb
     input:
         sdrf=get_sdrf()
     output:
