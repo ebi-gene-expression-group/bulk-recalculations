@@ -172,10 +172,10 @@ rule get_experiment_metadata:
         fi
         # fix species name
         while read line; do
-        echo "$line"
-        DIR=$line
+            echo "$line"
+            DIR=$line
         done < <(perl {workflow.basedir}/bin/bulk_recalculations_check_species_names.pl $(echo $organism) {params.check_species_file}  )
-	    organism_check=$(echo $DIR)
+	organism_check=$(echo $DIR)
 
         ##echo $organism "check-> "$organism_check >> organisms.txt
         organism=$organism_check
@@ -184,7 +184,9 @@ rule get_experiment_metadata:
         if [ -z "$gff_file" ]; then
             gff_file=$( find {input.gtf_dir}/$organism -iname "$organism_*.gff3" | head -n1)
         fi
-        magetabfiles=$( perl {workflow.basedir}/bin/get_experiment_info.pl --experiment {wildcards.accession} --xmlfile {wildcards.accession}/{wildcards.accession}-configuration.xml --magetabfiles)
+	echo "GTF file location sourced"
+        magetabfiles=$( perl {workflow.basedir}/bin/get_experiment_info.pl --experiment {wildcards.accession} --xmlfile {wildcards.accession}/{wildcards.accession}-configuration.xml --magetabfiles --not-strict)
+	echo "MAGETAB location sourced"
         idf=$( echo $magetabfiles | awk -F',' '{{ print $1 }}' )
         sdrf=$( echo $magetabfiles | awk -F',' '{{ print $2 }}' )
         if [ -z "$gff_file" ] || [ -z "$idf" ] || [ -z "$sdrf" ]; then
