@@ -97,7 +97,7 @@ my $expAcc = $args->{ "experiment_accession" };
 
 my $idfFile = get_idfFile_path( $expAcc );
 
-my $magetab4atlas = Atlas::Magetab4Atlas->new( idf_filename => $idfFile );
+my $magetab4atlas = Atlas::Magetab4Atlas->new( idf_filename => $idfFile, strict => !$args->{ "not_strict" } );
 
 my $experimentType = $magetab4atlas->get_experiment_type;
 
@@ -136,6 +136,7 @@ sub parse_args {
         "a|arraydesign"     => \$args{ "array_design" },
         "r|rawdatafiles"    => \$args{ "raw_data_files" },
         "m|magetabfiles"    => \$args{ "magetabfiles" },
+	"n|not_strict"      => \$not_strict, # added as negation to keep the default true as it was.
         "x|xmlfile=s"         => \$args{ "xml_filename" }
     );
     if( $want_help ) {
