@@ -46,6 +46,10 @@ Optional. Filenames of raw data files for a microarray experiment.
 
 Optional. Filenames of IDF and SDRF files, comma separated.
 
+=item -n --not-strict
+
+Option. Avoids strict check of assay factor's values.
+
 =item -h --help
 
 Optional. Display this help.
@@ -136,7 +140,7 @@ sub parse_args {
         "a|arraydesign"     => \$args{ "array_design" },
         "r|rawdatafiles"    => \$args{ "raw_data_files" },
         "m|magetabfiles"    => \$args{ "magetabfiles" },
-	"n|not_strict"      => \$not_strict, # added as negation to keep the default true as it was.
+	"n|not-strict"      => \$args{ "not_strict" }, # added as negation to keep the default true as it was.
         "x|xmlfile=s"         => \$args{ "xml_filename" }
     );
     if( $want_help ) {
@@ -173,6 +177,7 @@ sub parse_args {
     # Only do one attribute per script run.
     my $definedArgs;
     foreach my $arg ( keys %args ) {
+        next if( $arg eq "not_strict" );
         if( defined( $args{ $arg } ) ) { $definedArgs++; }
     }
     if( $definedArgs > 3 ) {
