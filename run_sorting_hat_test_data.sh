@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 
+if [ -z ${ACCESSIONS+x} ]; then 
+        ACC=""
+else 
+        ACC="accessions="$ACCESSIONS
+fi
+
 NEXPS=${NEXPS:-30}
 NJOBS=${NJOBS:-10}
 GTF=$( pwd )/test-data/gff
@@ -44,7 +50,7 @@ snakemake --use-conda --conda-frontend mamba \
         $CONDA_PREFIX_LINE \
         --latency-wait 10 \
         --keep-going \
-        --config gtf_dir=$GTF \
+        --config $ACC gtf_dir=$GTF \
         atlas_prod=path/to/atlasprod \
         atlas_exps=path/to/atlasexps \
         atlas_meta_config=path/to/supporting_files \
