@@ -513,12 +513,17 @@ rule rnaseq_qc:
 rule microarray_quality_control:
 	
 rule microarray_normalisation:
-## Get normalized expressions
-#arrayNormalization.pl $expTargetDir $idf_filename $ae_dir $mirbase_dir
-#if [ $? -ne 0 ]; then
-#    echo "ERROR: Failed to calculate normalized expressions for ${expAcc}" >&2
-#    exit 1
-#fi
+    conda: "envs/....yaml"
+    log: "logs/....log"
+    shell:
+        """
+	## Get normalized expressions
+	#arrayNormalization.pl $expTargetDir $idf_filename $ae_dir $mirbase_dir
+	#if [ $? -ne 0 ]; then
+	#    echo "ERROR: Failed to calculate normalized expressions for ${expAcc}" >&2
+	#    exit 1
+	#fi
+        """
 
 rule microarray_calculate_analytics:
 
