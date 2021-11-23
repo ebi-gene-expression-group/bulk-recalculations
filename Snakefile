@@ -509,3 +509,34 @@ rule rnaseq_qc:
         """
 
 # add more rules here
+
+rule microarray_quality_control:
+	
+rule microarray_normalisation:
+## Get normalized expressions
+#arrayNormalization.pl $expTargetDir $idf_filename $ae_dir $mirbase_dir
+#if [ $? -ne 0 ]; then
+#    echo "ERROR: Failed to calculate normalized expressions for ${expAcc}" >&2
+#    exit 1
+#fi
+
+rule microarray_calculate_analytics:
+
+rule check_microarray_analystics: 
+
+rule create_tracks_symlinks:
+
+rule delete_experiment:
+	
+rule quantile_norm_and_summarize_expression:
+	
+rule transcripts_na_check:
+	
+rule generate_analysis_methods:
+	
+	
+	
+
+
+
+
