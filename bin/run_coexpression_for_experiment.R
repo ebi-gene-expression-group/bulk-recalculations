@@ -47,7 +47,10 @@ exp[, 2:ncol(exp)] <- sapply(exp[2:ncol(exp)], function(x) sub("(^[^,]+[,][^,]+[
   "\\2", x))  #get the middle value for each gene/tissue
 expL <- sapply(exp[, 2:ncol(exp)], as.numeric)  # make sure the values are numeric
 rownames(expL) <- exp[, 1]
-expL <- log(expL+1)  # get the natural logarithm
+
+C <- min(expL[expL>0], na.rm=TRUE)/2
+print(paste0('half the minimum non-zero value = ',C) )  
+expL <- log(expL+C)  # get the natural logarithm
 
 expL[is.na(expL)] <- 0  # turn any NAs to 0
 
