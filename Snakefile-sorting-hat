@@ -5,6 +5,17 @@ import glob
 
 metadata = {}
 
+def get_lsf_config_file():
+    """
+    Returns the rule-specific LSF resource settings file to be copied to
+    acc working directory before the snakemake call
+    """
+    if 'lsf_config' in config:
+        return config['lsf_config']
+    else:
+        return None
+
+
 def fill_metadata(acc):
     with open(f"{acc}/{acc}.metadata_summary.yaml", 'r') as meta:
         metadata[acc] = yaml.load(meta, Loader=yaml.FullLoader)
@@ -98,14 +109,15 @@ def get_outputs():
                 return expand("{accession}/{accession}.recalculations.done", accession=pass_ACC)
             else:
                 return expand("{accession}/{accession}.recalculations.done", accession=ACC)
-        # no necessary to be in atlas_exps for re-processing
-        elif config['goal'] == 'reprocess':   
+        elif config['goal'] == 'reprocess':
             return expand("{accession}/{accession}.reprocess.done", accession=ACC)
         else:
             return None
     else:
         return None
 
+
+localrules: all
 
 wildcard_constraints:
     accession = "E-\D+-\d+"
@@ -160,10 +172,10 @@ rule get_experiment_metadata:
         fi
         # fix species name
         while read line; do
-        echo "$line"
-        DIR=$line
+            echo "$line"
+            DIR=$line
         done < <(perl {workflow.basedir}/bin/bulk_recalculations_check_species_names.pl $(echo $organism) {params.check_species_file}  )
-	    organism_check=$(echo $DIR)
+	organism_check=$(echo $DIR)
 
         ##echo $organism "check-> "$organism_check >> organisms.txt
         organism=$organism_check
@@ -172,7 +184,9 @@ rule get_experiment_metadata:
         if [ -z "$gff_file" ]; then
             gff_file=$( find {input.gtf_dir}/$organism -iname "$organism_*.gff3" | head -n1)
         fi
-        magetabfiles=$( perl {workflow.basedir}/bin/get_experiment_info.pl --experiment {wildcards.accession} --xmlfile {wildcards.accession}/{wildcards.accession}-configuration.xml --magetabfiles)
+	echo "GTF file location sourced"
+        magetabfiles=$( perl {workflow.basedir}/bin/get_experiment_info.pl --experiment {wildcards.accession} --xmlfile {wildcards.accession}/{wildcards.accession}-configuration.xml --magetabfiles --not-strict)
+	echo "MAGETAB location sourced"
         idf=$( echo $magetabfiles | awk -F',' '{{ print $1 }}' )
         sdrf=$( echo $magetabfiles | awk -F',' '{{ print $2 }}' )
         if [ -z "$gff_file" ] || [ -z "$idf" ] || [ -z "$sdrf" ]; then
@@ -197,6 +211,7 @@ rule produce_reprocess_call:
     params:
         bioentities_properties=get_bioentities_property_path(),
         skip_steps_file=get_skip_steps_file(),
+        lsf_config = get_lsf_config_file(),
         log_handler_script=get_log_handler_script()
     output:
         touch("{accession}/{accession}.reprocess.done")
@@ -206,6 +221,7 @@ rule produce_reprocess_call:
         mkdir -p {wildcards.accession}/logs
         exec &> {log}
         pushd {input.working_directory}
+        cp {params.lsf_config} lsf.yaml
 
         snakemake --restart-times 1 --latency-wait 100 {config['sm_options']} --config \
             accession={wildcards.accession} \
@@ -228,6 +244,7 @@ rule produce_recalculations_call:
     params:
         bioentities_properties=get_bioentities_property_path(),
         skip_steps_file=get_skip_steps_file(),
+        lsf_config = get_lsf_config_file(),
         log_handler_script=get_log_handler_script()
     output:
         touch("{accession}/{accession}.recalculations.done")
@@ -237,9 +254,13 @@ rule produce_recalculations_call:
         mkdir -p {wildcards.accession}/logs
         exec &> {log}
         pushd {input.working_directory}
+        if ! [ -z {params.lsf_config} ]; then
+            if [ ! -f "lsf.yaml" ]; then
+                ln -s {params.lsf_config} lsf.yaml
+            fi
+        fi
 
-
-        snakemake --restart-times 4 --latency-wait 150 {config['sm_options']} --config \
+        snakemake --restart-times 4 --latency-wait 250 {config['sm_options']} --config \
             accession={wildcards.accession} \
             tool={get_tool(wildcards.accession)} \
             metadata_summary=../{input.metadata} \
