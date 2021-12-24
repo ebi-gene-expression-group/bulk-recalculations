@@ -2,25 +2,29 @@ include: "Snakefile"
 
 # atom: set grammar=python:
 
+# This script used to rerun studies that have new matrices generated from IRAP/ISL
+
 def get_outputs():
-     """
-     First method to be executed since it is run by rule all.
-     """
-     import os.path
-     import datetime
-     print('Starting getting list of outputs..' + str(datetime.datetime.now()))
+    """
+    First method to be executed since it is run by rule all.
+    """
+    import os.path
+    import datetime
+    print('Starting getting list of outputs..' + str(datetime.datetime.now()))
 
-     outputs = []
-     # collect output for reprocessing
-     outputs.append('TBD')
+    outputs = []
+    # collect output for reprocessing
+    outputs.extend(expand("logs/"+f"{config['accession']}-check_xml.done" ))
 
-     print(outputs)
-     print('Getting list of outputs.. done')
-     print(datetime.datetime.now())
+    print(outputs)
+    print('Getting list of outputs.. done')
+    print(datetime.datetime.now())
 
-     return outputs
+    return outputs
 
 
- rule all:
+rule all:
     input:
         required_outputs=get_outputs()
+
+

@@ -510,6 +510,26 @@ rule rnaseq_qc:
 
 # add more rules here
 
+
+rule check_configuration_xml:
+    """
+    Here we should check that xmls exist. In case of a baseline rna-seq experiment
+    two files are needed: -configuration.xml and -factors.xml
+    """
+    log: "logs/{accession}-check_configuration_xml.log"
+    input: "{accession}-configuration.xml"
+    output: temp("logs/{accession}-check_xml.done")
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+        if ! [ -e {input} ]; then
+            exit 1
+        fi
+        touch {output}
+        """
+
+
 rule microarray_quality_control:
 	
 rule microarray_normalisation:
