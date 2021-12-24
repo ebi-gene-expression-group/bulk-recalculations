@@ -15,6 +15,12 @@ def get_outputs():
     outputs = []
     # collect output for reprocessing
     outputs.extend(expand("logs/"+f"{config['accession']}-check_xml.done" ))
+    # baseline
+    # if 'baseline-tracks' in config['tool']
+    # differential rna-seq
+    # if
+    #differential microarrays
+    # if
 
     print(outputs)
     print('Getting list of outputs.. done')
