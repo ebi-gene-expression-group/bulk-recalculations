@@ -20,6 +20,7 @@ read_metadata_summary()
 def get_isl_dir():
     return None
 
+
 def read_skip_steps_file():
     if 'skip_steps_file' in config:
         global skip_steps
@@ -420,48 +421,29 @@ rule atlas_experiment_summary:
 	          --output {output.rsummary}
         """
 
-rule copy_raw_gene_counts_from_isl:
-    params:
-        exp_isl_dir=get_isl_dir()
-    output:
-        raw_counts_undecorated="{accession}-raw-counts.tsv.undecorated"
-    shell:
-        """
-        export expIslDir={params.exp_isl_dir}
-        export expTargetDir=./
-        [ ! -z $expIslDir+x} ] || (echo "snakemake param exp_isl_dir needs to defined in rule" && exit 1)
-        if [ -s "$expIslDir/genes.raw.htseq2.tsv" ]; then
-            cp $expIslDir/genes.raw.htseq2.tsv {output.raw_counts_undecorated}
-        elif [ -s "$expIslDir/genes.raw.featurecounts.tsv" ]; then
-            cp $expIslDir/genes.raw.featurecounts.tsv {output.raw_counts_undecorated}
-        else
-            echo "Neither genes.raw.htseq2.tsv nor genes.raw.featurecounts.tsv found on $expIslDir"
-            exit 1
-        fi
-        """
 
-rule copy_normalised_counts_from_isl:
-    params:
-        exp_isl_dir=get_isl_dir()
-    output:
-        normalised_counts_undecorated="{accession}-{metric}s.tsv.undecorated"
-    shell:
-        """
-        # replaces copy_unit_matrices_from_isl in experiment_loading_routines.sh
-        export expIslDir={params.exp_isl_dir}
-
-        [ ! -z $expIslDir+x} ] || (echo "snakemake param exp_isl_dir needs to defined in rule" && exit 1)
-
-        if [ -s "$expIslDir/genes.{wildcards.metric}.htseq2.tsv" ]; then
-            # maybe rsync could be better here?
-            cp $expIslDir/genes.{wildcards.metric}.htseq2.tsv {output.normalised_counts_undecorated}
-        elif [ -s "$expIslDir/genes.{wildcards.metric}.featurecounts.tsv" ]; then
-            cp $expIslDir/genes.{wildcards.metric}.featurecounts.tsv {output.normalised_counts_undecorated}
-        else
-            echo "$expIslDir/genes.{wildcards.metric}.htseqORfeaturecounts.tsv not found"
-            exit 1
-        fi
-        """
+#rule copy_normalised_counts_from_isl:
+#    params:
+#        exp_isl_dir=get_isl_dir()
+#    output:
+#        normalised_counts_undecorated="{accession}-{metric}s.tsv.undecorated"
+#    shell:
+#        """
+#        # replaces copy_unit_matrices_from_isl in experiment_loading_routines.sh
+#        export expIslDir={params.exp_isl_dir}
+#
+#        [ ! -z $expIslDir+x} ] || (echo "snakemake param exp_isl_dir needs to defined in rule" && exit 1)
+#
+#        if [ -s "$expIslDir/genes.{wildcards.metric}.htseq2.tsv" ]; then
+#            # maybe rsync could be better here?
+#            cp $expIslDir/genes.{wildcards.metric}.htseq2.tsv {output.normalised_counts_undecorated}
+#        elif [ -s "$expIslDir/genes.{wildcards.metric}.featurecounts.tsv" ]; then
+#            cp $expIslDir/genes.{wildcards.metric}.featurecounts.tsv {output.normalised_counts_undecorated}
+#        else
+#            echo "$expIslDir/genes.{wildcards.metric}.htseqORfeaturecounts.tsv not found"
+#            exit 1
+#        fi
+#        """
 
 
 rule copy_transcript_files_from_isl:
@@ -510,7 +492,7 @@ rule rnaseq_qc:
         fi
         """
 
-# add more rules here
+# rules below are specific for reprocessing
 
 rule check_configuration_xml:
     """
@@ -547,6 +529,47 @@ rule check_factors_xml:
         fi
         touch {output}
         """
+
+
+rule copy_raw_gene_counts_from_isl:
+    """
+    Copy raw gene counts file.
+    """
+    log: "logs/{accession}-copy_raw_gene_counts_from_isl.log"
+    output:
+        raw_counts_undecorated="{accession}-raw-counts.tsv.undecorated"
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+        source {workflow.basedir}/bin/reprocessing_routines.sh
+        expIslDir=$(find_exp_isl_dir {wildcards.accession})
+
+        [ ! -z $expIslDir+x ] || (echo "snakemake param exp_isl_dir needs to defined in rule" && exit 1)
+        if [ -s "$expIslDir/genes.raw.htseq2.tsv" ]; then
+            cp $expIslDir/genes.raw.htseq2.tsv {output.raw_counts_undecorated}
+        elif [ -s "$expIslDir/genes.raw.featurecounts.tsv" ]; then
+            cp $expIslDir/genes.raw.featurecounts.tsv {output.raw_counts_undecorated}
+        else
+            echo "Neither genes.raw.htseq2.tsv nor genes.raw.featurecounts.tsv found on $expIslDir"
+            exit 1
+        fi
+        """
+
+
+## copy raw gene counts file
+#copy_raw_from_isl
+# copy fpkm gene expression file
+#copy_unit_matrices_from_isl "fpkm"
+# copy tpm gene expression file
+#copy_unit_matrices_from_isl "tpm"
+
+
+
+
+
+
+
 
 
 rule microarray_quality_control:
