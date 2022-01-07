@@ -1,5 +1,5 @@
 include: "Snakefile"
-
+  
 # atom: set grammar=python:
 
 # This script used to rerun studies that have new matrices generated from IRAP/ISL
@@ -14,9 +14,11 @@ def get_outputs():
 
     outputs = []
     # collect output for reprocessing
-    outputs.extend(expand("logs/"+f"{config['accession']}-check_xml.done" ))
-    # baseline
-    # if 'baseline-tracks' in config['tool']
+    outputs.extend(expand("logs/"+f"{config['accession']}-check_configuration_xml.done" ))
+
+    if config['tool']=="all-baseline" or 'baseline-tracks' in config['tool'] or 'baseline-heatmap' in config['tool'] or 'baseline-coexpression' in config['tool']:
+        outputs.extend(expand("logs/"+f"{config['accession']}-check_factors_xml.done" ))
+
     # differential rna-seq
     # if
     #differential microarrays
@@ -32,5 +34,4 @@ def get_outputs():
 rule all:
     input:
         required_outputs=get_outputs()
-
 
