@@ -558,7 +558,6 @@ rule copy_normalised_counts_from_isl:
         """
 
 
-  
 rule copy_transcript_files_from_isl:
     """
     This rule attemps to copy Kallisto TPM transcripts if metrics 'tpms' exists
@@ -575,15 +574,12 @@ rule copy_transcript_files_from_isl:
         echo "ISL dir: $expIslDir"
 
         [ ! -z $expIslDir+x ] || (echo "snakemake param exp_isl_dir needs to defined in rule" && exit 1)
-        if [[ "{wildcards.metric}" == "tpms" ]]; then
-            if [ -s "$expIslDir/transcripts.tpm.kallisto.tsv" ] ; then
-                cp $expIslDir/transcripts.tpm.kallisto.tsv {output.transcripts}
-            else
-                echo "$expIslDir/transcripts.tpm.kallisto.tsv not found - skipping"
-                exit 1
-            fi
+
+        if [ -s "$expIslDir/transcripts.tpm.kallisto.tsv" ] ; then
+            cp $expIslDir/transcripts.tpm.kallisto.tsv {output.transcripts}
         else
-                echo "metric TPM does not exist"  #the rules fails to generate oputput for FPKMS
+            echo "$expIslDir/transcripts.tpm.kallisto.tsv not found - skipping"
+            exit 1
         fi
         """
 
