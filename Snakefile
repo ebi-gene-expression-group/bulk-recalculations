@@ -167,11 +167,12 @@ def get_mem_mb(wildcards, attempt):
 
 
 
-localrules: check_differential_gsea, link_baseline_coexpression, link_baseline_heatmap
+localrules: check_differential_gsea, link_baseline_coexpression, link_baseline_heatmap, copy_raw_gene_counts_from_isl, copy_normalised_counts_from_isl, check_configuration_xml, check_factors_xml
 
 
 wildcard_constraints:
-    accession="E-\D+-\d+"
+    accession="E-\D+-\d+",
+    metric="\D+ms"
 
 rule percentile_ranks:
     conda: "envs/atlas-internal.yaml"
@@ -422,28 +423,6 @@ rule atlas_experiment_summary:
         """
 
 
-#rule copy_normalised_counts_from_isl:
-#    params:
-#        exp_isl_dir=get_isl_dir()
-#    output:
-#        normalised_counts_undecorated="{accession}-{metric}s.tsv.undecorated"
-#    shell:
-#        """
-#        # replaces copy_unit_matrices_from_isl in experiment_loading_routines.sh
-#        export expIslDir={params.exp_isl_dir}
-#
-#        [ ! -z $expIslDir+x} ] || (echo "snakemake param exp_isl_dir needs to defined in rule" && exit 1)
-#
-#        if [ -s "$expIslDir/genes.{wildcards.metric}.htseq2.tsv" ]; then
-#            # maybe rsync could be better here?
-#            cp $expIslDir/genes.{wildcards.metric}.htseq2.tsv {output.normalised_counts_undecorated}
-#        elif [ -s "$expIslDir/genes.{wildcards.metric}.featurecounts.tsv" ]; then
-#            cp $expIslDir/genes.{wildcards.metric}.featurecounts.tsv {output.normalised_counts_undecorated}
-#        else
-#            echo "$expIslDir/genes.{wildcards.metric}.htseqORfeaturecounts.tsv not found"
-#            exit 1
-#        fi
-#        """
 
 
 rule copy_transcript_files_from_isl:
@@ -545,7 +524,7 @@ rule copy_raw_gene_counts_from_isl:
         source {workflow.basedir}/bin/reprocessing_routines.sh
         expIslDir=$(find_exp_isl_dir {wildcards.accession})
 
-        [ ! -z $expIslDir+x ] || (echo "snakemake param exp_isl_dir needs to defined in rule" && exit 1)
+        [ ! -z $expIslDir+x ] || (echo "Env var $expIslDir needs to defined" && exit 1)
         if [ -s "$expIslDir/genes.raw.htseq2.tsv" ]; then
             cp $expIslDir/genes.raw.htseq2.tsv {output.raw_counts_undecorated}
         elif [ -s "$expIslDir/genes.raw.featurecounts.tsv" ]; then
@@ -555,6 +534,43 @@ rule copy_raw_gene_counts_from_isl:
             exit 1
         fi
         """
+
+
+rule copy_normalised_counts_from_isl:
+    """
+    Copy fpkm and tpm gene expression files.
+    Replaces copy_unit_matrices_from_isl in experiment_loading_routines.sh
+    """
+    log: "logs/{accession}-{metric}-copy_normalised_counts_from_isl.log"
+    output:
+        normalised_counts_undecorated="{accession}-{metric}.tsv.undecorated"
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+        source {workflow.basedir}/bin/reprocessing_routines.sh
+        expIslDir=$(find_exp_isl_dir {wildcards.accession})
+        echo "ISL dir: $expIslDir"
+
+        [ ! -z $expIslDir+x ] || (echo "snakemake param exp_isl_dir needs to defined in rule" && exit 1)
+
+        if [[ "{wildcards.metric}" == "tpms" ]]; then
+            metrictype="tpm"
+        else
+            metrictype="fpkm"
+        fi
+
+        if [ -s "$expIslDir/genes.$metrictype.htseq2.tsv" ]; then
+            # maybe rsync could be better here?
+            cp $expIslDir/genes.$metrictype.htseq2.tsv {output.normalised_counts_undecorated}
+        elif [ -s "$expIslDir/genes.$metrictype.featurecounts.tsv" ]; then
+            cp $expIslDir/genes.$metrictype.featurecounts.tsv {output.normalised_counts_undecorated}
+        else
+            echo "$expIslDir/genes.$metrictype.htseqORfeaturecounts.tsv not found"
+            exit 1
+        fi
+        """
+
 
 
 ## copy raw gene counts file

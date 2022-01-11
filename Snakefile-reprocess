@@ -13,13 +13,25 @@ def get_outputs():
     print('Starting getting list of outputs..' + str(datetime.datetime.now()))
 
     outputs = []
+    #get metrics only for baseline
+    global metrics
+    if config['tool']=="all-baseline" or 'baseline-tracks' in config['tool'] or 'baseline-heatmap' in config['tool'] or 'baseline-coexpression' in config['tool']:
+        metrics = get_metrics()
+
+    # Read this now so that it is available for all other needs
+    read_metadata_summary()
+    global skip_accession
+    skip_accession = read_skip_steps_file()
+    required_config=['tool']
+    check_config_required(fields=required_config)
+
     # collect output for reprocessing
     outputs.extend(expand("logs/"+f"{config['accession']}-check_configuration_xml.done" ))
 
     if config['tool']=="all-baseline" or 'baseline-tracks' in config['tool'] or 'baseline-heatmap' in config['tool'] or 'baseline-coexpression' in config['tool']:
         outputs.extend(expand("logs/"+f"{config['accession']}-check_factors_xml.done" ))
         outputs.append(f"{config['accession']}-raw-counts.tsv.undecorated")
-
+        outputs.extend(expand(config['accession']+"-{metric}.tsv.undecorated", metric=metrics))
     # differential rna-seq
     # if
     #differential microarrays
