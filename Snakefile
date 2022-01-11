@@ -172,7 +172,7 @@ localrules: check_differential_gsea, link_baseline_coexpression, link_baseline_h
 
 wildcard_constraints:
     accession="E-\D+-\d+",
-    metric="\D+ms"
+    metric="tpms|fpkms"
 
 rule percentile_ranks:
     conda: "envs/atlas-internal.yaml"
@@ -425,20 +425,6 @@ rule atlas_experiment_summary:
 
 
 
-rule copy_transcript_files_from_isl:
-    params:
-        exp_isl_dir=get_isl_dir()
-    output:
-        transcripts="{accession}-transcripts-{metric}s.tsv.undecorated"
-    shell:
-        """
-        if [ -s "{params.exp_isl_dir}/transcripts.{wildcards.metric}.kallisto.tsv" ] ; then
-            # maybe rsync could be better here?
-        	cp {params.exp_isl_dir}/transcripts.{wildcards.metric}.kallisto.tsv {output.transcripts}
-        else
-        	echo "{params.exp_isl_dir}/transcripts.{wildcards.metric}.kallisto.tsv not found - skipping"
-        fi
-        """
 
 rule copy_transcript_relative_isoforms:
     params:
@@ -570,6 +556,37 @@ rule copy_normalised_counts_from_isl:
             exit 1
         fi
         """
+
+
+  
+rule copy_transcript_files_from_isl:
+    """
+    This rule attemps to copy Kallisto TPM transcripts if metrics 'tpms' exists
+    """
+    log: "logs/{accession}-copy_transcript_files_{metric}_from_isl.log"
+    output:
+        transcripts="{accession}-transcripts-{metric}.tsv.undecorated"
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+        source {workflow.basedir}/bin/reprocessing_routines.sh
+        expIslDir=$(find_exp_isl_dir {wildcards.accession})
+        echo "ISL dir: $expIslDir"
+
+        [ ! -z $expIslDir+x ] || (echo "snakemake param exp_isl_dir needs to defined in rule" && exit 1)
+        if [[ "{wildcards.metric}" == "tpms" ]]; then
+            if [ -s "$expIslDir/transcripts.tpm.kallisto.tsv" ] ; then
+                cp $expIslDir/transcripts.tpm.kallisto.tsv {output.transcripts}
+            else
+                echo "$expIslDir/transcripts.tpm.kallisto.tsv not found - skipping"
+                exit 1
+            fi
+        else
+                echo "metric TPM does not exist"  #the rules fails to generate oputput for FPKMS
+        fi
+        """
+
 
 
 

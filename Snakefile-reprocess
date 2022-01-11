@@ -32,6 +32,9 @@ def get_outputs():
         outputs.extend(expand("logs/"+f"{config['accession']}-check_factors_xml.done" ))
         outputs.append(f"{config['accession']}-raw-counts.tsv.undecorated")
         outputs.extend(expand(config['accession']+"-{metric}.tsv.undecorated", metric=metrics))
+        outputs.extend(expand(config['accession']+"-transcripts-{metric}.tsv.undecorated", metric=metrics))
+
+        
     # differential rna-seq
     # if
     #differential microarrays
