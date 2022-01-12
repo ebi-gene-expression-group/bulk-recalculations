@@ -424,26 +424,9 @@ rule atlas_experiment_summary:
 
 
 
-
-
-rule rnaseq_qc:
-    params:
-    output:
-    shell:
-        """
-        $projectRoot/analysis/qc/rnaseqQC.sh $expAcc $expTargetDir
-        qcExitCode=$?
-
-        if [ "$qcExitCode" -eq 2 ]; then
-        	echo "Experiment $expAcc has been disqualified due to insufficient quality, exiting"
-            exit 0
-        elif [ "$qcExitCode" -ne 0 ]; then
-        	echo "ERROR: QC for ${expAcc} failed" >&2
-            exit "$qcExitCode"
-        fi
-        """
-
 # rules below are specific for reprocessing
+
+# baseline_rnaseq_experiment
 
 rule check_configuration_xml:
     """
@@ -546,7 +529,8 @@ rule copy_normalised_counts_from_isl:
 
 rule copy_transcript_files_from_isl:
     """
-    This rule attemps to copy Kallisto TPM transcripts if metrics 'tpms' exists
+    This rule attemps to copy Kallisto TPM transcripts if metrics 'tpms' exists.
+    If file does not exist for an accession, this rule can be skipped.
     """
     log: "logs/{accession}-copy_transcript_files_{metric}_from_isl.log"
     output:
@@ -571,7 +555,8 @@ rule copy_transcript_files_from_isl:
 
 rule copy_transcript_relative_isoforms:
     """
-    Copy transcripts relative isoform usage files
+    Copy transcripts relative isoform usage files.
+    If file does not exist for an accession, this rule can be skipped.
     """
     log: "logs/{accession}-copy_transcript_relative_isoforms.log"
     output:
@@ -593,6 +578,29 @@ rule copy_transcript_relative_isoforms:
             exit 1
         fi
         """
+
+
+
+rule rnaseq_qc:
+    params:
+    output:
+    shell:
+        """
+        $projectRoot/analysis/qc/rnaseqQC.sh $expAcc $expTargetDir
+        qcExitCode=$?
+
+        if [ "$qcExitCode" -eq 2 ]; then
+        	echo "Experiment $expAcc has been disqualified due to insufficient quality, exiting"
+            exit 0
+        elif [ "$qcExitCode" -ne 0 ]; then
+        	echo "ERROR: QC for ${expAcc} failed" >&2
+            exit "$qcExitCode"
+        fi
+        """
+
+
+
+
 
 
 
