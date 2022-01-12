@@ -426,20 +426,6 @@ rule atlas_experiment_summary:
 
 
 
-rule copy_transcript_relative_isoforms:
-    params:
-        exp_isl_dir=get_isl_dir()
-    output:
-        transcripts_relative_isoforms="{accession}-transcripts.riu.tsv"
-    shell:
-        """
-        if [ -s "$expIslDir/transcripts.riu.kallisto.tsv" ] ; then
-            cp $expIslDir/transcripts.riu.kallisto.tsv {output.transcripts_relative_isoforms}
-        else
-            echo "$expIslDir/transcripts.riu.kallisto.tsv not found for {wildcards.accession} - skipping"
-        fi
-        """
-
 rule rnaseq_qc:
     params:
     output:
@@ -579,6 +565,31 @@ rule copy_transcript_files_from_isl:
             cp $expIslDir/transcripts.tpm.kallisto.tsv {output.transcripts}
         else
             echo "$expIslDir/transcripts.tpm.kallisto.tsv not found - skipping"
+            exit 1
+        fi
+        """
+
+rule copy_transcript_relative_isoforms:
+    """
+    Copy transcripts relative isoform usage files
+    """
+    log: "logs/{accession}-copy_transcript_relative_isoforms.log"
+    output:
+        transcripts_relative_isoforms="{accession}-transcripts.riu.tsv"
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+        source {workflow.basedir}/bin/reprocessing_routines.sh
+        expIslDir=$(find_exp_isl_dir {wildcards.accession})
+        echo "ISL dir: $expIslDir"
+
+        [ ! -z $expIslDir+x ] || (echo "snakemake param exp_isl_dir needs to defined in rule" && exit 1)
+
+        if [ -s "$expIslDir/transcripts.riu.kallisto.tsv" ] ; then
+            cp $expIslDir/transcripts.riu.kallisto.tsv {output.transcripts_relative_isoforms}
+        else
+            echo "$expIslDir/transcripts.riu.kallisto.tsv not found for {wildcards.accession} - skipping"
             exit 1
         fi
         """

@@ -33,6 +33,7 @@ def get_outputs():
         outputs.append(f"{config['accession']}-raw-counts.tsv.undecorated")
         outputs.extend(expand(config['accession']+"-{metric}.tsv.undecorated", metric=metrics))
         outputs.extend(expand(config['accession']+"-transcripts-{metric}.tsv.undecorated", metric=["tpms"] ))
+        outputs.append(f"{config['accession']}-transcripts.riu.tsv")
 
         
     # differential rna-seq
