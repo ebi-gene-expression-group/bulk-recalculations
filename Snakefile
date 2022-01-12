@@ -606,19 +606,35 @@ rule rnaseq_qc:
         """
 
 
+rule quantile_normalise_expression:
+    """
+    TPM quantile normalize and summarize expression.
+    """
+    conda: "envs/irap.yaml"
+    log: "logs/{accession}-quantile_normalise_expression.log"
+    input:
+        xml="{accession}-configuration.xml",
+        tpm_expression="{accession}-tpms.tsv.undecorated"
+    output: 
+        tpm_qn_expression="{accession}-tpms.tsv.undecorated.quantile_normalized"
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+        {workflow.basedir}/bin/quantile_normalize.sh  -c {input.xml} -s {input.tpm_expression} -d {output.tpm_qn_expression}
+        if [ $? -ne 0 ]; then
+	        echo "ERROR: Failed to quantile normalize TPMs for {wildcards.accession}  " >&2
+	        exit 1
+        fi
+        """
 
-# TPM quantile normalize and summarize expression
 
 
 
+rule summarize_expression:
 
 
-## copy raw gene counts file
-#copy_raw_from_isl
-# copy fpkm gene expression file
-#copy_unit_matrices_from_isl "fpkm"
-# copy tpm gene expression file
-#copy_unit_matrices_from_isl "tpm"
+
 
 
 
@@ -650,8 +666,6 @@ rule check_microarray_analystics:
 rule create_tracks_symlinks:
 
 rule delete_experiment:
-	
-rule quantile_norm_and_summarize_expression:
 	
 rule transcripts_na_check:
 	
