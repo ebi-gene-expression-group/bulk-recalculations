@@ -167,7 +167,7 @@ def get_mem_mb(wildcards, attempt):
 
 
 
-localrules: check_differential_gsea, link_baseline_coexpression, link_baseline_heatmap, copy_raw_gene_counts_from_isl, copy_normalised_counts_from_isl, check_configuration_xml, check_factors_xml
+localrules: check_differential_gsea, link_baseline_coexpression, link_baseline_heatmap, copy_raw_gene_counts_from_isl, copy_normalised_counts_from_isl, check_configuration_xml, check_factors_xml, copy_transcript_files_from_isl, copy_transcript_relative_isoforms
 
 
 wildcard_constraints:
