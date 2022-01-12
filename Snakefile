@@ -580,26 +580,34 @@ rule copy_transcript_relative_isoforms:
         """
 
 
-
 rule rnaseq_qc:
-    params:
-    output:
+    """
+    QC step for baseline rnaseq experiments.
+    (WIP)
+    """
+    conda: "envs/perl-atlas-modules.yaml"
+    log: "logs/{accession}-rnaseq_qc.log"
+    output: "qc/{accession}-irap-single-lib-report.tsv"
     shell:
         """
-        $projectRoot/analysis/qc/rnaseqQC.sh $expAcc $expTargetDir
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+
+        {workflow.basedir}/bin/rnaseqQC.sh {wildcards.accession} {workflow.basedir}
         qcExitCode=$?
 
         if [ "$qcExitCode" -eq 2 ]; then
-        	echo "Experiment $expAcc has been disqualified due to insufficient quality, exiting"
+            echo "Experiment {wildcards.accession} has been disqualified due to insufficient quality, exiting"
             exit 0
         elif [ "$qcExitCode" -ne 0 ]; then
-        	echo "ERROR: QC for ${expAcc} failed" >&2
+            echo "ERROR: QC for {wildcards.accession} failed" >&2
             exit "$qcExitCode"
         fi
         """
 
 
 
+# TPM quantile normalize and summarize expression
 
 
 

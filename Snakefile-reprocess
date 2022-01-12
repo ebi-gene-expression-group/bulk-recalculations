@@ -34,12 +34,14 @@ def get_outputs():
         outputs.extend(expand(config['accession']+"-{metric}.tsv.undecorated", metric=metrics))
         outputs.extend(expand(config['accession']+"-transcripts-{metric}.tsv.undecorated", metric=["tpms"] ))
         outputs.append(f"{config['accession']}-transcripts.riu.tsv")
+        #outputs.extend(expand("qc/"+f"{config['accession']}-irap-single-lib-report.tsv" ))   # TO BE DONE when ISL is available
 
-        
-    # differential rna-seq
-    # if
-    #differential microarrays
-    # if
+
+    # collect output for differential rna-seq
+    # 
+    # collect output for differential microarrays
+    # 
+    
 
     print(outputs)
     print('Getting list of outputs.. done')
