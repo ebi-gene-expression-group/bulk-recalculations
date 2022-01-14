@@ -14,7 +14,7 @@ usage(){
 	exit 2
 }
 
-while getopts ":c:s:d:" opt; do
+while getopts ":c:s:d:b:" opt; do
   case $opt in
     c)
       path_to_experiment_config=$OPTARG;
@@ -44,7 +44,7 @@ trap 'rm -f ${tmp_files}.*' INT TERM EXIT
 
 tmp_config_tsv=$tmp_files.config.tsv
 #"$scriptDir/get_assay_groups.pl" "$path_to_experiment_config" > "$tmp_config_tsv"
-atlas-bash-util get_assay_groups.pl "$path_to_experiment_config" > "$tmp_config_tsv"
+"$scriptDir/get_assay_groups.pl" "$path_to_experiment_config" > "$tmp_config_tsv"
 
 columns_with_right_assays=$(join -1 2 -o 1.1 -2 1 <(head -n1 "$path_to_source" | tr $'\t' $'\n' | cat -n | sort -k2) <(cut -f 3 "$tmp_config_tsv" | sort -u) | tr $'\n' ',' | sed 's/,$//')
 
@@ -60,7 +60,7 @@ tmp_config_format_for_r=$tmp_files.config.tsv.manipulated
 echo -e "AssayGroupID\tColumnHeading" > "$tmp_config_format_for_r"
 cut -f 1,3 "$tmp_config_tsv" >> "$tmp_config_format_for_r"
 
-"$scriptDir/gxa_quantileNormalization.R" "$tmp_trimmed_source_tsv" "$tmp_config_format_for_r" "$tmp_out"
+Rscript "$scriptDir/gxa_quantileNormalization.R" "$tmp_trimmed_source_tsv" "$tmp_config_format_for_r" "$tmp_out"
 
 numRowsBeforeQuantileNormalization=$(wc -l < "$tmp_trimmed_source_tsv" )
 numRowsAfterQuantileNormalization=$(wc -l < "$tmp_out" )
@@ -68,3 +68,4 @@ numRowsAfterQuantileNormalization=$(wc -l < "$tmp_out" )
 	|| usage "ERROR: attempted quantile normalization on file with $numRowsBeforeQuantileNormalization rows, got output with $numRowsAfterQuantileNormalization rows"
 
 mv "$tmp_out" "$path_to_destination"
+

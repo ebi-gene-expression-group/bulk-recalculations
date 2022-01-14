@@ -610,7 +610,7 @@ rule quantile_normalise_expression:
     """
     TPM quantile normalize and summarize expression.
     """
-    conda: "envs/irap.yaml"
+    conda: "envs/quantile.yaml"
     log: "logs/{accession}-quantile_normalise_expression.log"
     input:
         xml="{accession}-configuration.xml",
@@ -621,7 +621,7 @@ rule quantile_normalise_expression:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
-        {workflow.basedir}/bin/quantile_normalize.sh  -c {input.xml} -s {input.tpm_expression} -d {output.tpm_qn_expression}
+        {workflow.basedir}/bin/quantile_normalize.sh  -c {input.xml} -s {input.tpm_expression} -d {output.tpm_qn_expression} -b {workflow.basedir}/bin
         if [ $? -ne 0 ]; then
 	        echo "ERROR: Failed to quantile normalize TPMs for {wildcards.accession}  " >&2
 	        exit 1

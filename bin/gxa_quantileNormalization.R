@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
-#
-# Script to read in a matrix of FPKMs, run quantile normalization, and write
-# out the normalized matrix to a new file.
+
+# Script to read in a matrix of FPKMs, run quantile normalization, 
+# and write out the normalized matrix to a new file. 
 
 # Load limma package.
 suppressMessages( library( limma ) )
