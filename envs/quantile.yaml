@@ -1,0 +1,7 @@
+channels:
+ - ebi-gene-expression-group
+ - conda-forge
+ - bioconda
+dependencies:
+ - atlas-bash-util
+ - bioconductor-limma

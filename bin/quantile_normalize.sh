@@ -2,15 +2,15 @@
 
 set -euo pipefail
 
-scriptDir=$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-projectRoot=${scriptDir}/..
+#scriptDir=$2/bin  # $(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+#projectRoot=${scriptDir}/..
 
 path_to_experiment_config=""
 path_to_source=""
 path_to_destination=""
 usage(){
 	[ ! "$1" ] || echo "${BASH_SOURCE[0]} : $1" >&2
-	echo "${BASH_SOURCE[0]} Usage: -c <configuration.xml> -s <source tsv> -d <destination>" >&2
+	echo "${BASH_SOURCE[0]} Usage: -c <configuration.xml> -s <source tsv> -d <destination> -b <scriptdir>" >&2
 	exit 2
 }
 
@@ -22,12 +22,15 @@ while getopts ":c:s:d:" opt; do
     s)
       path_to_source=$OPTARG;
       ;;
-	d)
-	  path_to_destination=$OPTARG;
+	  d)
+	    path_to_destination=$OPTARG;
+	  ;;
+    b)
+	    scriptDir=$OPTARG;
 	  ;;
     ?)
       usage "Unknown option: $OPTARG"
-      ;;
+    ;;
   esac
 done
 
@@ -40,7 +43,8 @@ tmp_files="$path_to_destination.$(date -u +"%Y-%m-%d_%H:%M").tmp"
 trap 'rm -f ${tmp_files}.*' INT TERM EXIT
 
 tmp_config_tsv=$tmp_files.config.tsv
-"$projectRoot/bash_util/get_assay_groups.pl" "$path_to_experiment_config" > "$tmp_config_tsv"
+#"$scriptDir/get_assay_groups.pl" "$path_to_experiment_config" > "$tmp_config_tsv"
+atlas-bash-util get_assay_groups.pl "$path_to_experiment_config" > "$tmp_config_tsv"
 
 columns_with_right_assays=$(join -1 2 -o 1.1 -2 1 <(head -n1 "$path_to_source" | tr $'\t' $'\n' | cat -n | sort -k2) <(cut -f 3 "$tmp_config_tsv" | sort -u) | tr $'\n' ',' | sed 's/,$//')
 
@@ -56,7 +60,7 @@ tmp_config_format_for_r=$tmp_files.config.tsv.manipulated
 echo -e "AssayGroupID\tColumnHeading" > "$tmp_config_format_for_r"
 cut -f 1,3 "$tmp_config_tsv" >> "$tmp_config_format_for_r"
 
-"$projectRoot/irap/gxa_quantileNormalization.R" "$tmp_trimmed_source_tsv" "$tmp_config_format_for_r" "$tmp_out"
+"$scriptDir/gxa_quantileNormalization.R" "$tmp_trimmed_source_tsv" "$tmp_config_format_for_r" "$tmp_out"
 
 numRowsBeforeQuantileNormalization=$(wc -l < "$tmp_trimmed_source_tsv" )
 numRowsAfterQuantileNormalization=$(wc -l < "$tmp_out" )
