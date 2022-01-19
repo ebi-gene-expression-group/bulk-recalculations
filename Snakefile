@@ -656,9 +656,47 @@ rule summarize_expression:
         fi
         """
 
+rule transcripts_na_check:
+    """
+    Replace NAs with 0 in Kallisto TPM transcripts, if the file exists
+    (input and output file here is the same)
+    """
+    conda: "envs/atlas-internal.yaml"
+    log: "logs/{accession}-rule-transcripts_na_check_{metric}.log"
+    input:
+        transcripts="{accession}-transcripts-{metric}.tsv.undecorated"
+    output:
+        temp("logs/{accession}-rule-transcripts_na_check_{metric}.done")
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+        source {workflow.basedir}/bin/reprocessing_routines.sh
+        expIslDir=$(find_exp_isl_dir {wildcards.accession})
+        echo "ISL dir: $expIslDir"
+
+        [ ! -z $expIslDir+x ] || (echo "snakemake param exp_isl_dir needs to defined in rule" && exit 1)
+
+        if [ -s "$expIslDir/transcripts.raw.kallisto.tsv" ] ; then
+            {workflow.basedir}/bin/transcripts_expr_values_check.R {input.transcripts} $expIslDir/transcripts.raw.kallisto.tsv
+            echo "transcripts NA check -  executed for {input.transcripts} "
+        else
+            echo "$expIslDir/transcripts.raw.kallisto.tsv not found for {wildcards.accession} - skipping rule_transcripts_na_check for {input.transcripts}"
+            #exit 1
+        fi
+        touch {output}
+        """
 
 
 
+
+
+rule quantile_normalise_transcripts:
+    """
+    #if transcripts file exists then summarize it
+    """
+
+rule summarize_transcripts:
 
 
 
@@ -688,7 +726,6 @@ rule create_tracks_symlinks:
 
 rule delete_experiment:
 	
-rule transcripts_na_check:
 	
 rule generate_analysis_methods:
 	
