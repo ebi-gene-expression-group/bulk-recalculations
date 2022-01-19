@@ -609,6 +609,7 @@ rule rnaseq_qc:
 rule quantile_normalise_expression:
     """
     Quantile normalize and summarize expression in tpms and fpkms.
+    To maintain previous logic, the output file is marked as temporal
     """
     conda: "envs/quantile.yaml"
     log: "logs/{accession}-quantile_normalise_expression_{metric}.log"
@@ -616,7 +617,7 @@ rule quantile_normalise_expression:
         xml="{accession}-configuration.xml",
         expression="{accession}-{metric}.tsv.undecorated"
     output:
-        qn_expression="{accession}-{metric}.tsv.undecorated.quantile_normalized"
+        qn_expression=temp("{accession}-{metric}.tsv.undecorated.quantile_normalized")
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
