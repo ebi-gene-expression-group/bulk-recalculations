@@ -608,26 +608,25 @@ rule rnaseq_qc:
 
 rule quantile_normalise_expression:
     """
-    TPM quantile normalize and summarize expression.
+    Quantile normalize and summarize expression in tpms and fpkms.
     """
     conda: "envs/quantile.yaml"
-    log: "logs/{accession}-quantile_normalise_expression.log"
+    log: "logs/{accession}-quantile_normalise_expression_{metric}.log"
     input:
         xml="{accession}-configuration.xml",
-        tpm_expression="{accession}-tpms.tsv.undecorated"
-    output: 
-        tpm_qn_expression="{accession}-tpms.tsv.undecorated.quantile_normalized"
+        expression="{accession}-{metric}.tsv.undecorated"
+    output:
+        qn_expression="{accession}-{metric}.tsv.undecorated.quantile_normalized"
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
-        {workflow.basedir}/bin/quantile_normalize.sh  -c {input.xml} -s {input.tpm_expression} -d {output.tpm_qn_expression} -b {workflow.basedir}/bin
+        {workflow.basedir}/bin/quantile_normalize.sh  -c {input.xml} -s {input.expression} -d {output.qn_expression} -b {workflow.basedir}/bin
         if [ $? -ne 0 ]; then
-	        echo "ERROR: Failed to quantile normalize TPMs for {wildcards.accession}  " >&2
-	        exit 1
+            echo "ERROR: Failed to quantile normalize {wildcards.metric} for {wildcards.accession}  " >&2
+            exit 1
         fi
         """
-
 
 
 
