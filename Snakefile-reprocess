@@ -36,6 +36,7 @@ def get_outputs():
         outputs.append(f"{config['accession']}-transcripts.riu.tsv")
         #outputs.extend(expand("qc/"+f"{config['accession']}-irap-single-lib-report.tsv" ))   # TO BE DONE when ISL is available
         outputs.extend(expand(config['accession']+"-{metric}.tsv.undecorated.quantile_normalized", metric=metrics))
+        outputs.extend(expand(config['accession']+"-{metric}.tsv.undecorated.aggregated", metric=metrics))
 
 
     # collect output for differential rna-seq

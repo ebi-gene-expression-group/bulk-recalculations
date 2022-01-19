@@ -628,11 +628,32 @@ rule quantile_normalise_expression:
         fi
         """
 
-
-
 rule summarize_expression:
+    """
+    Summarize expression, either into median per biological replicate or into quartile per assay group.
+    """
+    conda: "envs/perl-atlas-modules.yaml"
+    log: "logs/{accession}-summarize_expression_{metric}.log"
+    input:
+        xml="{accession}-configuration.xml",
+        qn_expression="{accession}-{metric}.tsv.undecorated.quantile_normalized"
+    output:
+        sum_expression="{accession}-{metric}.tsv.undecorated.aggregated"
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
 
-
+        perl {workflow.basedir}/bin/gxa_summarize_expression.pl  \
+            --aggregate-quartiles \
+            --configuration {input.xml}  \
+            < {input.qn_expression}  \
+            > {output.sum_expression}
+        if [ $? -ne 0 ]; then
+	        echo "ERROR: Failed to summarize gene expression in {wildcards.metric} for {wildcards.accession} " >&2
+	        exit 1
+        fi
+        """
 
 
 
