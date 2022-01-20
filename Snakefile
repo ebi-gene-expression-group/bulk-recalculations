@@ -690,7 +690,7 @@ rule transcripts_na_check:
 
 rule quantile_normalise_transcripts:
     """
-    Quantile normalize and summarize transcripts in tpms, if the file exists.
+    Quantile normalize transcripts in tpms, if the file exists.
     """
     conda: "envs/quantile.yaml"
     log: "logs/{accession}-quantile_normalise_transcripts_{metric}.log"
@@ -721,11 +721,41 @@ rule quantile_normalise_transcripts:
         """
 
 
-
-
-
-
 rule summarize_transcripts:
+    """
+    Summarize transcript expression in tpms, if the file exists,
+    either into median per biological replicate or into quartile per assay group.
+    """
+    conda: "envs/perl-atlas-modules.yaml"
+    log: "logs/{accession}-summarize_transcripts_{metric}.log"
+    input:
+        xml="{accession}-configuration.xml",
+        qn_expression="{accession}-transcripts-{metric}.tsv.undecorated.quantile_normalized",
+    output:
+        temp("logs/{accession}-summarize_transcripts_{metric}.done")
+    params:
+        aggtranscripts="{accession}-transcripts-{metric}.tsv.undecorated.aggregated"
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+
+        perl {workflow.basedir}/bin/gxa_summarize_expression.pl  \
+            --aggregate-quartiles \
+            --configuration {input.xml}  \
+            < {input.qn_expression}  \
+            > {params.aggtranscripts}
+        if [ $? -ne 0 ]; then
+                echo "ERROR: Failed to summarize transcript expressions TPMs for {input.qn_expression}  " >&2
+                exit 1
+        fi
+        # Maintain previous behaviour - quantile_normalized files are temporary
+        rm {input.qn_expression}
+        touch {output}
+        """
+
+
+
 
 
 
