@@ -12,6 +12,8 @@ GTF=$( pwd )/test-data/gff
 FORCEALL=${FORCEALL:-true}
 RESTART_TIMES=3
 SKIP_STEPS=$( pwd )/step_skip.yaml
+TEMPLATE_METHODS_BASELINE=$( pwd )/baseline_atlas_methods_template.conf
+TEMPLATE_METHODS_DIFFERENTIAL=$( pwd )/differential_atlas_methods_template.conf
 # CHECK_SPECIES file should come from a clone of the atlas-config repo in Jenkins:
 CHECK_SPECIES=$( pwd )/atlas-species-name-mapping.yaml
 BIOENTITIES_PROPERTIES=$( pwd )/test-data/bioentity_properties
@@ -58,6 +60,8 @@ snakemake --use-conda --conda-frontend mamba \
         goal='recalculations' \
         atlas_meta_config=path/to/supporting_files \
         skip_steps_file=$SKIP_STEPS \
+        methods_base=$TEMPLATE_METHODS_BASELINE \
+        methods_dif=$TEMPLATE_METHODS_DIFFERENTIAL \
         check_sp_file=$CHECK_SPECIES \
         sm_options="--use-conda --conda-frontend mamba --keep-going $PROFILE_LINE -j $NJOBS $CONDA_PREFIX_LINE $FORCE_ALL --restart-times $RESTART_TIMES " \
         bioentities_properties=$BIOENTITIES_PROPERTIES -j $NEXPS -s $SORTING_HAT &> $USUAL_SM_ERR_OUT

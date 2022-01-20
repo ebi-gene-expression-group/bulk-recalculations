@@ -88,6 +88,17 @@ def get_check_sp_file():
   else:
     return None
 
+def get_methods_template_baseline():
+    if 'methods_base' in config:
+        return config['methods_base']
+    else:
+        return None
+
+def get_methods_template_differential():
+    if 'methods_dif' in config:
+        return config['methods_dif']
+    else:
+        return None
 
 
 def get_outputs():
@@ -211,6 +222,8 @@ rule produce_reprocess_call:
     params:
         bioentities_properties=get_bioentities_property_path(),
         skip_steps_file=get_skip_steps_file(),
+        methods_base=get_methods_template_baseline(),
+        methods_dif=get_methods_template_differential(),
         lsf_config = get_lsf_config_file(),
         log_handler_script=get_log_handler_script()
     output:
@@ -229,6 +242,8 @@ rule produce_reprocess_call:
             metadata_summary=../{input.metadata} \
             bioentities_properties={params.bioentities_properties} \
             skip_steps_file={params.skip_steps_file} \
+            methods_base={params.methods_base} \
+            methods_dif={params.methods_dif} \
             -s {workflow.basedir}/Snakefile-reprocess {params.log_handler_script}
         popd
         """

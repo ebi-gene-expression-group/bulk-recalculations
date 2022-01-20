@@ -40,6 +40,8 @@ def get_outputs():
         outputs.extend(expand("logs/"+f"{config['accession']}"+"-rule-transcripts_na_check_{metric}.done", metric=["tpms"] ))
         outputs.extend(expand("logs/"+f"{config['accession']}"+"-quantile_normalise_transcripts_{metric}.done", metric=["tpms"] )) 
         outputs.extend(expand("logs/"+f"{config['accession']}"+"-summarize_transcripts_{metric}.done", metric=["tpms"] ))
+        outputs.append(f"{config['accession']}-analysis-methods.tsv")
+    
 
     # collect output for differential rna-seq
     # 

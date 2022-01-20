@@ -23,3 +23,28 @@ find_exp_isl_dir(){
         return 0
     fi
 }
+
+get_methods_from_irap(){
+    irap_versions_file=$1
+    if [ ! -s "$irap_versions_file" ]; then
+        echo "irap.version file doesnt exist for $expAcc"
+    fi
+
+    ## Baseline
+    # Reads alignment
+    export baseline_mapper=$(cat $irap_versions_file | grep -P 'Reads alignment' | tail -1 | awk -F'\t' '{print $2}')
+
+    # Gene, transcript and exon quantification
+    export baseline_quantMethod=$(cat $irap_versions_file | grep -P 'Gene, transcript and exon quantification|Quantification' | awk -F'\t' '{print $2}')
+
+    ## Differential
+    # Reads alignment
+    export de_mapper=$(cat $irap_versions_file | grep -P 'Reads alignment' | tail -1 | awk -F'\t' '{print $2}')
+
+    # Gene  quantification
+    export de_quantMethod=$(cat $irap_versions_file | grep -P 'Gene, transcript and exon quantification|Quantification' | awk -F'\t' '{print $2}')
+
+    # Differential gene expression Method
+    export de_deMethod=$(cat $irap_versions_file | grep -P 'Differential gene expression' | awk -F'\t' '{print $2}')
+}
+

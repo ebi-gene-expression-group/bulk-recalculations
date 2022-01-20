@@ -16,9 +16,20 @@ def read_metadata_summary():
 
 read_metadata_summary()
 
-#to be implemented
-def get_isl_dir():
-    return None
+##to be implemented
+#def get_isl_dir():
+#    return None
+def get_methods_template_baseline():
+    if 'methods_base' in config:
+        return config['methods_base']
+    else:
+        return None
+
+def get_methods_template_differential():
+    if 'methods_dif' in config:
+        return config['methods_dif']
+    else:
+        return None
 
 
 def read_skip_steps_file():
@@ -720,7 +731,6 @@ rule quantile_normalise_transcripts:
         touch {output}
         """
 
-
 rule summarize_transcripts:
     """
     Summarize transcript expression in tpms, if the file exists,
@@ -753,6 +763,64 @@ rule summarize_transcripts:
         rm {input.qn_expression}
         touch {output}
         """
+
+
+# rule move_qc_folder
+# mv ${expTargetDir}/.qc ${expTargetDir}/qc
+
+rule generate_methods_baseline:
+    """
+    Fetches metadata about the analysis methods used in ISL/iRap to preprocess the experiment,
+    to generate analysis methods.
+    """
+    conda: "envs/perl-atlas-modules.yaml"
+    log: "logs/{accession}-generate_methods_baseline.log"
+    params:
+        organism=get_organism(),
+        template=get_methods_template_baseline()
+    output:
+        methods="{accession}-analysis-methods.tsv"
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+
+        if [ ! -s {params.template} ] ; then
+            echo "Methods template not found "
+            exit 1
+        fi
+
+        source {workflow.basedir}/bin/reprocessing_routines.sh
+        expIslDir=$(find_exp_isl_dir {wildcards.accession})
+        echo "ISL dir: $expIslDir"
+
+        [ ! -z $expIslDir+x ] || (echo "snakemake param exp_isl_dir needs to defined in rule" && exit 1)
+
+        # IRAP methods version file
+        if [ ! -s "$expIslDir/irap.versions.tsv" ] ; then
+            echo "$expIslDir/irap.versions.tsv not found for {wildcards.accession} "
+            exit 1
+        fi
+
+        # set env variables for mapper and quantification methods from used in irap.
+        get_methods_from_irap "$expIslDir/irap.versions.tsv"
+        [ ! -z ${baseline_mapper+x} ] || (echo "Env var baseline_mapper not defined." && exit 1)
+        [ ! -z ${baseline_quantMethod+x} ] || (echo "Env var baseline_quantMethod not defined." && exit 1)
+        [ ! -z ${de_mapper+x} ] || (echo "Env var de_mapper not defined." && exit 1)
+        [ ! -z ${de_quantMethod+x} ] || (echo "Env var de_mapper not defined." && exit 1)
+        [ ! -z ${de_deMethod+x} ] || (echo "Env var de_mapper not defined." && exit 1)
+
+        perl {workflow.basedir}/bin/gxa_generate_methods.pl "$expIslDir/irap.versions.tsv" \ 
+            {wildcards.accession} {params.organism} {params.template} \
+            "${baseline_mapper:?}" "${baseline_quantMethod:?}" "${de_mapper:?}" "${de_quantMethod:?}" "${de_deMethod:?}" > {output}
+            
+        if [ $? -ne 0 ]; then
+	        echo "ERROR: Failed to generate analysis methods for {wildcards.accession}" >&2
+	        exit 1
+        fi
+        """
+
+
 
 
 
