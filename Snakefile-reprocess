@@ -38,6 +38,7 @@ def get_outputs():
         outputs.extend(expand(config['accession']+"-{metric}.tsv.undecorated.quantile_normalized", metric=metrics))
         outputs.extend(expand(config['accession']+"-{metric}.tsv.undecorated.aggregated", metric=metrics))
         outputs.extend(expand("logs/"+f"{config['accession']}"+"-rule-transcripts_na_check_{metric}.done", metric=["tpms"] ))
+        outputs.extend(expand("logs/"+f"{config['accession']}"+"-quantile_normalise_transcripts_{metric}.done", metric=["tpms"] )) 
 
 
     # collect output for differential rna-seq

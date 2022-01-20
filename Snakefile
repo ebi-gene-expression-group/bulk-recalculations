@@ -688,13 +688,42 @@ rule transcripts_na_check:
         """
 
 
-
-
-
 rule quantile_normalise_transcripts:
     """
-    #if transcripts file exists then summarize it
+    Quantile normalize and summarize transcripts in tpms, if the file exists.
     """
+    conda: "envs/quantile.yaml"
+    log: "logs/{accession}-quantile_normalise_transcripts_{metric}.log"
+    input:
+        xml="{accession}-configuration.xml"
+    output:
+        temp("logs/{accession}-quantile_normalise_transcripts_{metric}.done")
+    params:
+        transcripts="{accession}-transcripts-{metric}.tsv.undecorated" ,
+        qntranscripts="{accession}-transcripts-{metric}.tsv.undecorated.quantile_normalized"
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+
+        if [ -s {params.transcripts} ] ; then
+
+            {workflow.basedir}/bin/quantile_normalize.sh -c {input.xml} -s {params.transcripts} -d {params.qntranscripts} -b {workflow.basedir}/bin
+
+            if [ $? -ne 0 ]; then
+                echo "ERROR: Failed to quantile normalize for {params.transcripts}  " >&2
+                exit 1
+            fi
+        else
+            echo "File {params.transcripts} not found "
+        fi
+        touch {output}
+        """
+
+
+
+
+
 
 rule summarize_transcripts:
 
