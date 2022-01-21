@@ -830,7 +830,7 @@ rule decorate_expression_baseline:
     """
     Decorate rna-seq baseline experiment with gene name from the latest Ensembl release.
     """
-    conda: "envs/scala.yaml"
+    container: "docker://quay.io/ebigxa/ensembl-update-env:amm1.1.2"
     log: "logs/{accession}-decorate_expression_baseline.log"
     input:
         expression="{accession}-{metric}.tsv.undecorated.aggregated"
