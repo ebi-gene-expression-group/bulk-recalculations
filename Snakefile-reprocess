@@ -41,7 +41,25 @@ def get_outputs():
         outputs.extend(expand("logs/"+f"{config['accession']}"+"-quantile_normalise_transcripts_{metric}.done", metric=["tpms"] )) 
         outputs.extend(expand("logs/"+f"{config['accession']}"+"-summarize_transcripts_{metric}.done", metric=["tpms"] ))
         outputs.append(f"{config['accession']}-analysis-methods.tsv")
-    
+        outputs.append(f"{config['accession']}-atlasExperimentSummary.Rdata")
+        outputs.extend(expand(config['accession']+"-{metric}.tsv", metric=metrics))
+
+
+        # Generating coexpressions matrix for baseline experiment:
+        #metric_link_coexp=False
+        #for m in metrics:
+        #    expression_file=f"{config['accession']}-{m}.tsv"
+        #    print(f"Checking file size for {expression_file} and number of columns")
+        #    if os.path.getsize(expression_file) > 0 and get_number_columns(expression_file)>4:
+        #        metric_link_coexp=True
+        #        outputs.extend(expand(f"{config['accession']}-{m}-coexpressions.tsv.gz"))
+        #
+        #if metric_link_coexp == True:
+        #    outputs.extend(expand(f"{config['accession']}-coexpressions.tsv.gz" ))
+
+
+
+
 
     # collect output for differential rna-seq
     # 

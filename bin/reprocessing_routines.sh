@@ -50,3 +50,27 @@ get_methods_from_irap(){
     export de_deMethod=$(cat $irap_versions_file | grep -P 'Differential gene expression' | awk -F'\t' '{print $2}')
 }
 
+# to decorate rnaseq baseline expression:
+
+get_geneNameFile_given_organism() {
+  find_properties_file $1 "symbol"
+}
+
+find_properties_file() {
+    organism=$1
+    property=$2
+
+    ensFile="${ATLAS_PROD}/bioentity_properties/ensembl/${organism}.ensgene.${property}.tsv"
+    if [ -s "$ensFile" ]; then
+        echo $ensFile
+    else
+        wbpsFile="${ATLAS_PROD}/bioentity_properties/wbps/${organism}.wbpsgene.${property}.tsv"
+        if [ -s "$wbpsFile" ]; then
+            echo $wbpsFile
+        else
+            >&2 echo "No annotation file found for organism $organism and property $property"
+            exit 1
+        fi
+    fi
+}
+

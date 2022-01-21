@@ -768,8 +768,6 @@ rule summarize_transcripts:
         touch {output}
         """
 
-
-
 rule generate_methods_baseline:
     """
     Fetches metadata about the analysis methods used in ISL/iRap to preprocess the experiment,
@@ -827,6 +825,56 @@ quantMethod:?}}" "${{de_deMethod:?}}" > {output.methods}
         fi
         """
 
+
+rule decorate_expression_baseline:
+    """
+    Decorate rna-seq baseline experiment with gene name from the latest Ensembl release.
+    """
+    conda: "envs/scala.yaml"
+    log: "logs/{accession}-decorate_expression_baseline.log"
+    input:
+        expression="{accession}-{metric}.tsv.undecorated.aggregated"
+    params:
+        organism=get_organism()
+    output:
+        decoexpression="{accession}-{metric}.tsv"
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+        source {workflow.basedir}/bin/reprocessing_routines.sh
+
+        geneNameFile=$( get_geneNameFile_given_organism {params.organism}  )
+
+        echo $geneNameFile
+
+        test -s "$geneNameFile" || (  >&2 echo "$0 gene name file not found: $geneNameFile" ; exit 1 )
+        #test -s "$FPKMexpressionsFile" -o -s "$TPMexpressionsFile" || (  >&2 echo "$0 no data files for $e" ; exit 1 )
+
+        decoratedFile=`echo {input.expression} | sed 's/\.undecorated.aggregated//'`
+
+        amm -s {workflow.basedir}/bin/decorateFile.sc \
+        --geneNameFile "$geneNameFile" \
+        --source "{input.expression}" \
+        | awk 'NR == 1; NR > 1 {print $0 | "sort -n"}' \
+        > $decoratedFile.swp
+
+        decoratedFileLength=$(wc -l "$decoratedFile.swp" | cut -f 1 -d ' ' )
+        if [ -s "$decoratedFile.swp" ] && [ "$decoratedFileLength" -gt 1 ]; then
+            mv $decoratedFile.swp $decoratedFile
+            return 0
+        else
+            echo "ERROR: decorate_rnaseq_file" "$@"
+	        return 1
+        fi
+
+        #decorate_rnaseq_file {input.expression} baseline "$geneNameFile" 
+
+        if [ $? -ne 0 ]; then
+	        echo "ERROR: decorate_baseline_rnaseq_experiment.sh failed for {wildcards.accession} " >&2
+	        exit 1
+        fi
+        """
 
 
 
