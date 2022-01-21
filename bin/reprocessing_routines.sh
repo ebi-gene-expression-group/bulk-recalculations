@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Old comment:
 # ******** TEMPORARY **********
 # Until we have "alternative views" in place and capability to access
@@ -27,7 +29,7 @@ find_exp_isl_dir(){
 get_methods_from_irap(){
     irap_versions_file=$1
     if [ ! -s "$irap_versions_file" ]; then
-        echo "irap.version file doesnt exist for $expAcc"
+        echo "irap.version file does not exist"
     fi
 
     ## Baseline

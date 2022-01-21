@@ -616,6 +616,8 @@ rule rnaseq_qc:
         fi
         """
 
+# move_qc_folder
+# mv ${expTargetDir}/.qc ${expTargetDir}/qc
 
 rule quantile_normalise_expression:
     """
@@ -765,8 +767,6 @@ rule summarize_transcripts:
         """
 
 
-# rule move_qc_folder
-# mv ${expTargetDir}/.qc ${expTargetDir}/qc
 
 rule generate_methods_baseline:
     """
@@ -804,19 +804,24 @@ rule generate_methods_baseline:
 
         # set env variables for mapper and quantification methods from used in irap.
         get_methods_from_irap "$expIslDir/irap.versions.tsv"
-        [ ! -z ${baseline_mapper+x} ] || (echo "Env var baseline_mapper not defined." && exit 1)
-        [ ! -z ${baseline_quantMethod+x} ] || (echo "Env var baseline_quantMethod not defined." && exit 1)
-        [ ! -z ${de_mapper+x} ] || (echo "Env var de_mapper not defined." && exit 1)
-        [ ! -z ${de_quantMethod+x} ] || (echo "Env var de_mapper not defined." && exit 1)
-        [ ! -z ${de_deMethod+x} ] || (echo "Env var de_mapper not defined." && exit 1)
+        [ ! -z ${{baseline_mapper+x}} ] || (echo "Env var baseline_mapper not defined." && exit 1)
+        [ ! -z ${{baseline_quantMethod+x}} ] || (echo "Env var baseline_quantMethod not defined." && exit 1)
+        [ ! -z ${{de_mapper+x}} ] || (echo "Env var de_mapper not defined." && exit 1)
+        [ ! -z ${{de_quantMethod+x}} ] || (echo "Env var de_mapper not defined." && exit 1)
+        [ ! -z ${{de_deMethod+x}} ] || (echo "Env var de_mapper not defined." && exit 1)
 
-        perl {workflow.basedir}/bin/gxa_generate_methods.pl "$expIslDir/irap.versions.tsv" \ 
-            {wildcards.accession} {params.organism} {params.template} \
-            "${baseline_mapper:?}" "${baseline_quantMethod:?}" "${de_mapper:?}" "${de_quantMethod:?}" "${de_deMethod:?}" > {output}
-            
+        echo $baseline_mapper
+        echo $baseline_quantMethod
+        echo $de_mapper
+        echo $de_quantMethod
+        echo $de_deMethod
+
+        perl {workflow.basedir}/bin/gxa_generate_methods.pl "$expIslDir/irap.versions.tsv" {wildcards.accession} {params.organism} {params.template} "${{baseline_mapper:?}}" "${{baseline_quantMethod:?}}" "${{de_mapper:?}}" "${{de_
+quantMethod:?}}" "${{de_deMethod:?}}" > {output.methods}
+
         if [ $? -ne 0 ]; then
-	        echo "ERROR: Failed to generate analysis methods for {wildcards.accession}" >&2
-	        exit 1
+            echo "ERROR: Failed to generate analysis methods for {wildcards.accession}" >&2
+            exit 1
         fi
         """
 

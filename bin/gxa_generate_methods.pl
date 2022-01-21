@@ -161,7 +161,9 @@ if( $tagsHash->{ "REF_NAME" } eq "Ensembl" ) {
 }
 
 my @irapOut = `cat $versionReferenceFile`;
-my $gseaVersion = `grep '^piano_version=' $irapProd/aux/mk/irap_versions.mk | awk -F"=" '{print \$NF}'`;
+#my $gseaVersion = `grep '^piano_version=' $irapProd/aux/mk/irap_versions.mk | awk -F"=" '{print \$NF}'`;
+my $gseaVersion = `grep '^piano_version=' $atlasProd/irap_versions.mk | awk -F"=" '{print \$NF}'`;
+
 
 # Get differential expression package version from Atlas installation.
 my $deMethodVersion = _get_atlas_rnaseq_de_version( $deDEMethod, $atlasSiteConfig );
