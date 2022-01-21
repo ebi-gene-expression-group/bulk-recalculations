@@ -831,7 +831,7 @@ rule decorate_expression_baseline:
     Decorate rna-seq baseline experiment with gene name from the latest Ensembl release.
     """
     container: "docker://quay.io/ebigxa/ensembl-update-env:amm1.1.2"
-    log: "logs/{accession}-decorate_expression_baseline.log"
+    log: "logs/{accession}-decorate_expression_baseline_{metric}.log"
     input:
         expression="{accession}-{metric}.tsv.undecorated.aggregated"
     params:
@@ -856,7 +856,7 @@ rule decorate_expression_baseline:
         amm -s {workflow.basedir}/bin/decorateFile.sc \
         --geneNameFile "$geneNameFile" \
         --source "{input.expression}" \
-        | awk 'NR == 1; NR > 1 {print $0 | "sort -n"}' \
+        | awk 'NR == 1; NR > 1 {{print $0 | "sort -n"}}' \
         > $decoratedFile.swp
 
         decoratedFileLength=$(wc -l "$decoratedFile.swp" | cut -f 1 -d ' ' )
