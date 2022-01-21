@@ -571,6 +571,8 @@ rule copy_transcript_relative_isoforms:
     """
     log: "logs/{accession}-copy_transcript_relative_isoforms.log"
     output:
+        temp("logs/{accession}-copy_transcript_relative_isoforms.done")
+    params:
         transcripts_relative_isoforms="{accession}-transcripts.riu.tsv"
     shell:
         """
@@ -583,13 +585,13 @@ rule copy_transcript_relative_isoforms:
         [ ! -z $expIslDir+x ] || (echo "snakemake param exp_isl_dir needs to defined in rule" && exit 1)
 
         if [ -s "$expIslDir/transcripts.riu.kallisto.tsv" ] ; then
-            cp $expIslDir/transcripts.riu.kallisto.tsv {output.transcripts_relative_isoforms}
+            cp $expIslDir/transcripts.riu.kallisto.tsv {params.transcripts_relative_isoforms}
         else
             echo "$expIslDir/transcripts.riu.kallisto.tsv not found for {wildcards.accession} - skipping"
-            exit 1
+            #exit 1
         fi
+        touch {output}
         """
-
 
 rule rnaseq_qc:
     """

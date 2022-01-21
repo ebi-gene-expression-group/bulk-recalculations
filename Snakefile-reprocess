@@ -33,7 +33,7 @@ def get_outputs():
         outputs.append(f"{config['accession']}-raw-counts.tsv.undecorated")
         outputs.extend(expand(config['accession']+"-{metric}.tsv.undecorated", metric=metrics))
         outputs.extend(expand(config['accession']+"-transcripts-{metric}.tsv.undecorated", metric=["tpms"] ))
-        outputs.append(f"{config['accession']}-transcripts.riu.tsv")
+        outputs.extend(expand("logs/"+f"{config['accession']}-copy_transcript_relative_isoforms.done" ))
         #outputs.extend(expand("qc/"+f"{config['accession']}-irap-single-lib-report.tsv" ))   # TO BE DONE when ISL is available
         outputs.extend(expand(config['accession']+"-{metric}.tsv.undecorated.quantile_normalized", metric=metrics))
         outputs.extend(expand(config['accession']+"-{metric}.tsv.undecorated.aggregated", metric=metrics))
