@@ -7,7 +7,7 @@ It deals with:
 - RNA-Seq differential recalculations
 - RNA-Seq baseline recalculations
 
-Ongoing features to handle Reprocessing. Reprocess RNA-seq experiments (baseline or differential), to be used when the experiment has been reprocessed in iRAP Single Lib (ISL), for instance due to a change in assembly or annotation.
+Ongoing features to handle new experiments processing / reprocessing. Reprocess RNA-seq experiments (baseline or differential), to be used when the experiment has been reprocessed in iRAP Single Lib (ISL), for instance due to a change in assembly or annotation.
 
 
 ## Temporary comments
