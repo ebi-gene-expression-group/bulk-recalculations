@@ -43,7 +43,8 @@ def get_outputs():
         outputs.append(f"{config['accession']}-analysis-methods.tsv")
         outputs.append(f"{config['accession']}-atlasExperimentSummary.Rdata")
         outputs.extend(expand(config['accession']+"-{metric}.tsv", metric=metrics))
-
+        outputs.extend(expand(f"{config['accession']}"+"-heatmap-{metric}.pdf", metric=metrics ))
+        outputs.append(f"{config['accession']}-heatmap.pdf")
 
         # Generating coexpressions matrix for baseline experiment:
         #metric_link_coexp=False
