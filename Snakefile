@@ -756,29 +756,39 @@ rule summarize_transcripts:
     log: "logs/{accession}-summarize_transcripts_{metric}.log"
     input:
         xml="{accession}-configuration.xml",
-        qn_expression="{accession}-transcripts-{metric}.tsv.undecorated.quantile_normalized",
+        getqn=rules.quantile_normalise_transcripts.output
     output:
         temp("logs/{accession}-summarize_transcripts_{metric}.done")
     params:
-        aggtranscripts="{accession}-transcripts-{metric}.tsv.undecorated.aggregated"
+        qn_transcripts="{accession}-transcripts-{metric}.tsv.undecorated.quantile_normalized",
+        agg_transcripts="{accession}-transcripts-{metric}.tsv.undecorated.aggregated"
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
 
-        perl {workflow.basedir}/bin/gxa_summarize_expression.pl  \
-            --aggregate-quartiles \
-            --configuration {input.xml}  \
-            < {input.qn_expression}  \
-            > {params.aggtranscripts}
-        if [ $? -ne 0 ]; then
-                echo "ERROR: Failed to summarize transcript expressions TPMs for {input.qn_expression}  " >&2
+        # transcripts qn rule done
+        echo {input.getqn}
+
+        if [ -s {params.qn_transcripts} ] ; then
+
+            perl {workflow.basedir}/bin/gxa_summarize_expression.pl  \
+                --aggregate-quartiles \
+                --configuration {input.xml}  \
+                < {params.qn_transcripts}  \
+                > {params.agg_transcripts}
+            if [ $? -ne 0 ]; then
+                echo "ERROR: Failed to summarize transcript expressions TPMs for {params.qn_transcripts}  " >&2
                 exit 1
+            fi
+            # maintain previous behaviour - quantile_normalized files are temporary
+            rm {params.qn_transcripts}
+        else
+            echo "File {params.qn_transcripts} not found. Transcript summary not performed "
         fi
-        # Maintain previous behaviour - quantile_normalized files are temporary
-        rm {input.qn_expression}
         touch {output}
         """
+
 
 rule generate_methods_baseline:
     """
@@ -915,6 +925,9 @@ rule create_tracks_symlinks:
 
 
 # differential_rnaseq_experiment
+
+
+
 
 
 
