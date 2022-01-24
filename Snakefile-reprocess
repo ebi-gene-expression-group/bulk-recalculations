@@ -45,6 +45,11 @@ def get_outputs():
         outputs.extend(expand(config['accession']+"-{metric}.tsv", metric=metrics))
         outputs.extend(expand(f"{config['accession']}"+"-heatmap-{metric}.pdf", metric=metrics ))
         outputs.append(f"{config['accession']}-heatmap.pdf")
+        # baseline tracks
+        check_config_required(fields=['metadata_summary'], method='baseline-tracks')
+        outputs.extend(expand(config['accession']+".{a_id}.genes.expressions_{metric}.bedGraph",
+                            a_id=get_assay_ids(),
+                            metric=metrics))
 
         # Generating coexpressions matrix for baseline experiment:
         #metric_link_coexp=False
