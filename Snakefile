@@ -91,7 +91,7 @@ def get_ext_db():
     else:
         return ["go", "reactome", "interpro"]
 
-def get_metrics():
+def get_metrics_recalculations():
     import glob
     if 'metric' in config:
         return config['metric'].split(":")
@@ -105,6 +105,18 @@ def get_metrics():
             return metric_grabbed     # ideally: ['tpms', "fpkms"]
         else:
             sys.exit("No metric available for baseline analyses.")
+
+def get_metrics_reprocess():
+    """
+    This could be based on files retrieved from iRAP/ISL
+    """
+    #import glob
+    if 'metric' in config:
+        return config['metric'].split(":")
+    else:
+        return ['tpms', 'fpkms']
+
+
 
 #metrics = get_metrics()
 plot_labels = {"go": "GO terms", "reactome": "Reactome Pathways", "interpro": "Interpro domains"}
@@ -851,30 +863,25 @@ rule decorate_expression_baseline:
         test -s "$geneNameFile" || (  >&2 echo "$0 gene name file not found: $geneNameFile" ; exit 1 )
         #test -s "$FPKMexpressionsFile" -o -s "$TPMexpressionsFile" || (  >&2 echo "$0 no data files for $e" ; exit 1 )
 
-        decoratedFile=`echo {input.expression} | sed 's/\.undecorated.aggregated//'`
+        decoratedFile={output.decoexpression} 
+
+        # Ammonite REPL & Script-Runner
 
         amm -s {workflow.basedir}/bin/decorateFile.sc \
         --geneNameFile "$geneNameFile" \
-        --source "{input.expression}" \
+        --source {input.expression} \
         | awk 'NR == 1; NR > 1 {{print $0 | "sort -n"}}' \
         > $decoratedFile.swp
 
         decoratedFileLength=$(wc -l "$decoratedFile.swp" | cut -f 1 -d ' ' )
         if [ -s "$decoratedFile.swp" ] && [ "$decoratedFileLength" -gt 1 ]; then
             mv $decoratedFile.swp $decoratedFile
-            return 0
         else
-            echo "ERROR: decorate_rnaseq_file" "$@"
-	        return 1
-        fi
-
-        #decorate_rnaseq_file {input.expression} baseline "$geneNameFile" 
-
-        if [ $? -ne 0 ]; then
-	        echo "ERROR: decorate_baseline_rnaseq_experiment.sh failed for {wildcards.accession} " >&2
-	        exit 1
+            echo "ERROR: decorate_rnaseq_file baseline for {wildcards.accession} and {wildcards.metric}"
+            exit 1
         fi
         """
+
 
 
 
