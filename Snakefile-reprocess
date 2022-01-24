@@ -50,8 +50,13 @@ def get_outputs():
         outputs.extend(expand(config['accession']+".{a_id}.genes.expressions_{metric}.bedGraph",
                             a_id=get_assay_ids(),
                             metric=metrics))
+        outputs.extend(expand("logs/"+f"{config['accession']}"+".{a_id}.create_tracks_symlinks_{metric}.done",
+                            a_id=get_assay_ids(),
+                            metric=["tpms"]))  #symlink only for tpms
 
-        # Generating coexpressions matrix for baseline experiment:
+        # generating coexpressions matrix for baseline experiment
+        outputs.extend(expand(f"{config['accession']}"+"-{metric}-coexpressions.tsv.gz", metric=metrics ))
+        outputs.append(f"{config['accession']}-coexpressions.tsv.gz")
         #metric_link_coexp=False
         #for m in metrics:
         #    expression_file=f"{config['accession']}-{m}.tsv"
@@ -59,11 +64,8 @@ def get_outputs():
         #    if os.path.getsize(expression_file) > 0 and get_number_columns(expression_file)>4:
         #        metric_link_coexp=True
         #        outputs.extend(expand(f"{config['accession']}-{m}-coexpressions.tsv.gz"))
-        #
         #if metric_link_coexp == True:
         #    outputs.extend(expand(f"{config['accession']}-coexpressions.tsv.gz" ))
-
-
 
 
 

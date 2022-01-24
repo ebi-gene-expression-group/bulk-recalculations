@@ -190,7 +190,7 @@ def get_mem_mb(wildcards, attempt):
 
 
 
-localrules: check_differential_gsea, link_baseline_coexpression, link_baseline_heatmap, copy_raw_gene_counts_from_isl, copy_normalised_counts_from_isl, check_configuration_xml, check_factors_xml, copy_transcript_files_from_isl, copy_transcript_relative_isoforms
+localrules: check_differential_gsea, link_baseline_coexpression, link_baseline_heatmap, copy_raw_gene_counts_from_isl, copy_normalised_counts_from_isl, check_configuration_xml, check_factors_xml, copy_transcript_files_from_isl, copy_transcript_relative_isoforms, create_tracks_symlinks
 
 
 wildcard_constraints:
@@ -837,7 +837,6 @@ quantMethod:?}}" "${{de_deMethod:?}}" > {output.methods}
         fi
         """
 
-
 rule decorate_expression_baseline:
     """
     Decorate rna-seq baseline experiment with gene name from the latest Ensembl release.
@@ -882,12 +881,40 @@ rule decorate_expression_baseline:
         fi
         """
 
+rule create_tracks_symlinks:
+    """
+    Create bedgraph tracks symlinks during reprocessing (only for tpms).
+    """
+    log: "logs/{accession}.{assay_id}.create_tracks_symlinks_{metric}.log"
+    input:
+        bedGraph="{accession}.{assay_id}.genes.expressions_{metric}.bedGraph"
+    params:
+        output="{accession}.{assay_id}.genes.expressions.bedGraph"
+    output:
+        temp("logs/{accession}.{assay_id}.create_tracks_symlinks_{metric}.done")
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+
+        # remove if any old bedgraph files
+        if [ -s {params.output} ] ; then
+            rm {params.output} 
+        fi
+
+        ln -s {input.bedGraph} {params.output}
+
+        if [ $? -ne 0 ]; then
+          echo "ERROR: creating symkink for {wildcards.accession} {wildcards.metric} {wildcards.assay_id}"
+          exit 1
+        fi
+
+        touch {output}
+        """
 
 
 
-
-
-
+# differential_rnaseq_experiment
 
 
 
@@ -910,8 +937,6 @@ rule microarray_normalisation:
 rule microarray_calculate_analytics:
 
 rule check_microarray_analystics: 
-
-rule create_tracks_symlinks:
 
 rule delete_experiment:
 	
