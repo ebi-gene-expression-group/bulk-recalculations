@@ -535,7 +535,6 @@ rule copy_transcript_files_from_isl:
             rsync -avz $expIslDir/transcripts.tpm.kallisto.tsv {output.transcripts}
         else
             echo "$expIslDir/transcripts.tpm.kallisto.tsv not found - skipping"
-            exit 1
         fi
         """
 
@@ -586,7 +585,7 @@ rule rnaseq_qc:
 
         if [ "$qcExitCode" -eq 2 ]; then
             echo "Experiment {wildcards.accession} has been disqualified due to insufficient quality, exiting"
-            exit 0
+            exit 1
         elif [ "$qcExitCode" -ne 0 ]; then
             echo "ERROR: QC for {wildcards.accession} failed" >&2
             exit "$qcExitCode"
@@ -604,7 +603,7 @@ rule quantile_normalise_expression:
     conda: "envs/quantile.yaml"
     log: "logs/{accession}-quantile_normalise_expression_{metric}.log"
     input:
-        xml="{accession}-configuration.xml",
+        config_xml="{accession}-configuration.xml",
         expression="{accession}-{metric}.tsv.undecorated"
     output:
         qn_expression=temp("{accession}-{metric}.tsv.undecorated.quantile_normalized")
@@ -612,7 +611,7 @@ rule quantile_normalise_expression:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
-        {workflow.basedir}/bin/quantile_normalize.sh  -c {input.xml} -s {input.expression} -d {output.qn_expression} -b {workflow.basedir}/bin
+        {workflow.basedir}/bin/quantile_normalize.sh  -c {input.config_xml} -s {input.expression} -d {output.qn_expression} -b {workflow.basedir}/bin
         if [ $? -ne 0 ]; then
             echo "ERROR: Failed to quantile normalize {wildcards.metric} for {wildcards.accession}  " >&2
             exit 1
@@ -626,7 +625,7 @@ rule summarize_expression:
     conda: "envs/perl-atlas-modules.yaml"
     log: "logs/{accession}-summarize_expression_{metric}.log"
     input:
-        xml="{accession}-configuration.xml",
+        config_xml="{accession}-configuration.xml",
         qn_expression="{accession}-{metric}.tsv.undecorated.quantile_normalized"
     output:
         sum_expression="{accession}-{metric}.tsv.undecorated.aggregated"
@@ -637,7 +636,7 @@ rule summarize_expression:
 
         perl {workflow.basedir}/bin/gxa_summarize_expression.pl  \
             --aggregate-quartiles \
-            --configuration {input.xml}  \
+            --configuration {input.config_xml}  \
             < {input.qn_expression}  \
             > {output.sum_expression}
         if [ $? -ne 0 ]; then
@@ -672,7 +671,6 @@ rule transcripts_na_check:
             echo "transcripts NA check -  executed for {input.transcripts} "
         else
             echo "$expIslDir/transcripts.raw.kallisto.tsv not found for {wildcards.accession} - skipping rule_transcripts_na_check for {input.transcripts}"
-            #exit 1
         fi
         touch {output}
         """
@@ -753,13 +751,13 @@ rule summarize_transcripts:
         """
 
 
-rule generate_methods_baseline:
+rule generate_methods_baseline_rnaseq:
     """
     Fetches metadata about the analysis methods used in ISL/iRap to preprocess the experiment,
     to generate analysis methods.
     """
     conda: "envs/perl-atlas-modules.yaml"
-    log: "logs/{accession}-generate_methods_baseline.log"
+    log: "logs/{accession}-generate_methods_baseline_rnaseq.log"
     params:
         organism=get_organism(),
         template=get_methods_template_baseline()
@@ -876,12 +874,6 @@ rule create_tracks_symlinks:
         fi
 
         ln -s {input.bedGraph} {params.output}
-
-        if [ $? -ne 0 ]; then
-          echo "ERROR: creating symkink for {wildcards.accession} {wildcards.metric} {wildcards.assay_id}"
-          exit 1
-        fi
-
         touch {output}
         """
 
