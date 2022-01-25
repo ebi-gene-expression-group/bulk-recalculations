@@ -672,7 +672,6 @@ rule transcripts_na_check:
             echo "transcripts NA check -  executed for {input.transcripts} "
         else
             echo "$expIslDir/transcripts.raw.kallisto.tsv not found for {wildcards.accession} - skipping rule_transcripts_na_check for {input.transcripts}"
-            #exit 1
         fi
         touch {output}
         """
