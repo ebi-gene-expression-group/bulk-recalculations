@@ -65,12 +65,14 @@ def get_outputs():
         #if metric_link_coexp == True:
         #    outputs.extend(expand(f"{config['accession']}-coexpressions.tsv.gz" ))
 
-
-
     # collect output for differential rna-seq
-    # 
+    if config['tool']=="all-diff":
+        outputs.append(f"{config['accession']}-raw-counts.tsv.undecorated")
+        #outputs.extend(expand("qc/"+f"{config['accession']}-irap-single-lib-report.tsv" ))   # TO BE DONE when ISL is available
+
     # collect output for differential microarrays
-    # 
+    #if
+
     
 
     print(outputs)

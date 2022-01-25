@@ -671,7 +671,6 @@ rule transcripts_na_check:
             echo "transcripts NA check -  executed for {input.transcripts} "
         else
             echo "$expIslDir/transcripts.raw.kallisto.tsv not found for {wildcards.accession} - skipping rule_transcripts_na_check for {input.transcripts}"
-            #exit 1
         fi
         touch {output}
         """
@@ -882,36 +881,42 @@ rule create_tracks_symlinks:
 
 # differential_rnaseq_experiment
 
+rule differential_rnaseq_statistics:
+
+rule round_log2_fold_changes_rnaseq:
+
+rule generate_methods_differential_rnaseq:
+
+rule decorate_expression_differential_rnaseq:
 
 
 
+# differential_microarray_experiment
 
+rule get_normalized_expressions:
 
+rule microarray_qc:
 
+rule generate_methods_differential_microarray:
 
-rule microarray_quality_control:
-	
-rule microarray_normalisation:
-    conda: "envs/....yaml"
-    log: "logs/....log"
-    shell:
-        """
-	## Get normalized expressions
-	#arrayNormalization.pl $expTargetDir $idf_filename $ae_dir $mirbase_dir
-	#if [ $? -ne 0 ]; then
-	#    echo "ERROR: Failed to calculate normalized expressions for ${expAcc}" >&2
-	#    exit 1
-	#fi
-        """
+rule merge_probe_ids_per_gene:
 
 rule microarray_calculate_analytics:
 
-rule check_microarray_analystics: 
+rule check_analytics_files:
+
+rule round_log2_fold_changes_microarray:
+
+rule decorate_expression_differential_microarray:
+
+
+
+
 
 rule delete_experiment:
 	
 	
-rule generate_analysis_methods:
+
 	
 	
 	
