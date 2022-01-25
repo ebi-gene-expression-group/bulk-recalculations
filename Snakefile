@@ -467,9 +467,9 @@ rule copy_raw_gene_counts_from_isl:
 
         [ ! -z $expIslDir+x ] || (echo "Env var $expIslDir needs to defined" && exit 1)
         if [ -s "$expIslDir/genes.raw.htseq2.tsv" ]; then
-            cp $expIslDir/genes.raw.htseq2.tsv {output.raw_counts_undecorated}
+            rsync -avz $expIslDir/genes.raw.htseq2.tsv {output.raw_counts_undecorated}
         elif [ -s "$expIslDir/genes.raw.featurecounts.tsv" ]; then
-            cp $expIslDir/genes.raw.featurecounts.tsv {output.raw_counts_undecorated}
+            rsync -avz $expIslDir/genes.raw.featurecounts.tsv {output.raw_counts_undecorated}
         else
             echo "Neither genes.raw.htseq2.tsv nor genes.raw.featurecounts.tsv found on $expIslDir"
             exit 1
@@ -503,9 +503,9 @@ rule copy_normalised_counts_from_isl:
 
         if [ -s "$expIslDir/genes.$metrictype.htseq2.tsv" ]; then
             # maybe rsync could be better here?
-            cp $expIslDir/genes.$metrictype.htseq2.tsv {output.normalised_counts_undecorated}
+            rsync -avz $expIslDir/genes.$metrictype.htseq2.tsv {output.normalised_counts_undecorated}
         elif [ -s "$expIslDir/genes.$metrictype.featurecounts.tsv" ]; then
-            cp $expIslDir/genes.$metrictype.featurecounts.tsv {output.normalised_counts_undecorated}
+            rsync -avz $expIslDir/genes.$metrictype.featurecounts.tsv {output.normalised_counts_undecorated}
         else
             echo "$expIslDir/genes.$metrictype.htseqORfeaturecounts.tsv not found"
             exit 1
@@ -532,7 +532,7 @@ rule copy_transcript_files_from_isl:
         [ ! -z $expIslDir+x ] || (echo "snakemake param exp_isl_dir needs to defined in rule" && exit 1)
 
         if [ -s "$expIslDir/transcripts.tpm.kallisto.tsv" ] ; then
-            cp $expIslDir/transcripts.tpm.kallisto.tsv {output.transcripts}
+            rsync -avz $expIslDir/transcripts.tpm.kallisto.tsv {output.transcripts}
         else
             echo "$expIslDir/transcripts.tpm.kallisto.tsv not found - skipping"
             exit 1
@@ -560,7 +560,7 @@ rule copy_transcript_relative_isoforms:
         [ ! -z $expIslDir+x ] || (echo "snakemake param exp_isl_dir needs to defined in rule" && exit 1)
 
         if [ -s "$expIslDir/transcripts.riu.kallisto.tsv" ] ; then
-            cp $expIslDir/transcripts.riu.kallisto.tsv {params.transcripts_relative_isoforms}
+            rsync -avz $expIslDir/transcripts.riu.kallisto.tsv {params.transcripts_relative_isoforms}
         else
             echo "$expIslDir/transcripts.riu.kallisto.tsv not found for {wildcards.accession} - skipping"
             #exit 1
