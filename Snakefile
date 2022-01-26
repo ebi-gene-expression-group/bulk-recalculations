@@ -852,6 +852,68 @@ rule decorate_expression_baseline:
         fi
         """
 
+
+rule decorate_transcripts_baseline:
+    """
+    Decorate rna-seq baseline transcripts with transcript name from the latest Ensembl release.
+    """
+    container: "docker://quay.io/ebigxa/ensembl-update-env:amm1.1.2"
+    log: "logs/{accession}-decorate_transcripts_baseline_{metric}.log"
+    resources:
+        mem_mb=get_mem_mb
+    input:
+        getagg=rules.summarize_transcripts.output
+    params:
+        organism=get_organism(),
+        transcripts="{accession}-transcripts-{metric}.tsv.undecorated.aggregated",
+        decotranscripts="{accession}-transcripts-{metric}.tsv"
+    output:
+        temp("logs/{accession}-transcripts-{metric}.tsv.done")
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+        source {workflow.basedir}/bin/reprocessing_routines.sh
+
+        # transcripts undecorated-aggregated rule done
+        echo {input.getagg}
+
+        if [ -s {params.transcripts} ] ; then
+
+            geneNameFile=$( get_geneNameFile_given_organism {params.organism}  )
+            transcriptFile=$( get_transcriptFile_given_organism {params.organism}  )
+
+            echo $geneNameFile
+            echo $transcriptFile
+
+            test -s "$geneNameFile" || (  >&2 echo "$0 gene name file not found: $geneNameFile" ; exit 1 )
+            test -s "$transcriptFile" || (  >&2 echo "$0 transcript to gene mapping file not found: $transcriptFile" ; exit 1 )
+
+            decoratedFile={params.decotranscripts} 
+
+            # Ammonite REPL & Script-Runner
+            #export JAVA_OPTS="-Xmx3000M"
+            amm -s {workflow.basedir}/bin/decorateFile.sc \
+                --geneIdFile "$transcriptFile" \
+                --geneNameFile "$geneNameFile" \
+                --source {params.transcripts} \
+                | awk 'NR == 1; NR > 1 {{print $0 | "sort -n"}}' \
+                > $decoratedFile.swp
+
+            decoratedFileLength=$(wc -l "$decoratedFile.swp" | cut -f 1 -d ' ' )
+            if [ -s "$decoratedFile.swp" ] && [ "$decoratedFileLength" -gt 1 ]; then
+                mv $decoratedFile.swp $decoratedFile
+            else
+                echo "ERROR: decorate_transcript_baseline_file for {wildcards.accession} and {wildcards.metric}"
+	            exit 1
+            fi
+        else
+            echo "File {params.transcripts} not found. Decorate transcript for baseline rna-seq summary not performed "
+        fi
+        touch {output}
+        """
+
+
 rule create_tracks_symlinks:
     """
     Create bedgraph tracks symlinks during reprocessing (only for tpms).

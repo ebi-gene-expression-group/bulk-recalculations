@@ -74,3 +74,19 @@ find_properties_file() {
     fi
 }
 
+get_transcriptFile_given_organism() {
+    organism=$1
+
+    ensFile="${ATLAS_PROD}/bioentity_properties/ensembl/${organism}.ensgene.enstranscript.tsv"
+    if [ -s "$ensFile" ]; then
+        echo $ensFile
+    else
+        wbpsFile="${ATLAS_PROD}/bioentity_properties/wbps/${organism}.wbpsgene.wbpstranscript.tsv"
+        if [ -s "$wbpsFile" ]; then
+            echo $wbpsFile
+        else
+            >&2 echo "No transcript annotation file found for organism $organism"
+            exit 1
+        fi
+    fi
+}
