@@ -100,6 +100,12 @@ def get_methods_template_differential():
     else:
         return None
 
+def get_isl_dir():
+    if 'isl_dir' in config:
+        return config['isl_dir']
+    else:
+        return None
+
 
 def get_outputs():
     import os
@@ -224,6 +230,7 @@ rule produce_reprocess_call:
         skip_steps_file=get_skip_steps_file(),
         methods_base=get_methods_template_baseline(),
         methods_dif=get_methods_template_differential(),
+        isl_dir=get_isl_dir(),
         lsf_config = get_lsf_config_file(),
         log_handler_script=get_log_handler_script()
     output:
@@ -244,6 +251,7 @@ rule produce_reprocess_call:
             skip_steps_file={params.skip_steps_file} \
             methods_base={params.methods_base} \
             methods_dif={params.methods_dif} \
+            isl_dir={params.isl_dir} \
             -s {workflow.basedir}/Snakefile-reprocess {params.log_handler_script}
         popd
         """

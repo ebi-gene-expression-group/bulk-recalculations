@@ -16,9 +16,7 @@ def read_metadata_summary():
 
 read_metadata_summary()
 
-##to be implemented
-#def get_isl_dir():
-#    return None
+
 def get_methods_template_baseline():
     if 'methods_base' in config:
         return config['methods_base']
@@ -31,6 +29,11 @@ def get_methods_template_differential():
     else:
         return None
 
+def get_isl_dir():
+    if 'isl_dir' in config:
+        return config['isl_dir']
+    else:
+        return None
 
 def read_skip_steps_file():
     if 'skip_steps_file' in config:
@@ -458,12 +461,15 @@ rule copy_raw_gene_counts_from_isl:
     log: "logs/{accession}-copy_raw_gene_counts_from_isl.log"
     output:
         raw_counts_undecorated="{accession}-raw-counts.tsv.undecorated"
+    params:
+        organism=get_organism(),
+        isl_dir=get_isl_dir()
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
-        source {workflow.basedir}/bin/reprocessing_routines.sh
-        expIslDir=$(find_exp_isl_dir {wildcards.accession})
+        expIslDir={params.isl_dir}/{wildcards.accession}/{params.organism}
+        echo "ISL dir: $expIslDir"
 
         [ ! -z $expIslDir+x ] || (echo "Env var $expIslDir needs to defined" && exit 1)
         if [ -s "$expIslDir/genes.raw.htseq2.tsv" ]; then
@@ -483,14 +489,16 @@ rule copy_normalised_counts_from_isl:
     Replaces copy_unit_matrices_from_isl in experiment_loading_routines.sh
     """
     log: "logs/{accession}-{metric}-copy_normalised_counts_from_isl.log"
+    params:
+        organism=get_organism(),
+        isl_dir=get_isl_dir()  
     output:
         normalised_counts_undecorated="{accession}-{metric}.tsv.undecorated"
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
-        source {workflow.basedir}/bin/reprocessing_routines.sh
-        expIslDir=$(find_exp_isl_dir {wildcards.accession})
+        expIslDir={params.isl_dir}/{wildcards.accession}/{params.organism}
         echo "ISL dir: $expIslDir"
 
         [ ! -z $expIslDir+x ] || (echo "snakemake param exp_isl_dir needs to defined in rule" && exit 1)
@@ -502,7 +510,6 @@ rule copy_normalised_counts_from_isl:
         fi
 
         if [ -s "$expIslDir/genes.$metrictype.htseq2.tsv" ]; then
-            # maybe rsync could be better here?
             rsync -avz $expIslDir/genes.$metrictype.htseq2.tsv {output.normalised_counts_undecorated}
         elif [ -s "$expIslDir/genes.$metrictype.featurecounts.tsv" ]; then
             rsync -avz $expIslDir/genes.$metrictype.featurecounts.tsv {output.normalised_counts_undecorated}
@@ -519,14 +526,16 @@ rule copy_transcript_files_from_isl:
     If file does not exist for an accession, this rule can be skipped.
     """
     log: "logs/{accession}-copy_transcript_files_{metric}_from_isl.log"
+    params:
+        organism=get_organism(),
+        isl_dir=get_isl_dir()  
     output:
         transcripts="{accession}-transcripts-{metric}.tsv.undecorated"
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
-        source {workflow.basedir}/bin/reprocessing_routines.sh
-        expIslDir=$(find_exp_isl_dir {wildcards.accession})
+        expIslDir={params.isl_dir}/{wildcards.accession}/{params.organism}
         echo "ISL dir: $expIslDir"
 
         [ ! -z $expIslDir+x ] || (echo "snakemake param exp_isl_dir needs to defined in rule" && exit 1)
@@ -547,13 +556,14 @@ rule copy_transcript_relative_isoforms:
     output:
         temp("logs/{accession}-copy_transcript_relative_isoforms.done")
     params:
-        transcripts_relative_isoforms="{accession}-transcripts.riu.tsv"
+        transcripts_relative_isoforms="{accession}-transcripts.riu.tsv",
+        organism=get_organism(),
+        isl_dir=get_isl_dir()  
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
-        source {workflow.basedir}/bin/reprocessing_routines.sh
-        expIslDir=$(find_exp_isl_dir {wildcards.accession})
+        expIslDir={params.isl_dir}/{wildcards.accession}/{params.organism}
         echo "ISL dir: $expIslDir"
 
         [ ! -z $expIslDir+x ] || (echo "snakemake param exp_isl_dir needs to defined in rule" && exit 1)
@@ -652,6 +662,9 @@ rule transcripts_na_check:
     """
     conda: "envs/atlas-internal.yaml"
     log: "logs/{accession}-rule-transcripts_na_check_{metric}.log"
+    params:
+        organism=get_organism(),
+        isl_dir=get_isl_dir()  
     input:
         transcripts="{accession}-transcripts-{metric}.tsv.undecorated"
     output:
@@ -660,8 +673,7 @@ rule transcripts_na_check:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
-        source {workflow.basedir}/bin/reprocessing_routines.sh
-        expIslDir=$(find_exp_isl_dir {wildcards.accession})
+        expIslDir={params.isl_dir}/{wildcards.accession}/{params.organism}
         echo "ISL dir: $expIslDir"
 
         [ ! -z $expIslDir+x ] || (echo "snakemake param exp_isl_dir needs to defined in rule" && exit 1)
@@ -760,7 +772,8 @@ rule generate_methods_baseline_rnaseq:
     log: "logs/{accession}-generate_methods_baseline_rnaseq.log"
     params:
         organism=get_organism(),
-        template=get_methods_template_baseline()
+        template=get_methods_template_baseline(),
+        isl_dir=get_isl_dir()  
     output:
         methods="{accession}-analysis-methods.tsv"
     shell:
@@ -774,7 +787,7 @@ rule generate_methods_baseline_rnaseq:
         fi
 
         source {workflow.basedir}/bin/reprocessing_routines.sh
-        expIslDir=$(find_exp_isl_dir {wildcards.accession})
+        expIslDir={params.isl_dir}/{wildcards.accession}/{params.organism}
         echo "ISL dir: $expIslDir"
 
         [ ! -z $expIslDir+x ] || (echo "snakemake param exp_isl_dir needs to defined in rule" && exit 1)
