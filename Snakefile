@@ -572,7 +572,6 @@ rule copy_transcript_relative_isoforms:
             rsync -avz $expIslDir/transcripts.riu.kallisto.tsv {params.transcripts_relative_isoforms}
         else
             echo "$expIslDir/transcripts.riu.kallisto.tsv not found for {wildcards.accession} - skipping"
-            #exit 1
         fi
         touch {output}
         """
@@ -695,7 +694,8 @@ rule quantile_normalise_transcripts:
     conda: "envs/quantile.yaml"
     log: "logs/{accession}-quantile_normalise_transcripts_{metric}.log"
     input:
-        xml="{accession}-configuration.xml"
+        xml="{accession}-configuration.xml",
+        transcripts_na_check=rules.transcripts_na_check.output
     output:
         temp("logs/{accession}-quantile_normalise_transcripts_{metric}.done")
     params:
@@ -705,6 +705,9 @@ rule quantile_normalise_transcripts:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
+
+        # transcripts_na_check rule done
+        echo {input.transcripts_na_check}
 
         if [ -s {params.transcripts} ] ; then
 
@@ -746,7 +749,6 @@ rule summarize_transcripts:
         if [ -s {params.qn_transcripts} ] ; then
 
             perl {workflow.basedir}/bin/gxa_summarize_expression.pl  \
-                --aggregate-quartiles \
                 --configuration {input.xml}  \
                 < {params.qn_transcripts}  \
                 > {params.agg_transcripts}
