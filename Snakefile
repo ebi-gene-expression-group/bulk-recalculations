@@ -193,7 +193,7 @@ def get_mem_mb(wildcards, attempt):
 
 
 
-localrules: check_differential_gsea, link_baseline_coexpression, link_baseline_heatmap, copy_raw_gene_counts_from_isl, copy_normalised_counts_from_isl, check_configuration_xml, check_factors_xml, copy_transcript_files_from_isl, copy_transcript_relative_isoforms, create_tracks_symlinks
+localrules: check_differential_gsea, link_baseline_coexpression, link_baseline_heatmap, copy_raw_gene_counts_from_isl, copy_normalised_counts_from_isl, copy_transcript_files_from_isl, copy_transcript_relative_isoforms, create_tracks_symlinks
 
 
 wildcard_constraints:
@@ -958,7 +958,38 @@ rule create_tracks_symlinks:
 
 # differential_rnaseq_experiment
 
-rule differential_rnaseq_statistics:
+rule differential_statistics_rnaseq:
+    """
+    Calculate RNA-seq differential expression statistics and generate MvA plots.
+    """
+    conda: "envs/differential-stats.yaml"
+    log: "logs/{accession}.differential_rnaseq_statistics.log"
+    input:
+        config_xml="{accession}-configuration.xml",
+        raw_counts_undecorated="{accession}-raw-counts.tsv.undecorated"
+    output:
+        differential_expression="{accession}-analytics.tsv.undecorated"
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+        PATH=$PATH:{workflow.basedir}/bin
+
+        echo $TMPDIR
+        if [ ! -d "$TMPDIR"/tmp ]; then
+            mkdir $TMPDIR/tmp
+        fi
+
+        perl {workflow.basedir}/bin/diffAtlas_DE.pl --experiment {wildcards.accession} --directory ./
+        if [ $? -ne 0 ]; then
+	        echo "ERROR: Failed to generate differential expression statistics and MvA plots for {wildcards.accession}" >&2
+	        rm -rf *.png {wildcards.accession}-analytics.tsv.undecorated
+	        exit 1
+        fi
+        """
+
+# rule check mvaPlot="{accession}-{contrast_id}-mvaPlot.png"
+
 
 rule round_log2_fold_changes_rnaseq:
 
@@ -991,7 +1022,8 @@ rule decorate_expression_differential_microarray:
 
 
 rule delete_experiment:
-	
+
+# mv data to atlas_exps
 	
 
 	

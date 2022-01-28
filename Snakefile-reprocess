@@ -25,9 +25,10 @@ def get_outputs():
     required_config=['tool']
     check_config_required(fields=required_config)
 
+    print(get_from_config_or_metadata_summary('experiment_type'))
     # collect output for reprocessing
-
-    if config['tool']=="all-baseline" or 'baseline-tracks' in config['tool'] or 'baseline-heatmap' in config['tool'] or 'baseline-coexpression' in config['tool']:
+    if get_from_config_or_metadata_summary('experiment_type') == 'rnaseq_mrna_baseline':
+    #if config['tool']=="all-baseline" or 'baseline-tracks' in config['tool'] or 'baseline-heatmap' in config['tool'] or 'baseline-coexpression' in config['tool']:
         outputs.append(f"{config['accession']}-raw-counts.tsv.undecorated")
         outputs.extend(expand(config['accession']+"-{metric}.tsv.undecorated", metric=metrics))
         outputs.extend(expand(config['accession']+"-transcripts-{metric}.tsv.undecorated", metric=["tpms"] ))
@@ -66,15 +67,24 @@ def get_outputs():
         #if metric_link_coexp == True:
         #    outputs.extend(expand(f"{config['accession']}-coexpressions.tsv.gz" ))
 
+
     # collect output for differential rna-seq
-    if config['tool']=="all-diff":
+    if get_from_config_or_metadata_summary('experiment_type') == 'rnaseq_mrna_differential':
         outputs.append(f"{config['accession']}-raw-counts.tsv.undecorated")
         #outputs.extend(expand("qc/"+f"{config['accession']}-irap-single-lib-report.tsv" ))   # TO BE DONE when ISL is available
+        outputs.append(f"{config['accession']}-analytics.tsv.undecorated")
+        #outputs.extend(expand(config['accession']+"-{id}-mvaPlot.png", id=get_contrast_ids() ))
+
 
     # collect output for differential microarrays
-    #if
+    #if get_from_config_or_metadata_summary('experiment_type') == 'microarray_1colour_mrna_differential' or get_from_config_or_metadata_summary('experiment_type') =='microarray_2colour_mrna_differential' or get_from_config_or_metadata_summary('experiment_type') =='microarray_1colour_microrna_differential':
 
-    
+    # collect output for baseline proteomics
+    #if get_from_config_or_metadata_summary('experiment_type') == 'proteomics_baseline' or get_from_config_or_metadata_summary('experiment_type') =='proteomics_baseline_dia':
+
+    # collect output for differential proteomics
+    #if get_from_config_or_metadata_summary('experiment_type') == 'proteomics_differential':
+
 
     print(outputs)
     print('Getting list of outputs.. done')

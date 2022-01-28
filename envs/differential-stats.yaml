@@ -1,0 +1,13 @@
+channels:
+ - conda-forge
+ - bioconda
+ - ebi-gene-expression-group
+dependencies:
+ - perl-atlas-modules >=0.3.1
+ - r-atlas-internal>=1.8
+ - r-ggplot2
+ - bioconductor-limma
+ - bioconductor-genefilter
+ - bioconductor-biobase
+ - bioconductor-deseq2
+ 
