@@ -106,6 +106,13 @@ def get_isl_dir():
     else:
         return None
 
+def get_tmp_dir():
+    if 'tmp_dir' in config:
+        return config['tmp_dir']
+    else:
+        return None
+
+
 
 def get_outputs():
     import os
@@ -231,6 +238,7 @@ rule produce_reprocess_call:
         methods_base=get_methods_template_baseline(),
         methods_dif=get_methods_template_differential(),
         isl_dir=get_isl_dir(),
+        tmp_dir=get_tmp_dir(),
         lsf_config = get_lsf_config_file(),
         log_handler_script=get_log_handler_script()
     output:
@@ -252,6 +260,7 @@ rule produce_reprocess_call:
             methods_base={params.methods_base} \
             methods_dif={params.methods_dif} \
             isl_dir={params.isl_dir} \
+            tmp_dir={params.tmp_dir} \
             -s {workflow.basedir}/Snakefile-reprocess {params.log_handler_script}
         popd
         """

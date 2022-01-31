@@ -35,6 +35,12 @@ def get_isl_dir():
     else:
         return None
 
+def get_tmp_dir():
+    if 'tmp_dir' in config:
+        return config['tmp_dir']
+    else:
+        return None
+
 def read_skip_steps_file():
     if 'skip_steps_file' in config:
         global skip_steps
@@ -967,6 +973,8 @@ rule differential_statistics_rnaseq:
     input:
         config_xml="{accession}-configuration.xml",
         raw_counts_undecorated="{accession}-raw-counts.tsv.undecorated"
+    params:
+        tmp_dir=get_tmp_dir()
     output:
         differential_expression="{accession}-analytics.tsv.undecorated"
     shell:
@@ -975,7 +983,8 @@ rule differential_statistics_rnaseq:
         exec &> "{log}"
         PATH=$PATH:{workflow.basedir}/bin
 
-        echo $TMPDIR
+        TMPDIR={params.tmp_dir}
+        echo $TMPDIR"/tmp"
         if [ ! -d "$TMPDIR"/tmp ]; then
             mkdir $TMPDIR/tmp
         fi
