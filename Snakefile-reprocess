@@ -74,6 +74,7 @@ def get_outputs():
         #outputs.extend(expand("qc/"+f"{config['accession']}-irap-single-lib-report.tsv" ))   # TO BE DONE when ISL is available
         outputs.append(f"{config['accession']}-analytics.tsv.undecorated")
         outputs.extend(expand("logs/"+f"{config['accession']}"+"-{c_id}-mvaPlot.png.done", c_id=get_contrast_ids() ))
+        outputs.append(f"{config['accession']}-analytics.tsv.undecorated.unrounded")
 
 
     # collect output for differential microarrays

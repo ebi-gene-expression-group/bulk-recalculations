@@ -970,6 +970,7 @@ rule differential_statistics_rnaseq:
     """
     conda: "envs/differential-stats.yaml"
     log: "logs/{accession}.differential_statistics_rnaseq.log"
+    resources: mem_mb=get_mem_mb
     input:
         config_xml="{accession}-configuration.xml",
         raw_counts_undecorated="{accession}-raw-counts.tsv.undecorated"
@@ -1022,12 +1023,45 @@ rule check_mvaPlot_rnaseq:
         touch {output}
         """
 
-
-
-
 rule round_log2_fold_changes_rnaseq:
+    """
+    Round log2fold changes from differential expression analysis to one decimal place.
+    It modifies the input and leaves the initial logs in .unrounded
+    """
+    conda: "envs/perl-math-round.yaml"
+    log: "logs/{accession}.round_log2_fold_changes_rnaseq.log"
+    resources: mem_mb=get_mem_mb
+    input:
+        "{accession}-analytics.tsv.undecorated"
+    output:
+        unrounded="{accession}-analytics.tsv.undecorated.unrounded" #rounded="{accession}-analytics.tsv.rounded"
+    params:
+        intermediate_rounded="{accession}-analytics.tsv.undecorated.rounded"
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+
+        perl {workflow.basedir}/bin/round_log2_fold_changes.pl {input}
+
+        if [ $? -ne 0 ]; then
+	        echo "ERROR: Failed to round to one decimal place log2fold changes in {input} " >&2
+	        rm -rf {params.intermediate_rounded}
+	        exit 1
+        fi
+        mv {input} {output.unrounded}
+        mv {params.intermediate_rounded} {input}
+        """
+
+
+
 
 rule generate_methods_differential_rnaseq:
+
+
+
+
+
 
 rule decorate_expression_differential_rnaseq:
 
