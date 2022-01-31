@@ -783,7 +783,7 @@ rule generate_methods_baseline_rnaseq:
         template=get_methods_template_baseline(),
         isl_dir=get_isl_dir()  
     output:
-        methods="{accession}-analysis-methods.tsv"
+        methods=temp("{accession}-analysis-methods.tsv_baseline_rnaseq")
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
@@ -820,13 +820,13 @@ rule generate_methods_baseline_rnaseq:
         echo $de_quantMethod
         echo $de_deMethod
 
-        perl {workflow.basedir}/bin/gxa_generate_methods.pl "$expIslDir/irap.versions.tsv" {wildcards.accession} {params.organism} {params.template} "${{baseline_mapper:?}}" "${{baseline_quantMethod:?}}" "${{de_mapper:?}}" "${{de_
-quantMethod:?}}" "${{de_deMethod:?}}" > {output.methods}
+        perl {workflow.basedir}/bin/gxa_generate_methods.pl "$expIslDir/irap.versions.tsv" {wildcards.accession} {params.organism} {params.template} "${{baseline_mapper:?}}" "${{baseline_quantMethod:?}}" "${{de_mapper:?}}" "${{de_quantMethod:?}}" "${{de_deMethod:?}}" > {output.methods}
 
         if [ $? -ne 0 ]; then
             echo "ERROR: Failed to generate analysis methods for {wildcards.accession}" >&2
             exit 1
         fi
+        cp {output.methods} {wildcards.accession}-analysis-methods.tsv
         """
 
 rule decorate_expression_baseline:
@@ -1053,11 +1053,63 @@ rule round_log2_fold_changes_rnaseq:
         mv {params.intermediate_rounded} {input}
         """
 
-
-
-
 rule generate_methods_differential_rnaseq:
+    """
+    Fetches metadata about the analysis methods used in ISL/iRap to preprocess the experiment,
+    to generate analysis methods.
+    """
+    conda: "envs/perl-atlas-modules.yaml"
+    log: "logs/{accession}-generate_methods_differential_rnaseq.log"
+    params:
+        organism=get_organism(),
+        template=get_methods_template_differential(),
+        isl_dir=get_isl_dir()  
+    output:
+        methods=temp("{accession}-analysis-methods.tsv_differential_rnaseq")
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
 
+        if [ ! -s {params.template} ] ; then
+            echo "Methods template not found "
+            exit 1
+        fi
+
+        source {workflow.basedir}/bin/reprocessing_routines.sh
+        expIslDir={params.isl_dir}/{wildcards.accession}/{params.organism}
+        echo "ISL dir: $expIslDir"
+
+        [ ! -z $expIslDir+x ] || (echo "snakemake param exp_isl_dir needs to defined in rule" && exit 1)
+
+        # IRAP methods version file
+        if [ ! -s "$expIslDir/irap.versions.tsv" ] ; then
+            echo "$expIslDir/irap.versions.tsv not found for {wildcards.accession} "
+            exit 1
+        fi
+
+        # set env variables for mapper and quantification methods from used in irap.
+        get_methods_from_irap "$expIslDir/irap.versions.tsv"
+        [ ! -z ${{baseline_mapper+x}} ] || (echo "Env var baseline_mapper not defined." && exit 1)
+        [ ! -z ${{baseline_quantMethod+x}} ] || (echo "Env var baseline_quantMethod not defined." && exit 1)
+        [ ! -z ${{de_mapper+x}} ] || (echo "Env var de_mapper not defined." && exit 1)
+        [ ! -z ${{de_quantMethod+x}} ] || (echo "Env var de_mapper not defined." && exit 1)
+        [ ! -z ${{de_deMethod+x}} ] || (echo "Env var de_mapper not defined." && exit 1)
+
+        echo $baseline_mapper
+        echo $baseline_quantMethod
+        echo $de_mapper
+        echo $de_quantMethod
+        echo $de_deMethod
+
+        perl {workflow.basedir}/bin/gxa_generate_methods.pl "$expIslDir/irap.versions.tsv" {wildcards.accession} {params.organism} {params.template} "${{baseline_mapper:?}}" "${{baseline_quantMethod:?}}" "${{de_mapper:?}}" "${{de_quantMethod:?}}" "${{de_deMethod:?}}" > {output.methods}
+
+        if [ $? -ne 0 ]; then
+            echo "ERROR: Failed to generate analysis methods for {wildcards.accession}" >&2
+            exit 1
+        fi
+        cp {output.methods} {wildcards.accession}-analysis-methods.tsv
+        """
 
 
 
