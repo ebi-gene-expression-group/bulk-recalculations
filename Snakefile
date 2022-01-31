@@ -199,7 +199,7 @@ def get_mem_mb(wildcards, attempt):
 
 
 
-localrules: check_differential_gsea, link_baseline_coexpression, link_baseline_heatmap, copy_raw_gene_counts_from_isl, copy_normalised_counts_from_isl, copy_transcript_files_from_isl, copy_transcript_relative_isoforms, create_tracks_symlinks
+localrules: check_differential_gsea, link_baseline_coexpression, link_baseline_heatmap, copy_raw_gene_counts_from_isl, copy_normalised_counts_from_isl, copy_transcript_files_from_isl, copy_transcript_relative_isoforms, create_tracks_symlinks, check_mvaPlot_rnaseq
 
 
 wildcard_constraints:
@@ -969,14 +969,15 @@ rule differential_statistics_rnaseq:
     Calculate RNA-seq differential expression statistics and generate MvA plots.
     """
     conda: "envs/differential-stats.yaml"
-    log: "logs/{accession}.differential_rnaseq_statistics.log"
+    log: "logs/{accession}.differential_statistics_rnaseq.log"
     input:
         config_xml="{accession}-configuration.xml",
         raw_counts_undecorated="{accession}-raw-counts.tsv.undecorated"
     params:
         tmp_dir=get_tmp_dir()
     output:
-        differential_expression="{accession}-analytics.tsv.undecorated"
+        differential_expression="{accession}-analytics.tsv.undecorated",
+        done=temp("logs/{accession}.differential_statistics_rnaseq.log.done")
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
@@ -995,9 +996,33 @@ rule differential_statistics_rnaseq:
 	        rm -rf *.png {wildcards.accession}-analytics.tsv.undecorated
 	        exit 1
         fi
+        touch {output.done}
         """
 
-# rule check mvaPlot="{accession}-{contrast_id}-mvaPlot.png"
+rule check_mvaPlot_rnaseq:
+    """
+    This will check that all mvaPlots were produced by differential rna-seq analysis.
+    """
+    log: "logs/{accession}.{contrast_id}.check_mvaPlot_rnaseq.log"
+    input:
+        rules.differential_statistics_rnaseq.output.done
+    output:
+        temp("logs/{accession}-{contrast_id}-mvaPlot.png.done")
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+
+        if [ -s "{wildcards.accession}-{wildcards.contrast_id}-mvaPlot.png" ] ; then
+            echo "mvaPlot for {wildcards.accession} and {wildcards.contrast_id} successfully generated during differential rna-seq statistics: {wildcards.accession}-{wildcards.contrast_id}-mvaPlot.png"
+        else
+            echo "ERROR: mvaPlot for {wildcards.accession} and {wildcards.contrast_id} not produced during differential rna-seq statistics."
+            exit 1
+        fi
+        touch {output}
+        """
+
+
 
 
 rule round_log2_fold_changes_rnaseq:
