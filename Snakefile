@@ -1034,7 +1034,7 @@ rule round_log2_fold_changes_rnaseq:
     input:
         "{accession}-analytics.tsv.undecorated"
     output:
-        unrounded="{accession}-analytics.tsv.undecorated.unrounded" #rounded="{accession}-analytics.tsv.rounded"
+        unrounded="{accession}-analytics.tsv.undecorated.unrounded" 
     params:
         intermediate_rounded="{accession}-analytics.tsv.undecorated.rounded"
     shell:
@@ -1114,8 +1114,58 @@ rule generate_methods_differential_rnaseq:
 
 
 
+rule decorate_differential_rnaseq:
+    """
+    Decorate differential rna-seq experiment with gene name from the latest Ensembl release.
+    """
+    container: "docker://quay.io/ebigxa/ensembl-update-env:amm1.1.2"
+    log: "logs/{accession}-decorate_differential_rnaseq.log"
+    input:
+        rounded="{accession}-analytics.tsv.undecorated",
+        unrounded="{accession}-analytics.tsv.undecorated.unrounded",
+        raw="{accession}-raw-counts.tsv.undecorated",
+    params:
+        organism=get_organism()
+    output:
+        rounded.deco="{accession}-analytics.tsv",
+        unrounded.deco="{accession}-analytics.tsv.unrounded",
+        raw.deco="{accession}-raw-counts.tsv",
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+        source {workflow.basedir}/bin/reprocessing_routines.sh
 
-rule decorate_expression_differential_rnaseq:
+        geneNameFile=$( get_geneNameFile_given_organism {params.organism}  )
+
+        echo $geneNameFile
+
+        test -s "$geneNameFile" || (  >&2 echo "$0 gene name file not found: $geneNameFile" ; exit 1 )
+
+        for file in 'rounded'  'unrounded' 'raw' ; do
+            decoratedFile={output."$file"} 
+            echo $decoratedFile
+ 
+            amm -s {workflow.basedir}/bin/decorateFile.sc \
+            --geneNameFile "$geneNameFile" \
+            --source {input."$file"} \
+            | awk 'NR == 1; NR > 1 {{print $0 | "sort -n"}}' \
+            > $decoratedFile.swp
+
+            decoratedFileLength=$(wc -l "$decoratedFile.swp" | cut -f 1 -d ' ' )
+            if [ -s "$decoratedFile.swp" ] && [ "$decoratedFileLength" -gt 1 ]; then
+                mv $decoratedFile.swp $decoratedFile
+            else
+                echo "ERROR: decorate_rnaseq_file baseline for {wildcards.accession} and ""$file"
+                exit 1
+            fi
+        done
+        """
+
+
+
+
+
 
 
 
