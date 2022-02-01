@@ -1112,8 +1112,6 @@ rule generate_methods_differential_rnaseq:
         """
 
 
-
-
 rule decorate_differential_rnaseq:
     """
     Decorate differential rna-seq experiment with gene name from the latest Ensembl release.
@@ -1121,15 +1119,15 @@ rule decorate_differential_rnaseq:
     container: "docker://quay.io/ebigxa/ensembl-update-env:amm1.1.2"
     log: "logs/{accession}-decorate_differential_rnaseq.log"
     input:
-        rounded="{accession}-analytics.tsv.undecorated",
-        unrounded="{accession}-analytics.tsv.undecorated.unrounded",
-        raw="{accession}-raw-counts.tsv.undecorated",
+        "{accession}-analytics.tsv.undecorated",
+        "{accession}-analytics.tsv.undecorated.unrounded",
+        "{accession}-raw-counts.tsv.undecorated"
     params:
         organism=get_organism()
     output:
-        rounded.deco="{accession}-analytics.tsv",
-        unrounded.deco="{accession}-analytics.tsv.unrounded",
-        raw.deco="{accession}-raw-counts.tsv",
+        "{accession}-analytics.tsv",
+        "{accession}-analytics.tsv.unrounded",
+        "{accession}-raw-counts.tsv"
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
@@ -1142,31 +1140,28 @@ rule decorate_differential_rnaseq:
 
         test -s "$geneNameFile" || (  >&2 echo "$0 gene name file not found: $geneNameFile" ; exit 1 )
 
-        for file in 'rounded'  'unrounded' 'raw' ; do
-            decoratedFile={output."$file"} 
-            echo $decoratedFile
- 
+        for i in {input}
+        do  
+            echo "${{i}}"
+            decoratedFile=`echo "${{i}}" | sed 's/\.undecorated//'`
+            echo "$decoratedFile"
+
             amm -s {workflow.basedir}/bin/decorateFile.sc \
             --geneNameFile "$geneNameFile" \
-            --source {input."$file"} \
+            --source "${{i}}" \
             | awk 'NR == 1; NR > 1 {{print $0 | "sort -n"}}' \
             > $decoratedFile.swp
 
             decoratedFileLength=$(wc -l "$decoratedFile.swp" | cut -f 1 -d ' ' )
             if [ -s "$decoratedFile.swp" ] && [ "$decoratedFileLength" -gt 1 ]; then
                 mv $decoratedFile.swp $decoratedFile
-            else
-                echo "ERROR: decorate_rnaseq_file baseline for {wildcards.accession} and ""$file"
-                exit 1
+            else                                                                                                                                                                                                                    
+                echo "ERROR: decorate_differential_rnaseq for {wildcards.accession} and undecorated input ${{i}} "
+                exit 1                                                                                                                                                                                                              
             fi
-        done
-        """
-
-
-
-
-
-
+        done                                                                                                                                                                                                                        
+        """                                                                                                                                                                                                                         
+                                                                                                                                                                                                                  
 
 
 # differential_microarray_experiment
