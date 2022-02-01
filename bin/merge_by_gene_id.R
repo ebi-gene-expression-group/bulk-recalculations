@@ -19,5 +19,5 @@ if (length(args) > 2) {
     first <- merge(first, other, all = TRUE)
   }
 
-  fwrite(first, file = outputfile, sep = "\t", quote = FALSE)
+  fwrite(first, file = outputfile, sep = "\t", quote = FALSE, na="NA")
 }
