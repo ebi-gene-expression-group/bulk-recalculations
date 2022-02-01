@@ -81,8 +81,8 @@ def get_outputs():
         outputs.append(f"{config['accession']}-analytics.tsv.unrounded")
         outputs.append(f"{config['accession']}-raw-counts.tsv")
         outputs.append(f"{config['accession']}-percentile-ranks.tsv")
-        #differential gsea
-        #check_config_required(fields=['bioentities_properties'], method='differential-gsea')
+        # differential gsea
+        check_config_required(fields=['bioentities_properties'], method='differential-gsea')
         outputs.extend( expand( config['accession']+".{c_id}.{ext_db}.{type}",
                         c_id=get_contrast_ids(),
                         ext_db=get_ext_db(),
@@ -91,8 +91,8 @@ def get_outputs():
                         c_id=get_contrast_ids(),
                         ext_db=get_ext_db(),
                         type=["check_differential_gsea.done", "check_differential_gsea_list.done"]))
-
-
+        # generate Genome browser tracks (bedGraph) for the experiment
+        outputs.extend(expand(config['accession']+".{id}.{type}", id=get_contrast_ids(), type=["genes.pval.bedGraph", "genes.log2foldchange.bedGraph"]))
 
 
     # collect output for differential microarrays
