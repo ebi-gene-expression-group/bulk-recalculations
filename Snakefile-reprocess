@@ -80,7 +80,8 @@ def get_outputs():
         outputs.append(f"{config['accession']}-analytics.tsv")
         outputs.append(f"{config['accession']}-analytics.tsv.unrounded")
         outputs.append(f"{config['accession']}-raw-counts.tsv")
-
+        outputs.append(f"{config['accession']}-percentile-ranks.tsv")
+        
     # collect output for differential microarrays
     #if get_from_config_or_metadata_summary('experiment_type') == 'microarray_1colour_mrna_differential' or get_from_config_or_metadata_summary('experiment_type') =='microarray_2colour_mrna_differential' or get_from_config_or_metadata_summary('experiment_type') =='microarray_1colour_microrna_differential':
 
