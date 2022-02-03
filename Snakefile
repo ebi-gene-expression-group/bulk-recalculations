@@ -198,7 +198,8 @@ def get_mem_mb(wildcards, attempt):
 
 def input_percentile_ranks(wildcards):
     """
-    Return appropriate input for experiment type and analysis goal.
+    Return appropriate input for experiment type and analysis goal
+    for rule percentile_ranks.
     """
     if config['goal'] == 'reprocess':
         if experiment_type=='rnaseq_mrna_differential':
