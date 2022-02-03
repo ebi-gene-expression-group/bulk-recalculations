@@ -205,6 +205,7 @@ def input_percentile_ranks(wildcards):
         if experiment_type=='rnaseq_mrna_differential':
             return [ 'logs/'+wildcards['accession']+'-decorate_differential_rnaseq.done' ]
         else:
+            # microarrays (TBD)
             return None
     if config['goal'] == 'recalculations':
         # input files are already there
@@ -219,6 +220,7 @@ def input_differential_tracks_and_gsea(wildcards):
         if experiment_type=='rnaseq_mrna_differential':
             return [ 'logs/'+wildcards['accession']+'-decorate_differential_rnaseq.done' ]
         else:
+            # microarrays (TBD)
             return None
     if config['goal'] == 'recalculations':
         # input files are already there
@@ -1013,7 +1015,7 @@ rule differential_statistics_rnaseq:
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
         PATH=$PATH:{workflow.basedir}/bin
-
+        
         TMPDIR={params.tmp_dir}
         echo $TMPDIR"/tmp"
         if [ ! -d "$TMPDIR"/tmp ]; then
@@ -1194,10 +1196,42 @@ rule decorate_differential_rnaseq:
         """                                                                                                                                                                                                                         
                                                                                                                                                                                                                   
 
-
 # differential_microarray_experiment
 
 rule get_normalized_expressions:
+    """
+    Get normalized expressions for differential microarray analysis.
+    """
+    conda: "envs/quantile.yaml"
+    log: "logs/{accession}-get_normalized_expressions.log"
+    output:
+        "{accession}-test"
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+        ## get path to IDF file name and Array Express load directory
+        # -i flag will retrieve path to idf filename 
+        # -d flag will retrieve path to Array Express load directory
+        # -m flag will retrieve path to mirbase directory
+        idf_filename=$(perl {workflow.basedir}/bin/get_magetab_paths.pl -e {wildcards.accession} -i) 
+        ae_dir=$(perl {workflow.basedir}/bin/get_magetab_paths.pl -e {wildcards.accession} -d)
+        mirbase_dir=$(perl {workflow.basedir}/bin/get_magetab_paths.pl -e {wildcards.accession} -m)  
+
+        echo $idf_filename
+        echo $ae_dir
+        echo $mirbase_dir
+
+        # Get normalized expressions
+        perl {workflow.basedir}/bin/arrayNormalization.pl {wildcards.accession} $idf_filename $ae_dir $mirbase_dir {workflow.basedir} $(pwd)
+        if [ $? -ne 0 ]; then
+            echo "ERROR: Failed to calculate normalized expressions for {wildcards.accession}" >&2
+            exit 1
+        fi
+        touch {output}
+        """ 
+
+
 
 rule microarray_qc:
 

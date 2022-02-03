@@ -100,7 +100,8 @@ def get_outputs():
         outputs.extend(expand("logs/"+f"{config['accession']}"+"-decorate_differential_rnaseq.done" ))
 
     # collect output for differential microarrays
-    #if experiment_type == 'microarray_1colour_mrna_differential' or experiment_type =='microarray_2colour_mrna_differential' or experiment_type =='microarray_1colour_microrna_differential':
+    if experiment_type == 'microarray_1colour_mrna_differential' or experiment_type =='microarray_2colour_mrna_differential' or experiment_type =='microarray_1colour_microrna_differential':
+        outputs.append(f"{config['accession']}-test")
 
     # collect output for baseline proteomics
     #if experiment_type == 'proteomics_baseline' or experiment_type =='proteomics_baseline_dia':

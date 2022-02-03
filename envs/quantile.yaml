@@ -4,3 +4,5 @@ channels:
 dependencies:
  - perl-atlas-modules >=0.3.1
  - bioconductor-limma
+ - bioconductor-lumi
+ - bioconductor-oligo
