@@ -187,7 +187,6 @@ def get_assay_label(wildcards):
     global metadata_summary
     return metadata_summary['assays'][wildcards['assay_id']]
 
-
 def get_mem_mb(wildcards, attempt):
     """
     To adjust resources in the rules 
@@ -197,6 +196,32 @@ def get_mem_mb(wildcards, attempt):
     mem_avail = [ 2, 2, 4, 8, 16, 64, 128, 256 ]  
     return mem_avail[attempt-1] * 1000
 
+def input_percentile_ranks(wildcards):
+    """
+    Return appropriate input for experiment type and analysis goal.
+    """
+    if config['goal'] == 'reprocess':
+        if experiment_type=='rnaseq_mrna_differential':
+            return [ 'logs/'+wildcards['accession']+'-decorate_differential_rnaseq.done' ]
+        else:
+            return None
+    if config['goal'] == 'recalculations':
+        # input files are already there
+        return None
+
+def input_differential_tracks_and_gsea(wildcards):
+    """
+    Return appropriate input for experiment type and analysis goal
+    for rule differential_tracks and rule differential_gsea
+    """
+    if config['goal'] == 'reprocess':
+        if experiment_type=='rnaseq_mrna_differential':
+            return [ 'logs/'+wildcards['accession']+'-decorate_differential_rnaseq.done' ]
+        else:
+            return None
+    if config['goal'] == 'recalculations':
+        # input files are already there
+        return None
 
 
 localrules: check_differential_gsea, link_baseline_coexpression, link_baseline_heatmap, copy_raw_gene_counts_from_isl, copy_normalised_counts_from_isl, copy_transcript_files_from_isl, copy_transcript_relative_isoforms, create_tracks_symlinks, check_mvaPlot_rnaseq
@@ -210,6 +235,7 @@ rule percentile_ranks:
     conda: "envs/atlas-internal.yaml"
     log: "logs/{accession}-percentile_ranks.log"
     resources: mem_mb=get_mem_mb
+    input: input_percentile_ranks
     output:
         percentile_ranks_merged="{accession}-percentile-ranks.tsv"
     shell:
@@ -244,7 +270,8 @@ rule differential_tracks:
     log: "logs/{accession}.{contrast_id}-differential_tracks.log"
     resources: mem_mb=get_mem_mb
     input:
-        gff=get_gff()
+        gff=get_gff(),
+        check_point=input_differential_tracks_and_gsea
         # analytics will be derived below since it could be either {accession}-{arraydesign}-analytics.tsv
         # or just {accession}-analytics.tsv for RNA-Seq
     params:
@@ -274,6 +301,7 @@ rule differential_gsea:
     log: "logs/{accession}.{contrast_id}.{ext_db}-differential_gsea.log"
     resources: mem_mb=get_mem_mb
     threads: 8
+    input: input_differential_tracks_and_gsea
     params:
         organism=get_organism(),
         BIOENTITIES_PROPERTIES_PATH=config['bioentities_properties'],
@@ -1127,7 +1155,8 @@ rule decorate_differential_rnaseq:
     output:
         "{accession}-analytics.tsv",
         "{accession}-analytics.tsv.unrounded",
-        "{accession}-raw-counts.tsv"
+        "{accession}-raw-counts.tsv",
+        temp("logs/{accession}-decorate_differential_rnaseq.done")
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
@@ -1159,7 +1188,8 @@ rule decorate_differential_rnaseq:
                 echo "ERROR: decorate_differential_rnaseq for {wildcards.accession} and undecorated input ${{i}} "
                 exit 1                                                                                                                                                                                                              
             fi
-        done                                                                                                                                                                                                                        
+        done
+        touch {output[3]}                                                                                                                                                                                                       
         """                                                                                                                                                                                                                         
                                                                                                                                                                                                                   
 

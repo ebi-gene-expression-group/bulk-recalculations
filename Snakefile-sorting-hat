@@ -112,6 +112,11 @@ def get_tmp_dir():
     else:
         return None
 
+def get_goal():
+    if 'goal' in config:
+        return config['goal']
+    else:
+        return None
 
 
 def get_outputs():
@@ -240,7 +245,8 @@ rule produce_reprocess_call:
         isl_dir=get_isl_dir(),
         tmp_dir=get_tmp_dir(),
         lsf_config = get_lsf_config_file(),
-        log_handler_script=get_log_handler_script()
+        log_handler_script=get_log_handler_script(),
+        goal=get_goal()
     output:
         touch("{accession}/{accession}.reprocess.done")
     run:
@@ -253,6 +259,7 @@ rule produce_reprocess_call:
 
         snakemake --use-singularity --restart-times 1 --latency-wait 100 {config['sm_options']} --config \
             accession={wildcards.accession} \
+            goal={params.goal} \
             tool={get_tool(wildcards.accession)} \
             metadata_summary=../{input.metadata} \
             bioentities_properties={params.bioentities_properties} \
@@ -277,7 +284,8 @@ rule produce_recalculations_call:
         bioentities_properties=get_bioentities_property_path(),
         skip_steps_file=get_skip_steps_file(),
         lsf_config = get_lsf_config_file(),
-        log_handler_script=get_log_handler_script()
+        log_handler_script=get_log_handler_script(),
+        goal=get_goal()
     output:
         touch("{accession}/{accession}.recalculations.done")
     run:
@@ -294,6 +302,7 @@ rule produce_recalculations_call:
 
         snakemake --restart-times 4 --latency-wait 250 {config['sm_options']} --config \
             accession={wildcards.accession} \
+            goal={params.goal} \
             tool={get_tool(wildcards.accession)} \
             metadata_summary=../{input.metadata} \
             bioentities_properties={params.bioentities_properties} \
