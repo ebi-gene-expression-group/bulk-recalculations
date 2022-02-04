@@ -125,6 +125,9 @@ def get_metrics_reprocess():
     else:
         return ['tpms', 'fpkms']
 
+def get_array_design():
+    # parse xml config file here
+    return 'A-AFFY-2'
 
 
 #metrics = get_metrics()
@@ -1198,18 +1201,28 @@ rule decorate_differential_rnaseq:
 
 # differential_microarray_experiment
 
-rule get_normalized_expressions:
+rule get_normalized_expressions_microarray:
     """
     Get normalized expressions for differential microarray analysis.
     """
     conda: "envs/quantile.yaml"
-    log: "logs/{accession}-get_normalized_expressions.log"
+    log: "logs/{accession}-get_normalized_expressions_microarray.log"
+    resources: mem_mb=get_mem_mb
+    params:
+        tmp_dir=get_tmp_dir()
     output:
         "{accession}-test"
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
+
+        TMPDIR={params.tmp_dir}
+        echo $TMPDIR"/tmp"
+        if [ ! -d "$TMPDIR"/tmp ]; then
+            mkdir $TMPDIR/tmp
+        fi
+
         ## get path to IDF file name and Array Express load directory
         # -i flag will retrieve path to idf filename 
         # -d flag will retrieve path to Array Express load directory
@@ -1230,6 +1243,12 @@ rule get_normalized_expressions:
         fi
         touch {output}
         """ 
+
+rule check_normalized_expressions_microarray:
+    """
+    Check normalized expression have been created for each array_design
+    get_array_design()
+    """
 
 
 

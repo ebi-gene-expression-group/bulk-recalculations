@@ -15,6 +15,11 @@
 #					- "lumi" : RSN normalization for Illumina microarray single color arrays using Lumi package
 # 	- outFile <- filename to store normalized data matrix
 # 	- miRBaseFile <- filename with probeset IDs and latest miRBase mappings (if applicable).
+require(ff)
+require(bit)
+require(bit64)
+require(oligoClasses)
+
 normalizeArrayData <- function(inFile, mode, outFile, miRBaseFile) {
 
 	# Use try() to catch errors
@@ -229,7 +234,6 @@ affymetrixArray <- function(files, assayNames, outFile) {
 		eSet <- rma(featureSet) # no target
 	}
 	print("rma finished")
-
 	# Now the pre-processing is done, either with oligo or affy, and the
 	# data is stored in the eSet object. 
 
@@ -237,16 +241,13 @@ affymetrixArray <- function(files, assayNames, outFile) {
 	# order as their corresponding samples in eSet.
 	# shortFileNames is vector of CEL filenames with /path/to/files/ stripped off (i.e. just base names).
 	shortFileNames <- gsub(".+/", "", files)
-
 	# Create a vector of scan names in the correct order with relSort().
 	assayNamesSorted <- relSort(assayNames, shortFileNames, sampleNames(eSet))
-
 	# Normalized expressions to data frame.
 	normExprs <- exprs(eSet)
 	# Add row names as a column and give it col name "DesignElementAccession".
-	normExprs <- data.frame(cbind(rownames(normExprs), normExprs))
+	normExprs <- cbind(rownames(normExprs), as.data.frame(normExprs[,])  )
 	colnames(normExprs) <- c("DesignElementAccession", assayNamesSorted)
-
 	print("Writing normalized expressions matrix")
 	# Write normalized data to file.
 	write.table(normExprs, file = outFile, sep = "\t", quote = FALSE, row.names=FALSE)	
