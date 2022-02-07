@@ -125,10 +125,6 @@ def get_metrics_reprocess():
     else:
         return ['tpms', 'fpkms']
 
-def get_array_design():
-    # parse xml config file here
-    return 'A-AFFY-2'
-
 
 #metrics = get_metrics()
 plot_labels = {"go": "GO terms", "reactome": "Reactome Pathways", "interpro": "Interpro domains"}
@@ -228,6 +224,18 @@ def input_differential_tracks_and_gsea(wildcards):
     if config['goal'] == 'recalculations':
         # input files are already there
         return None
+
+def get_array_design_from_xml(wildcards):
+    """
+    Parse xml config file here.
+    """
+    from xml.dom import minidom
+    xmldoc = minidom.parse( wildcards['accession']+'-configuration.xml' )
+    itemlist = xmldoc.getElementsByTagName('array_design')
+    array_designs_grabbed = []
+    for s in itemlist:
+        array_designs_grabbed.append( s.firstChild.nodeValue )
+    return array_designs_grabbed
 
 
 localrules: check_differential_gsea, link_baseline_coexpression, link_baseline_heatmap, copy_raw_gene_counts_from_isl, copy_normalised_counts_from_isl, copy_transcript_files_from_isl, copy_transcript_relative_isoforms, create_tracks_symlinks, check_mvaPlot_rnaseq
@@ -1211,7 +1219,7 @@ rule get_normalized_expressions_microarray:
     params:
         tmp_dir=get_tmp_dir()
     output:
-        "{accession}-test"
+        temp("logs/{accession}-get_normalized_expressions_microarray.done")
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
@@ -1246,9 +1254,32 @@ rule get_normalized_expressions_microarray:
 
 rule check_normalized_expressions_microarray:
     """
-    Check normalized expression have been created for each array_design
-    get_array_design()
+    Check that normalized expressions have been created for each array_design.
     """
+    log: "logs/{accession}-check_normalized_expressions_microarray.log"
+    input:
+        rule_get_done=rules.get_normalized_expressions_microarray.output
+    params:
+        array_designs=get_array_design_from_xml
+    output:
+        temp("logs/{accession}-check_normalized_expressions_microarray.done")
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+
+        for p in {params.array_designs}
+        do  
+            echo "Array designs found in the xml config file: ${{p}}"
+            if [ -s {wildcards.accession}_"${{p}}-normalized-expressions.tsv.undecorated" ] ; then
+                echo "File {wildcards.accession}_${{p}}-normalized-expressions.tsv.undecorated exists for {wildcards.accession} and array_design ${{p}}"
+            else
+                echo "ERROR: File does not exist for {wildcards.accession} and array_design ${{p}}" >&2
+                exit 1
+            fi
+        done
+        touch {output}
+        """
 
 
 

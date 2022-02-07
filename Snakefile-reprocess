@@ -101,8 +101,9 @@ def get_outputs():
 
     # collect output for differential microarrays
     if experiment_type == 'microarray_1colour_mrna_differential' or experiment_type =='microarray_2colour_mrna_differential' or experiment_type =='microarray_1colour_microrna_differential':
-        outputs.append(f"{config['accession']}-test")
-        #outputs.extend( expand( config['accession']+"_{array_design}-normalized-expressions.tsv.undecorated", array_design=get_array_design() )) 
+        outputs.extend(expand("logs/"+f"{config['accession']}"+"-get_normalized_expressions_microarray.done" ))
+        outputs.extend(expand("logs/"+f"{config['accession']}"+"-check_normalized_expressions_microarray.done" ))
+
 
 
 
