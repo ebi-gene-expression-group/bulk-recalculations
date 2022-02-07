@@ -12,6 +12,8 @@ dependencies:
  - bioconductor-lumi
  - bioconductor-oligo
  - bioconductor-oligoclasses
+ - bioconductor-biobase
+ - bioconductor-arrayqualitymetrics >3.32.0
 
 # see conflict between ff and oligoClasses
 # because ff no longer exports S3 methods

@@ -1282,8 +1282,52 @@ rule check_normalized_expressions_microarray:
         """
 
 
-
 rule microarray_qc:
+    """
+    Run array quality control (and modify the experiment configuration file as necessary).
+    """
+    conda: "envs/quantile.yaml"
+    log: "logs/{accession}-microarray_qc.log"
+    input:
+        rule_check_done=rules.check_normalized_expressions_microarray.output
+    resources: mem_mb=get_mem_mb
+    output:
+        "{accession}-microarray_qc"
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+
+        ## get path to IDF file name and Array Express load directory
+        # -i flag will retrieve path to idf filename 
+        # -d flag will retrieve path to Array Express load directory
+        # -m flag will retrieve path to mirbase directory
+        idf_filename=$(perl {workflow.basedir}/bin/get_magetab_paths.pl -e {wildcards.accession} -i) 
+        ae_dir=$(perl {workflow.basedir}/bin/get_magetab_paths.pl -e {wildcards.accession} -d)
+        mirbase_dir=$(perl {workflow.basedir}/bin/get_magetab_paths.pl -e {wildcards.accession} -m)  
+
+        echo $idf_filename
+        echo $ae_dir
+        echo $mirbase_dir
+
+        # arrayQualityMetrics should be > 3.32.0
+
+        {workflow.basedir}/bin/arrayQC.sh $(pwd) $idf_filename $ae_dir $mirbase_dir {workflow.basedir}/bin
+        qcExitCode=$?
+
+        if [ "$qcExitCode" -eq 2 ]; then
+	        echo "Experiment $expAcc has been disqualified due to insufficient quality, exiting"
+            exit 0
+        elif [ "$qcExitCode" -ne 0 ]; then
+	        echo "ERROR: QC for {wildcards.accession} failed" >&2
+            exit "$qcExitCode"
+        fi
+        touch {output}
+        """
+
+
+
+
 
 rule generate_methods_differential_microarray:
 
