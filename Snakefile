@@ -125,6 +125,11 @@ def get_metrics_reprocess():
     else:
         return ['tpms', 'fpkms']
 
+def get_meta_config():
+    if 'atlas_meta_config' in config:
+        return config['atlas_meta_config']
+    else:
+        return None
 
 #metrics = get_metrics()
 plot_labels = {"go": "GO terms", "reactome": "Reactome Pathways", "interpro": "Interpro domains"}
@@ -1340,10 +1345,59 @@ rule microarray_qc:
         """
 
 
-
-
-
 rule generate_methods_differential_microarray:
+    """
+    Populate analysis methods for microarrays.
+    """
+    conda: "envs/perl-atlas-modules.yaml"
+    log: "logs/{accession}-generate_methods_differential_microarray.log"
+    input:
+        config_xml="{accession}-configuration.xml"
+    params:
+        atlas_meta_config=get_meta_config(),
+        exp_type=get_from_config_or_metadata_summary('experiment_type')
+    output:
+        "{accession}-analysis-methods.tsv"
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+        export ATLAS_META_CONFIG={params.atlas_meta_config}
+
+        # Populate analysis methods
+        target=""
+        expType={params.exp_type}
+        if [ "$expType" == "microarray_1colour_mrna_differential" ]; then
+            arrayDataType=$(perl {workflow.basedir}/bin/get_experiment_info.pl --experiment {wildcards.accession} --xmlfile {input.config_xml} --rawdatafiles | head -1 | awk -F"." '{{print $2}}' | tr '[:upper:]' '[:lower:]')
+            if [ "$arrayDataType" == "cel" ]; then
+                target=../../affymetrix-differential-analytics-methods.tsv
+            else
+                target=../../onecolour-microarray-differential-analytics-methods.tsv
+            fi
+        elif [ "$expType" == "microarray_2colour_mrna_differential" ]; then
+            target=../../twocolour-microarray-differential-analytics-methods.tsv
+        elif [ "$expType" == "microarray_1colour_microrna_differential" ]; then
+            target=../../onecolour-mirna-microarray-differential-analytics-methods.tsv
+        elif [ "$expType" == "microarray_2colour_microrna_differential" ]; then
+            target=../../twocolour-mirna-microarray-differential-analytics-methods.tsv
+        else
+            echo "ERROR: Unrecognised type: $expType for experiment: {wildcards.accession}" >&2
+            exit 1
+        fi
+
+        if [ ! -f "$target" ]; then
+            echo "ERROR: Failed to obtain analysis methods for {wildcards.accession}, file not found: $target" >&2
+            exit 1
+        fi
+        ln -s $target {output}
+        """
+
+
+
+
+
+
+
 
 rule merge_probe_ids_microarray:
 
@@ -1355,7 +1409,10 @@ rule round_log2_fold_changes_microarray:
 
 rule decorate_expression_differential_microarray:
 
-
+rule cleanup_microarray:
+    """
+    Remove intermediate files.
+    """
 
 
 

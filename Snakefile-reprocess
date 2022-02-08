@@ -104,7 +104,7 @@ def get_outputs():
         outputs.extend(expand("logs/"+f"{config['accession']}"+"-get_normalized_expressions_microarray.done" ))
         outputs.extend(expand("logs/"+f"{config['accession']}"+"-check_normalized_expressions_microarray.done" ))
         outputs.extend(expand("logs/"+f"{config['accession']}"+"-microarray_qc.done" ))
-
+        outputs.append(f"{config['accession']}-analysis-methods.tsv")
 
 
     # collect output for baseline proteomics

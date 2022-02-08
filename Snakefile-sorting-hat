@@ -118,6 +118,11 @@ def get_goal():
     else:
         return None
 
+def get_meta_config():
+    if 'atlas_meta_config' in config:
+        return config['atlas_meta_config']
+    else:
+        return None
 
 def get_outputs():
     import os
@@ -246,7 +251,8 @@ rule produce_reprocess_call:
         tmp_dir=get_tmp_dir(),
         lsf_config = get_lsf_config_file(),
         log_handler_script=get_log_handler_script(),
-        goal=get_goal()
+        goal=get_goal(),
+        atlasmeta_config=get_meta_config()
     output:
         touch("{accession}/{accession}.reprocess.done")
     run:
@@ -268,6 +274,7 @@ rule produce_reprocess_call:
             methods_dif={params.methods_dif} \
             isl_dir={params.isl_dir} \
             tmp_dir={params.tmp_dir} \
+            atlas_meta_config={params.atlasmeta_config} \
             -s {workflow.basedir}/Snakefile-reprocess {params.log_handler_script}
         popd
         """
