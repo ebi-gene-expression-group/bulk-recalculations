@@ -227,7 +227,7 @@ def input_differential_tracks_and_gsea(wildcards):
 
 def get_array_design_from_xml(wildcards):
     """
-    Parse xml config file here.
+    Meant to be used within a rule. Parse xml config file here.
     """
     from xml.dom import minidom
     xmldoc = minidom.parse( wildcards['accession']+'-configuration.xml' )
@@ -1282,6 +1282,7 @@ rule check_normalized_expressions_microarray:
         """
 
 
+
 rule microarray_qc:
     """
     Run array quality control (and modify the experiment configuration file as necessary).
@@ -1291,8 +1292,10 @@ rule microarray_qc:
     input:
         rule_check_done=rules.check_normalized_expressions_microarray.output
     resources: mem_mb=get_mem_mb
+    params:
+        array_designs=get_array_design_from_xml
     output:
-        "{accession}-microarray_qc"
+        temp("logs/{accession}-microarray_qc.done")
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
@@ -1322,6 +1325,17 @@ rule microarray_qc:
 	        echo "ERROR: QC for {wildcards.accession} failed" >&2
             exit "$qcExitCode"
         fi
+
+        # check that qc dirs exist for each array design
+        for p in {params.array_designs}
+        do
+            if [ -d "./qc/{wildcards.accession}_${{p}}_QM" ]; then
+                echo " ./qc/{wildcards.accession}_${{p}}_QM found"
+            else
+                echo "ERROR: ./qc/{wildcards.accession}_${{p}}_QM not found"
+                exit 1
+            fi
+        done
         touch {output}
         """
 
