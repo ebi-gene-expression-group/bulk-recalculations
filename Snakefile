@@ -1345,11 +1345,11 @@ rule microarray_qc:
 
 rule generate_methods_differential_microarray:
 
-rule merge_probe_ids_per_gene:
+rule merge_probe_ids_microarray:
 
-rule microarray_calculate_analytics:
+rule mdifferential_statistics_microarray:
 
-rule check_analytics_files:
+rule check_nas_microarray:
 
 rule round_log2_fold_changes_microarray:
 
