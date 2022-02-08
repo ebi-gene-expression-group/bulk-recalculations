@@ -238,7 +238,7 @@ def get_array_design_from_xml(wildcards):
     return array_designs_grabbed
 
 
-localrules: check_differential_gsea, link_baseline_coexpression, link_baseline_heatmap, copy_raw_gene_counts_from_isl, copy_normalised_counts_from_isl, copy_transcript_files_from_isl, copy_transcript_relative_isoforms, create_tracks_symlinks, check_mvaPlot_rnaseq
+localrules: check_differential_gsea, link_baseline_coexpression, link_baseline_heatmap, copy_raw_gene_counts_from_isl, copy_normalised_counts_from_isl, copy_transcript_files_from_isl, copy_transcript_relative_isoforms, create_tracks_symlinks, check_mvaPlot_rnaseq, check_normalized_expressions_microarray
 
 
 wildcard_constraints:

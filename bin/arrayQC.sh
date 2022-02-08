@@ -1,9 +1,5 @@
 #!/usr/bin/env bash
 
-# Source script from the same (prod or test) Atlas environment as this script
-#scriptDir=$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-#projectRoot=${scriptDir}/../..
-
 if [ $# -lt 1 ]; then
    echo "Usage: $0 expAcc"
    echo "e.g. $0 E-MTAB-1066 E-MTAB-1066.idf.txt AE_loadDirectoryPath "
