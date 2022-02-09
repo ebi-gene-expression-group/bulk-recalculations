@@ -1394,16 +1394,17 @@ rule generate_methods_differential_microarray:
 
 
 
-rule decorate_norm_expr_microarray:
+rule decorate_temp_norm_expr_microarray:
     """
     Generate temp decorated file.
     """
     container: "docker://quay.io/ebigxa/ensembl-update-env:amm1.1.2"
-    log: "logs/{accession}-decorate_norm_expr_microarray.log"
+    log: "logs/{accession}-decorate_temp_norm_expr_microarray.log"
+    resources: mem_mb=get_mem_mb
     input:
         rules.check_normalized_expressions_microarray.output
     output:
-        temp("logs/{accession}-decorate_norm_expr_microarray.done")
+        temp("logs/{accession}-decorate_temp_norm_expr_microarray.done")
     params:
         organism=get_organism()
     shell:
@@ -1453,6 +1454,38 @@ rule decorate_norm_expr_microarray:
         touch {output}
         """
 
+
+rule merge_probe_ids_microarray:
+    """
+    Merge probe ids with highest mean.
+    """
+    conda: "envs/atlas-internal.yaml"
+    log: "logs/{accession}-merge_probe_ids_microarray.log"
+    resources: mem_mb=get_mem_mb
+    input:
+        rules.decorate_temp_norm_expr_microarray.output
+    params:
+        array_designs=get_array_design_from_xml
+    output:
+        temp("logs/{accession}-merge_probe_ids_microarray.done")
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+
+        # use the temp decorated file to find highest mean of probe ids per gene
+        for p in {params.array_designs}
+        do
+            if [ -s "{wildcards.accession}_${{p}}-normalized-expressions.tsv.decorated.tmp" ]; then
+                echo "Merging probe ids with highest mean per gene for {wildcards.accession} and array design ${{p}}"
+                {workflow.basedir}/bin/highestMeanProbeIdsPerGene.R "{wildcards.accession}_${{p}}-normalized-expressions.tsv.decorated.tmp"
+            else
+                echo "ERROR: {wildcards.accession}_${{p}}-normalized-expressions.tsv.decorated.tmp doesn't exist"
+                exit 1
+            fi
+        done
+        touch {output}
+        """
 
 
 

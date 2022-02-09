@@ -2,6 +2,20 @@ include: "Snakefile"
   
 # atom: set grammar=python:
 
+def get_array_design_from_xml():
+    """
+    Parse xml config file here.
+    """
+    from xml.dom import minidom
+    xmldoc = minidom.parse( config['accession']+'-configuration.xml' )
+    itemlist = xmldoc.getElementsByTagName('array_design')
+    array_designs_grabbed = []
+    for s in itemlist:
+        array_designs_grabbed.append( s.firstChild.nodeValue )
+    return array_designs_grabbed
+
+
+
 # This script used to rerun studies that have new matrices generated from IRAP/ISL
 
 def get_outputs():
@@ -105,7 +119,9 @@ def get_outputs():
         outputs.extend(expand("logs/"+f"{config['accession']}"+"-check_normalized_expressions_microarray.done" ))
         outputs.extend(expand("logs/"+f"{config['accession']}"+"-microarray_qc.done" ))
         outputs.append(f"{config['accession']}-analysis-methods.tsv")
-        outputs.extend(expand("logs/"+f"{config['accession']}"+"-decorate_norm_expr_microarray.done" ))
+        outputs.extend(expand("logs/"+f"{config['accession']}"+"-decorate_temp_norm_expr_microarray.done" ))
+        outputs.extend(expand("logs/"+f"{config['accession']}"+"-merge_probe_ids_microarray.done" ))
+        #outputs.extend(expand(config['accession']+"_{ad}-normalized-expressions.tsv.undecorated", ad=get_array_design_from_xml()  ))
 
 
     # collect output for baseline proteomics
