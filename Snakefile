@@ -1278,6 +1278,7 @@ rule check_normalized_expressions_microarray:
             echo "Array designs found in the xml config file: ${{p}}"
             if [ -s {wildcards.accession}_"${{p}}-normalized-expressions.tsv.undecorated" ] ; then
                 echo "File {wildcards.accession}_${{p}}-normalized-expressions.tsv.undecorated exists for {wildcards.accession} and array_design ${{p}}"
+                cp {wildcards.accession}_"${{p}}-normalized-expressions.tsv.undecorated" {wildcards.accession}_"${{p}}-normalized-expressions.tsv.undecorated.unmerged"
             else
                 echo "ERROR: File does not exist for {wildcards.accession} and array_design ${{p}}" >&2
                 exit 1
