@@ -96,7 +96,7 @@ def get_outputs():
         outputs.append(f"{config['accession']}-atlasExperimentSummary.Rdata")
         outputs.append(f"{config['accession']}-analytics.tsv")
         outputs.append(f"{config['accession']}-analytics.tsv.unrounded")
-        outputs.extend(expand("logs/"+f"{config['accession']}"+".differential_statistics_rnaseq.log.done" ))
+        outputs.extend(expand("logs/"+f"{config['accession']}"+".differential_statistics_rnaseq.done" ))
         outputs.append(f"{config['accession']}-raw-counts.tsv")
         outputs.append(f"{config['accession']}-percentile-ranks.tsv")
         # differential gsea
@@ -122,6 +122,7 @@ def get_outputs():
         outputs.extend(expand("logs/"+f"{config['accession']}"+"-decorate_temp_norm_expr_microarray.done" ))
         outputs.extend(expand("logs/"+f"{config['accession']}"+"-merge_probe_ids_microarray.done" ))
         #outputs.extend(expand(config['accession']+"_{ad}-normalized-expressions.tsv.undecorated", ad=get_array_design_from_xml()  ))
+        outputs.extend(expand("logs/"+f"{config['accession']}"+"-differential_statistics_microarray.done" ))
 
 
     # collect output for baseline proteomics

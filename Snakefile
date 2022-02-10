@@ -1025,7 +1025,7 @@ rule differential_statistics_rnaseq:
         tmp_dir=get_tmp_dir()
     output:
         differential_expression="{accession}-analytics.tsv.undecorated",
-        done=temp("logs/{accession}.differential_statistics_rnaseq.log.done")
+        done=temp("logs/{accession}.differential_statistics_rnaseq.done")
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
@@ -1455,7 +1455,6 @@ rule decorate_temp_norm_expr_microarray:
         touch {output}
         """
 
-
 rule merge_probe_ids_microarray:
     """
     Merge probe ids with highest mean.
@@ -1489,9 +1488,43 @@ rule merge_probe_ids_microarray:
         """
 
 
-
-
 rule differential_statistics_microarray:
+    """
+    Calculate differential expression statistics for microarrays - after probe ids have been merged.
+    """
+    conda: "envs/differential-stats.yaml"
+    log: "logs/{accession}.differential_statistics_microarray.log"
+    resources: mem_mb=get_mem_mb
+    input:
+        config_xml="{accession}-configuration.xml",
+        merged_done=rules.merge_probe_ids_microarray.output
+    params:
+        tmp_dir=get_tmp_dir()
+    output:
+        done=temp("logs/{accession}-differential_statistics_microarray.done")
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+        PATH=$PATH:{workflow.basedir}/bin
+        
+        TMPDIR={params.tmp_dir}
+        echo $TMPDIR"/tmp"
+        if [ ! -d "$TMPDIR"/tmp ]; then
+            mkdir $TMPDIR/tmp
+        fi
+        # Calculate analytics
+        perl {workflow.basedir}/bin/diffAtlas_DE.pl --experiment {wildcards.accession} --directory ./
+        if [ $? -ne 0 ]; then
+	        echo "ERROR: Failed to calculate analytics for {wildcards.accession}" >&2
+	        rm -rf *.png *-analytics.tsv.undecorated
+	        exit 1
+        fi
+        touch {output.done}
+        """
+
+
+
 
 rule check_nas_microarray:
 
