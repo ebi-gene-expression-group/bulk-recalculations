@@ -250,6 +250,7 @@ wildcard_constraints:
     accession="E-\D+-\d+",
     metric="tpms|fpkms"
 
+
 rule percentile_ranks:
     conda: "envs/atlas-internal.yaml"
     log: "logs/{accession}-percentile_ranks.log"
@@ -1493,7 +1494,7 @@ rule differential_statistics_microarray:
     Calculate differential expression statistics for microarrays - after probe ids have been merged.
     """
     conda: "envs/differential-stats.yaml"
-    log: "logs/{accession}.differential_statistics_microarray.log"
+    log: "logs/{accession}-differential_statistics_microarray.log"
     resources: mem_mb=get_mem_mb
     input:
         config_xml="{accession}-configuration.xml",
@@ -1556,9 +1557,40 @@ rule check_nas_microarray:
         touch {output}
         """
 
+rule round_log2_fold_changes_microarray:                                                                                                                                                                       
+    """                                                                                                                                                                                                        
+    Round log2fold changes to one decimal place.                                                                                                                                                               
+    It modifies the input and leaves the initial logs in .unrounded                                                                                                                                            
+    """                                                                                                                                                                                                        
+    conda: "envs/perl-math-round.yaml"                                                                                                                                                                         
+    log: "logs/{accession}_{array_design}-round_log2_fold_changes_microarray.log"                                                                                                                              
+    resources: mem_mb=get_mem_mb                                                                                                                                                                               
+    input:                                                                                                                                                                                                     
+        rules.check_nas_microarray.output                                                                                                                                                                      
+    output:                                                                                                                                                                                                    
+        "{accession}_{array_design}-analytics.tsv.undecorated.unrounded"                                                                                                                                       
+    params:                                                                                                                                                                                                    
+        analytics="{accession}_{array_design}-analytics.tsv.undecorated",                                                                                                                                      
+        intermediate_rounded="{accession}_{array_design}-analytics.tsv.undecorated.rounded"                                                                                                                    
+    shell:                                                                                                                                                                                                     
+        """                                                                                                                                                                                                    
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set                                                                                                                       
+        exec &> "{log}"                                                                                                                                                                                        
+                                                                                                                                                                                                               
+        perl {workflow.basedir}/bin/round_log2_fold_changes.pl {params.analytics}                                                                                                                              
+                                                                                                                                                                                                               
+        if [ $? -ne 0 ]; then                                                                                                                                                                                  
+                echo "ERROR: Failed to round to one decimal place log2fold changes in {params.analytics} " >&2                                                                                                 
+                rm -rf {params.intermediate_rounded}                                                                                                                                                           
+                exit 1                                                                                                                                                                                         
+        fi                                                                                                                                                                                                     
+        mv {params.analytics} {output}                                                                                                                                                                         
+        mv {params.intermediate_rounded} {params.analytics}                                                                                                                                                    
+        """                                                                                                                                                                                                    
 
 
-rule round_log2_fold_changes_microarray:
+
+
 
 rule decorate_expression_differential_microarray:
 
