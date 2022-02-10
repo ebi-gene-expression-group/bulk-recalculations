@@ -1523,10 +1523,40 @@ rule differential_statistics_microarray:
         touch {output.done}
         """
 
-
-
-
 rule check_nas_microarray:
+    """
+    Check that the analytics files have some p-values that are not NA.
+    """
+    conda: "envs/atlas-internal.yaml"
+    log: "logs/{accession}-check_nas_microarray.log"
+    input:
+        rules.differential_statistics_microarray.output
+    params:
+        array_designs=get_array_design_from_xml
+    output:
+        temp("logs/{accession}-check_nas_microarray.done")
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+
+        for p in {params.array_designs}
+        do
+            if [ -s "{wildcards.accession}_${{p}}-analytics.tsv.undecorated" ]; then
+                {workflow.basedir}/bin/check_na_pvals.R "{wildcards.accession}_${{p}}-analytics.tsv.undecorated"
+                if [ $? -ne 0 ]; then
+                    echo "ERROR: no non-NA p-values found in {wildcards.accession}_${{p}}-analytics.tsv.undecorated" >&2
+                    exit 1
+                fi
+            else
+                echo "ERROR: {wildcards.accession}_${{p}}-analytics.tsv.undecorated does not exist"
+                exit 1
+            fi
+        done
+        touch {output}
+        """
+
+
 
 rule round_log2_fold_changes_microarray:
 
