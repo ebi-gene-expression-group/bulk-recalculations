@@ -1091,7 +1091,10 @@ rule round_log2_fold_changes_rnaseq:
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
 
-        {workflow.basedir}/bin/round_log2_fold_changes.R {params.exp_type} {input} {params.intermediate_rounded}
+        {workflow.basedir}/bin/round_log2_fold_changes.R \
+            --experiment_type {params.exp_type} \
+            --input_to_round {input} \
+            --intermediate_output {params.intermediate_rounded}  
 
         if [ $? -ne 0 ]; then
 	        echo "ERROR: Failed to round to one decimal place log2fold changes in {input} " >&2
@@ -1579,7 +1582,10 @@ rule round_log2_fold_changes_microarray:
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set                                                                                                                       
         exec &> "{log}"                                                                                                                                                                                        
                                                                                                                                                                                                                
-        {workflow.basedir}/bin/round_log2_fold_changes.R {params.exp_type} {params.analytics} {params.intermediate_rounded}                                                                                                                               
+        {workflow.basedir}/bin/round_log2_fold_changes.R \
+            --experiment_type {params.exp_type} \
+            --input_to_round {params.analytics} \
+            --intermediate_output {params.intermediate_rounded}                                                                                                                               
                                                                                                                                                                                                                
         if [ $? -ne 0 ]; then                                                                                                                                                                                  
                 echo "ERROR: Failed to round to one decimal place log2fold changes in {params.analytics} " >&2                                                                                                 

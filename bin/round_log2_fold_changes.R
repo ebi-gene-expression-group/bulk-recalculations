@@ -3,31 +3,40 @@
 # Script to round log2 fold-changes from differential expression analysis to
 # the nearest 0.1.
 
-suppressPackageStartupMessages(library("data.table"))
+suppressPackageStartupMessages(library(data.table))
+suppressPackageStartupMessages(library(optparse))
 
-# Get commandline arguments.
-args <- commandArgs( TRUE )
+args <- parse_args(OptionParser(option_list = list(
+  make_option(
+    c("-e", "--experiment_type"),
+    help = "Experiment type"
+  ),
+  make_option(
+    c("-i", "--input_to_round"),
+    help = "Input file with unrounded logs"
+  ),
+  make_option(
+    c("-o", "--intermediate_output"),
+    help = "Intermediate output file with rounded logs"
+  )
+)))
 
-if( length( args ) != 3 ) {
-  stop( "\nUsage:\n\tround_log2_fold_changes.R <experiment_type> <unrounded_analytics_filename> <rounded_analytics_filename> \n\n" )
-}
-exp_type <- args[ 1 ]
-unrounded<- args[ 2 ]
-rounded  <- args[ 3 ]
+exp_type <- args$experiment_type
+unrounded<- args$input_to_round
+rounded  <- args$intermediate_output
 
 unrounded_dt <- fread(file=unrounded)
 # check that the file has at least one row
 if( nrow( unrounded_dt )<1 ) {
   stop( paste(  unrounded, " is empty. Please check." ) )
 }
-# round columns
+
 # in proteomics, where we see the issue, column says <contrast>.foldChange instead of log2foldchange
+# select columns
 index <- unique(grep(pattern='log2foldchange', x=colnames(unrounded_dt), fixed = TRUE)	, grep(pattern='foldChange', x=colnames(unrounded_dt), fixed = TRUE)	 )
 # replace NAs with 0s
-for (i in index){
-	unrounded_dt[ which(is.na(unrounded_dt[,i])==TRUE), i ] <- 0
-}
-
+for (j in index) set(unrounded_dt, which(is.na(unrounded_dt[[j]])) , j, 0)         
+# round columns
 for (j in index) set(unrounded_dt, j = j, value = round(unrounded_dt[[j]], digits = 1)  )
 
 if (exp_type=='proteomics_differential') {
