@@ -3,7 +3,7 @@
 # Script to round log2 fold-changes from differential expression analysis to
 # the nearest 0.1.
 
-suppressPackageStartupMessages(library(data.table))
+suppressPackageStartupMessages(library("data.table"))
 
 # Get commandline arguments.
 args <- commandArgs( TRUE )
@@ -23,6 +23,10 @@ if( nrow( unrounded_dt )<1 ) {
 # round columns
 # in proteomics, where we see the issue, column says <contrast>.foldChange instead of log2foldchange
 index <- unique(grep(pattern='log2foldchange', x=colnames(unrounded_dt), fixed = TRUE)	, grep(pattern='foldChange', x=colnames(unrounded_dt), fixed = TRUE)	 )
+# replace NAs with 0s
+for (i in index){
+	unrounded_dt[ which(is.na(unrounded_dt[,i])==TRUE), i ] <- 0
+}
 
 for (j in index) set(unrounded_dt, j = j, value = round(unrounded_dt[[j]], digits = 1)  )
 
