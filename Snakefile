@@ -1076,7 +1076,7 @@ rule round_log2_fold_changes_rnaseq:
     Round log2fold changes from differential expression analysis to one decimal place.
     It modifies the input and leaves the initial logs in .unrounded
     """
-    conda: "envs/perl-math-round.yaml"
+    conda: "envs/atlas-internal.yaml"
     log: "logs/{accession}.round_log2_fold_changes_rnaseq.log"
     resources: mem_mb=get_mem_mb
     input:
@@ -1084,13 +1084,14 @@ rule round_log2_fold_changes_rnaseq:
     output:
         unrounded="{accession}-analytics.tsv.undecorated.unrounded" 
     params:
+        exp_type=get_from_config_or_metadata_summary('experiment_type'),
         intermediate_rounded="{accession}-analytics.tsv.undecorated.rounded"
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
 
-        perl {workflow.basedir}/bin/round_log2_fold_changes.pl {input}
+        {workflow.basedir}/bin/round_log2_fold_changes.R {params.exp_type} {input} {params.intermediate_rounded}
 
         if [ $? -ne 0 ]; then
 	        echo "ERROR: Failed to round to one decimal place log2fold changes in {input} " >&2
@@ -1562,14 +1563,15 @@ rule round_log2_fold_changes_microarray:
     Round log2fold changes to one decimal place.                                                                                                                                                               
     It modifies the input and leaves the initial logs in .unrounded                                                                                                                                            
     """                                                                                                                                                                                                        
-    conda: "envs/perl-math-round.yaml"                                                                                                                                                                         
+    conda: "envs/atlas-internal.yaml"                                                                                                                                                                         
     log: "logs/{accession}_{array_design}-round_log2_fold_changes_microarray.log"                                                                                                                              
     resources: mem_mb=get_mem_mb                                                                                                                                                                               
     input:                                                                                                                                                                                                     
-        rules.check_nas_microarray.output                                                                                                                                                                      
+        rules.check_nas_microarray.output                                                                                                                                                                   
     output:                                                                                                                                                                                                    
         "{accession}_{array_design}-analytics.tsv.undecorated.unrounded"                                                                                                                                       
-    params:                                                                                                                                                                                                    
+    params:
+        exp_type=get_from_config_or_metadata_summary('experiment_type'),                                                                                                                                                  
         analytics="{accession}_{array_design}-analytics.tsv.undecorated",                                                                                                                                      
         intermediate_rounded="{accession}_{array_design}-analytics.tsv.undecorated.rounded"                                                                                                                    
     shell:                                                                                                                                                                                                     
@@ -1577,7 +1579,7 @@ rule round_log2_fold_changes_microarray:
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set                                                                                                                       
         exec &> "{log}"                                                                                                                                                                                        
                                                                                                                                                                                                                
-        perl {workflow.basedir}/bin/round_log2_fold_changes.pl {params.analytics}                                                                                                                              
+        {workflow.basedir}/bin/round_log2_fold_changes.R {params.exp_type} {params.analytics} {params.intermediate_rounded}                                                                                                                               
                                                                                                                                                                                                                
         if [ $? -ne 0 ]; then                                                                                                                                                                                  
                 echo "ERROR: Failed to round to one decimal place log2fold changes in {params.analytics} " >&2                                                                                                 
