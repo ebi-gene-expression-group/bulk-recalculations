@@ -1,5 +1,4 @@
 include: "Snakefile"
-include: "Snakefile-proteomics"
 
 # atom: set grammar=python:
 
