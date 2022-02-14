@@ -132,6 +132,18 @@ def get_outputs():
         outputs.extend(expand(config['accession']+"_{ad}-analytics.tsv", ad=get_array_design_from_xml()  ))
         outputs.extend(expand("logs/"+f"{config['accession']}"+"_{ad}-decorate_differential_microarray.done" ,ad=get_array_design_from_xml()   ))
         outputs.append(f"{config['accession']}-percentile-ranks.tsv")
+        # differential gsea
+        check_config_required(fields=['bioentities_properties'], method='differential-gsea')
+        outputs.extend( expand( config['accession']+".{c_id}.{ext_db}.{type}",
+                        c_id=get_contrast_ids(),
+                        ext_db=get_ext_db(),
+                        type=["gsea.tsv", "gsea_list.tsv"]))
+        outputs.extend( expand("logs/"+config['accession']+".{c_id}.{ext_db}.{type}",
+                        c_id=get_contrast_ids(),
+                        ext_db=get_ext_db(),
+                        type=["check_differential_gsea.done", "check_differential_gsea_list.done"]))
+        # generate Genome browser tracks (bedGraph) for the experiment
+        outputs.extend(expand(config['accession']+".{id}.{type}", id=get_contrast_ids(), type=["genes.pval.bedGraph", "genes.log2foldchange.bedGraph"]))
 
 
     # collect output for baseline proteomics

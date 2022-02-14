@@ -228,8 +228,13 @@ def input_differential_tracks_and_gsea(wildcards):
     if config['goal'] == 'reprocess':
         if experiment_type=='rnaseq_mrna_differential':
             return [ 'logs/'+wildcards['accession']+'-decorate_differential_rnaseq.done' ]
+        elif experiment_type == 'microarray_1colour_mrna_differential' or experiment_type =='microarray_2colour_mrna_differential' or experiment_type =='microarray_1colour_microrna_differential':
+            inputs = []
+            arr_designs=get_array_design_from_xml()
+            for s in arr_designs:
+                inputs.append( 'logs/'+wildcards['accession']+'_'+s+'-decorate_differential_microarray.done' )
+            return inputs
         else:
-            # microarrays (TBD)
             return None
     if config['goal'] == 'recalculations':
         # input files are already there
@@ -1672,18 +1677,9 @@ rule decorate_differential_microarray:
          
 
 
+rule delete_intermediate_files_microarray:
 
-rule rm_intermediate_files_microarray:
-    """
-    Remove intermediate files.
-    """
-    #rm -rf ${{expPath}}/mature.accession.tsv.aux
-    #rm -rf ${expPath}/*-normalized-expressions.tsv.decorated.tmp
-    #ff
-    #Rplots.pdf
-    # .unmerged
-
-rule delete_experiment:
+# rule delete_experiment:
 
 # mv data to atlas_exps
 	
