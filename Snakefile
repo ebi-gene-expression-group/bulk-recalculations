@@ -218,7 +218,7 @@ def input_percentile_ranks(wildcards):
             return None
     if config['goal'] == 'recalculations':
         # input files are already there
-        return None
+        return ''
 
 def input_differential_tracks_and_gsea(wildcards):
     """
@@ -238,7 +238,7 @@ def input_differential_tracks_and_gsea(wildcards):
             return None
     if config['goal'] == 'recalculations':
         # input files are already there
-        return None
+        return ''
 
 def get_array_design_from_xml(wildcards):
     """
