@@ -253,7 +253,7 @@ def get_array_design_from_xml(wildcards):
     return array_designs_grabbed
 
 
-localrules: check_differential_gsea, link_baseline_coexpression, link_baseline_heatmap, copy_raw_gene_counts_from_isl, copy_normalised_counts_from_isl, copy_transcript_files_from_isl, copy_transcript_relative_isoforms, create_tracks_symlinks, check_mvaPlot_rnaseq, check_normalized_expressions_microarray
+localrules: check_differential_gsea, link_baseline_coexpression, link_baseline_heatmap, copy_raw_gene_counts_from_isl, copy_normalised_counts_from_isl, copy_transcript_files_from_isl, copy_transcript_relative_isoforms, create_tracks_symlinks, check_mvaPlot_rnaseq, check_normalized_expressions_microarray, delete_intermediate_files_microarray
 
 
 wildcard_constraints:
@@ -1676,8 +1676,35 @@ rule decorate_differential_microarray:
         """                                                                                                                                                                                                                         
          
 
-
 rule delete_intermediate_files_microarray:
+    """
+    Delete intermediate files after microarray reprocessing. It runs after decoration
+    """
+    log: "logs/{accession}-delete_intermediate_files_microarray.log"
+    input: input_differential_tracks_and_gsea
+    params:
+        array_designs=get_array_design_from_xml
+    output:
+        temp("logs/{accession}-delete_intermediate_files_microarray.done")
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+
+        rm -rf intensities-*.ff
+        rm -rf rma-*.ff
+
+        [ -e mature.accession.tsv.aux ] && rm mature.accession.tsv.aux
+
+        for p in {params.array_designs}
+        do
+            [ -e "{wildcards.accession}_${{p}}-normalized-expressions.tsv.undecorated.unmerged" ] && rm "{wildcards.accession}_${{p}}-normalized-expressions.tsv.undecorated.unmerged" 
+            [ -e "{wildcards.accession}_${{p}}-normalized-expressions.tsv.decorated.tmp" ] && rm "{wildcards.accession}_${{p}}-normalized-expressions.tsv.decorated.tmp"
+
+        done
+        touch {output}   
+        """   
+
 
 # rule delete_experiment:
 

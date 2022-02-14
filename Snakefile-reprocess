@@ -144,6 +144,9 @@ def get_outputs():
                         type=["check_differential_gsea.done", "check_differential_gsea_list.done"]))
         # generate Genome browser tracks (bedGraph) for the experiment
         outputs.extend(expand(config['accession']+".{id}.{type}", id=get_contrast_ids(), type=["genes.pval.bedGraph", "genes.log2foldchange.bedGraph"]))
+        # delete intermediate files
+        outputs.extend(expand("logs/"+f"{config['accession']}"+"-delete_intermediate_files_microarray.done" ))
+
 
 
     # collect output for baseline proteomics
