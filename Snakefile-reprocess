@@ -131,7 +131,7 @@ def get_outputs():
         # decorate
         outputs.extend(expand(config['accession']+"_{ad}-analytics.tsv", ad=get_array_design_from_xml()  ))
         outputs.extend(expand("logs/"+f"{config['accession']}"+"_{ad}-decorate_differential_microarray.done" ,ad=get_array_design_from_xml()   ))
-
+        outputs.append(f"{config['accession']}-percentile-ranks.tsv")
 
 
     # collect output for baseline proteomics
