@@ -18,13 +18,13 @@ decorate_microarray_file() {
         mv $decoratedFile.swp $decoratedFile
         return 0
     else
-      echo "ERROR: decorate_microarray_file $@"
-	    return 1
+        echo "ERROR: decorate_microarray_file $@"
+        return 1
     fi
 }
 
 # microarray-import/bin/mergeProbeIdsPerGene.sh
-decorate_if_exists() {
+decorate_if_exists_norm() {
     fileToDecorate=$1
     if [ -e "$fileToDecorate" ]; then
         decorate_normalized_file $@
@@ -66,6 +66,18 @@ get_arraydesign_file() {
   else
     find -L ${ATLAS_PROD}/bioentity_properties/array_designs -type f -name "${organism}.${arraydesign}.tsv" | head -n1
   fi
+}
+
+# bioentity_annotations/decorate_microarray_experiment.sh
+decorate_if_exists() {
+    fileToDecorate=$1
+    if [ -e "$fileToDecorate" ]; then
+        decorate_microarray_file $@
+        if [ $? -ne 0 ]; then
+                echo "ERROR: FAILED decorate_microarray_file $@" >&2
+                exit 1
+        fi
+    fi
 }
 
 

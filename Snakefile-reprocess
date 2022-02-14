@@ -126,6 +126,13 @@ def get_outputs():
         outputs.extend(expand("logs/"+f"{config['accession']}"+"-differential_statistics_microarray.done" ))
         outputs.extend(expand("logs/"+f"{config['accession']}"+"-check_nas_microarray.done" ))
         outputs.extend(expand(config['accession']+"_{ad}-analytics.tsv.undecorated.unrounded", ad=get_array_design_from_xml()  ))
+        outputs.extend(expand("logs/"+f"{config['accession']}"+"_{ad}-round_log2_fold_changes_microarray.done" ,ad=get_array_design_from_xml()    ))
+        outputs.append(f"{config['accession']}-atlasExperimentSummary.Rdata")
+        # decorate
+        outputs.extend(expand(config['accession']+"_{ad}-analytics.tsv", ad=get_array_design_from_xml()  ))
+        outputs.extend(expand("logs/"+f"{config['accession']}"+"_{ad}-decorate_differential_microarray.done" ,ad=get_array_design_from_xml()   ))
+
+
 
     # collect output for baseline proteomics
     #if experiment_type == 'proteomics_baseline' or experiment_type =='proteomics_baseline_dia':

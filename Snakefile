@@ -1451,7 +1451,7 @@ rule decorate_temp_norm_expr_microarray:
             fi
 
             # generate temp decorated file normalized-expressions.tsv
-            decorate_if_exists "${{expPath}}/{wildcards.accession}_${{arrayDesign}}-normalized-expressions.tsv.undecorated" "$arrayDesignFile" "$geneNameFile"
+            decorate_if_exists_norm "${{expPath}}/{wildcards.accession}_${{arrayDesign}}-normalized-expressions.tsv.undecorated" "$arrayDesignFile" "$geneNameFile"
         done
         if [ $? -ne 0 ]; then
             echo "ERROR: Generate temp decorated files for {wildcards.accession}" >&2
@@ -1572,7 +1572,8 @@ rule round_log2_fold_changes_microarray:
     input:                                                                                                                                                                                                     
         rules.check_nas_microarray.output                                                                                                                                                                   
     output:                                                                                                                                                                                                    
-        "{accession}_{array_design}-analytics.tsv.undecorated.unrounded"                                                                                                                                       
+        unrounded="{accession}_{array_design}-analytics.tsv.undecorated.unrounded",
+        tmp=temp("logs/{accession}_{array_design}-round_log2_fold_changes_microarray.done")                                                                                                                            
     params:
         exp_type=get_from_config_or_metadata_summary('experiment_type'),                                                                                                                                                  
         analytics="{accession}_{array_design}-analytics.tsv.undecorated",                                                                                                                                      
@@ -1592,22 +1593,90 @@ rule round_log2_fold_changes_microarray:
                 rm -rf {params.intermediate_rounded}                                                                                                                                                           
                 exit 1                                                                                                                                                                                         
         fi                                                                                                                                                                                                     
-        mv {params.analytics} {output}                                                                                                                                                                         
-        mv {params.intermediate_rounded} {params.analytics}                                                                                                                                                    
+        mv {params.analytics} {output.unrounded}                                                                                                                                                                         
+        mv {params.intermediate_rounded} {params.analytics} 
+        touch {output.tmp}                                                                                                                                                 
         """                                                                                                                                                                                                    
 
 
+rule decorate_differential_microarray:
+    """
+    Decorate a microarray experiment with gene name and identifier from the latest 
+    Ensembl (or miRBase - as applicable) release.
+    """
+    container: "docker://quay.io/ebigxa/ensembl-update-env:amm1.1.2"
+    log: "logs/{accession}_{array_design}-decorate_differential_microarray.log"
+    resources: mem_mb=get_mem_mb    
+    input:
+        rules.round_log2_fold_changes_microarray.output.tmp       
+    params:
+        organism=get_organism()
+    output:
+        "{accession}_{array_design}-analytics.tsv",
+        temp("logs/{accession}_{array_design}-decorate_differential_microarray.done")
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+
+        source {workflow.basedir}/bin/reprocessing_routines.sh
+        source {workflow.basedir}/bin/decorate_microarray_routines.sh
+
+        expPath=$(pwd)
+        organism={params.organism}
+        echo $expPath
+        echo $organism
+
+        export WF_BASEDIR={workflow.basedir}/bin
+        #export LC_ALL=C # avoid Perl warning
+
+        # get normalized-expressions.tsv file
+        find ${{expPath}} -maxdepth 1 -name "{wildcards.accession}_{wildcards.array_design}-analytics.tsv.undecorated" \
+            | xargs -n1 basename \
+            | sed "s/{wildcards.accession}_//" \
+            | sed "s/-analytics.tsv.undecorated//" \
+            | while read -r arrayDesign ; do
+            arrayDesignFile=$(get_arraydesign_file ${{arrayDesign}} {params.organism}  )
+            if [ $? -ne 0 ]; then
+                echo "ERROR: Could not find array design: $arrayDesign" >&2
+                exit 1
+            fi
+            # previously, however this has issues with organisms that share the array design
+            # organism=$(get_organism_given_arraydesign_file ${{arrayDesignFile}} )
+            if [ ! -z `echo $arrayDesignFile | grep mirbase` ]; then
+                # This is a miRNA microarray experiment
+                geneNameFile="${{expPath}}/mature.accession.tsv.aux"
+                tail -n +2 ${{ATLAS_PROD}}/bioentity_properties/mirbase/${{organism}}.mature.tsv | awk -F"\t" '{{print $2"\t"$1}}' | sort -k 1,1 > $geneNameFile
+            else
+                geneNameFile=$(get_geneNameFile_given_organism {params.organism} )
+            fi
+            # ${{arrayDesign}} == {wildcards.array_design}
+            # proceed with decorations, *-analytics.tsv is mandatory output for this rule
+            decorate_if_exists "${{expPath}}/{wildcards.accession}_${{arrayDesign}}-analytics.tsv.undecorated" "$arrayDesignFile" "$geneNameFile"
+            decorate_if_exists "${{expPath}}/{wildcards.accession}_${{arrayDesign}}-normalized-expressions.tsv.undecorated" "$arrayDesignFile" "$geneNameFile"
+            decorate_if_exists "${{expPath}}/{wildcards.accession}_${{arrayDesign}}-average-intensities.tsv.undecorated" "$arrayDesignFile" "$geneNameFile"
+            decorate_if_exists "${{expPath}}/{wildcards.accession}_${{arrayDesign}}-log-fold-changes.tsv.undecorated" "$arrayDesignFile" "$geneNameFile"
+            decorate_if_exists "${{expPath}}/{wildcards.accession}_${{arrayDesign}}-analytics.tsv.undecorated.unrounded" "$arrayDesignFile" "$geneNameFile"
+        done
+        if [ $? -ne 0 ]; then
+            echo "ERROR: Failed to decorate {wildcards.accession} and array {wildcards.array_design}" >&2
+            exit 1
+        fi
+        touch {output}                                                                                                                                                                                                   
+        """                                                                                                                                                                                                                         
+         
 
 
-
-rule decorate_expression_differential_microarray:
 
 rule rm_intermediate_files_microarray:
     """
     Remove intermediate files.
     """
-
-
+    #rm -rf ${{expPath}}/mature.accession.tsv.aux
+    #rm -rf ${expPath}/*-normalized-expressions.tsv.decorated.tmp
+    #ff
+    #Rplots.pdf
+    # .unmerged
 
 rule delete_experiment:
 
