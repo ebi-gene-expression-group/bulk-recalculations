@@ -1706,14 +1706,21 @@ rule delete_intermediate_files_microarray:
         """   
 
 
-# rule delete_experiment:
 
-# mv data to atlas_exps
-	
 
-	
-	
-	
+# Final reprocessing rules, for all experiments
+
+rule copy_experiment_from_analysis_to_atlas_exps:
+    """
+    Copy data to atlas_exps
+    """
+
+
+rule get_magetab_for_experiment:
+    """
+    Generate condensed SDRF with Zooma mappings for the experiment	
+    """
+
 
 
 
