@@ -260,6 +260,7 @@ def get_checkpoints_cp_atlas_exps(wildcards):
     if config['goal'] == 'reprocess':
         if experiment_type=='rnaseq_mrna_baseline':
             # coexpressions, baseline tracks, etc
+            return None
         elif experiment_type=='rnaseq_mrna_differential':
             # diff gsea, diff tracks
             return [ 'logs/'+wildcards['accession']+'-decorate_differential_rnaseq.done' ]
@@ -1741,7 +1742,7 @@ rule copy_experiment_from_analysis_to_atlas_exps:
     conda: "envs/perl-atlas-modules.yaml"
     log: "logs/{accession}-copy_experiment_from_analysis_to_atlas_exps.log"
     input: get_checkpoints_cp_atlas_exps
-    out:
+    output:
         temp("logs/{accession}-copy_experiment_from_analysis_to_atlas_exps.done")
     shell:
         """
@@ -1761,7 +1762,7 @@ rule get_magetab_for_experiment:
     log: "logs/{accession}-get_magetab_for_experiment.log"
     input:
         rules.copy_experiment_from_analysis_to_atlas_exps.output
-    out:
+    output:
         temp("logs/{accession}-get_magetab_for_experiment.done")
     shell:
         """
