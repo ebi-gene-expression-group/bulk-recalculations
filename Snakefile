@@ -253,6 +253,28 @@ def get_array_design_from_xml(wildcards):
     return array_designs_grabbed
 
 
+def get_checkpoints_cp_atlas_exps(wildcards):
+    """
+    Only for reprocessing, to collet inputs for rule copy_experiment_from_analysis_to_atlas_exps
+    """
+    if config['goal'] == 'reprocess':
+        if experiment_type=='rnaseq_mrna_baseline':
+            # coexpressions, baseline tracks, etc
+        elif experiment_type=='rnaseq_mrna_differential':
+            # diff gsea, diff tracks
+            return [ 'logs/'+wildcards['accession']+'-decorate_differential_rnaseq.done' ]
+        elif experiment_type == 'microarray_1colour_mrna_differential' or experiment_type =='microarray_2colour_mrna_differential' or experiment_type =='microarray_1colour_microrna_differential':
+            # diff gsea, diff tracks, delete_intermediate_files
+            inputs = []
+            arr_designs=get_array_design_from_xml()
+            for s in arr_designs:
+                inputs.append( 'logs/'+wildcards['accession']+'_'+s+'-decorate_differential_microarray.done' )
+            return inputs
+        else:
+            return None
+
+
+
 localrules: check_differential_gsea, link_baseline_coexpression, link_baseline_heatmap, copy_raw_gene_counts_from_isl, copy_normalised_counts_from_isl, copy_transcript_files_from_isl, copy_transcript_relative_isoforms, create_tracks_symlinks, check_mvaPlot_rnaseq, check_normalized_expressions_microarray, delete_intermediate_files_microarray
 
 
@@ -1707,21 +1729,53 @@ rule delete_intermediate_files_microarray:
 
 
 
-
+######################################################
 # Final reprocessing rules, for all experiments
 
+# WIP
 rule copy_experiment_from_analysis_to_atlas_exps:
     """
-    Copy data to atlas_exps
+    Copy data to atlas_exps.
+    Its execution starting time depends on experiment_type.
     """
+    conda: "envs/perl-atlas-modules.yaml"
+    log: "logs/{accession}-copy_experiment_from_analysis_to_atlas_exps.log"
+    input: get_checkpoints_cp_atlas_exps
+    out:
+        temp("logs/{accession}-copy_experiment_from_analysis_to_atlas_exps.done")
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+        # cp files to atlas_exps
 
+        touch {output} 
+        """
 
+# WIP
 rule get_magetab_for_experiment:
     """
-    Generate condensed SDRF with Zooma mappings for the experiment	
+    Generate condensed SDRF with Zooma mappings for the experiment - in atlas_exps.
     """
+    conda: "envs/perl-atlas-modules.yaml"
+    log: "logs/{accession}-get_magetab_for_experiment.log"
+    input:
+        rules.copy_experiment_from_analysis_to_atlas_exps.output
+    out:
+        temp("logs/{accession}-get_magetab_for_experiment.done")
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+        source {workflow.basedir}/bin/reprocessing_routines.sh
+        # define atlas_env 
 
+        echo "Retrieving magetab files for {wildcards.accession}"
+        get_magetab_for_experiment {wildcards.accession}
+        echo "Retrieved magetab files for {wildcards.accession}"
 
+        touch {output} 
+        """
 
 
 

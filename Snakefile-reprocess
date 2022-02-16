@@ -148,13 +148,16 @@ def get_outputs():
         outputs.extend(expand("logs/"+f"{config['accession']}"+"-delete_intermediate_files_microarray.done" ))
 
 
-
     # collect output for baseline proteomics
     #if experiment_type == 'proteomics_baseline' or experiment_type =='proteomics_baseline_dia':
 
     # collect output for differential proteomics
     #if experiment_type == 'proteomics_differential':
 
+
+    # For all experiment types, move data to atlas_exps and create condensed SDRF
+    # outputs.extend(expand("logs/"+f"{config['accession']}"+"-copy_experiment_from_analysis_to_atlas_exps.done" ))
+    # outputs.extend(expand("logs/"+f"{config['accession']}"+"-get_magetab_for_experiment.done" ))
 
     print(outputs)
     print('Getting list of outputs.. done')
