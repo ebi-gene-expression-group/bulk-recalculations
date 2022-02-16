@@ -168,7 +168,7 @@ applyFixes() {
     exp=$1
     fixesFile=$2
     fileTypeToBeFixed=$3
-    atlasEnv=`atlas_env` ########  atlasEnv='prod'  
+    atlasEnv=`atlas_env` 
 
     # Apply factor type fixes in ${fileTypeToBeFixed} file
     for l in $(cat $ATLAS_PROD/sw/atlasinstall_${atlasEnv}/atlasprod/experiment_metadata/$fixesFile | sed 's|[[:space:]]*$||g');
@@ -206,4 +206,13 @@ applyFixes() {
 	    fi
 	fi
     done
+}
+
+# Returns prod or test, depending on the Atlas environment in which the script calling it is running
+# It is assuming that all atlasinstall_<env>s are under ${ATLAS_PROD}/sw (it will fail otherwise)
+atlas_env() {
+    #scriptDir=$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+    #atlasInstallSubDir=$(echo $scriptDir | awk -F"/" '{print $8}')
+    #echo $atlasInstallSubDir | awk -F"_" '{print $2}'
+    echo 'prod'
 }
