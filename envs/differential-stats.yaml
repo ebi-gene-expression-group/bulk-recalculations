@@ -6,6 +6,7 @@ dependencies:
  - perl-atlas-modules >=0.3.1
  - r-atlas-internal>=1.8
  - r-ggplot2
+ - r-reshape2
  - bioconductor-limma
  - bioconductor-genefilter
  - bioconductor-biobase
