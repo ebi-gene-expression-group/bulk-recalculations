@@ -1,10 +1,24 @@
 #!/usr/bin/env bash
 
+# only one, either ACCESSIONS or SPECIES can be defined
+# SPECIES=homo_sapiens:rattus_norvegicus
+
 if [ -z ${ACCESSIONS+x} ]; then 
         ACC=""
 else 
         ACC="accessions="$ACCESSIONS
 fi
+
+if [ -z ${SPECIES+x} ]; then 
+        SPE=""
+else 
+        if [ -z ${ACCESSIONS+x} ]; then 
+                SPE="species="$SPECIES
+        else 
+                SPE=""
+        fi
+fi
+
 
 NEXPS=${NEXPS:-30}
 NJOBS=${NJOBS:-10}
@@ -53,7 +67,7 @@ snakemake --use-conda --conda-frontend mamba \
         $CONDA_PREFIX_LINE \
         --latency-wait 10 \
         --keep-going \
-        --config $ACC gtf_dir=$GTF \
+        --config $ACC $SPE gtf_dir=$GTF \
         atlas_prod=path/to/atlasprod \
         atlas_exps=path/to/atlasexps \
         lsf_config=$LSF_CONFIG \

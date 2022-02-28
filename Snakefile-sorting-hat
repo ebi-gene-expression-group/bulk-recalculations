@@ -124,6 +124,15 @@ def get_meta_config():
     else:
         return None
 
+def get_user_species(wildcards):
+    if 'species' in config:
+        if get_organism( wildcards['accession'] ) in config['species'].split(":"):
+            return 'True'
+        else:
+            return 'False'
+    else:
+        return 'True'
+
 def get_outputs():
     import os
     ACC=[]
@@ -252,7 +261,8 @@ rule produce_reprocess_call:
         lsf_config = get_lsf_config_file(),
         log_handler_script=get_log_handler_script(),
         goal=get_goal(),
-        atlasmeta_config=get_meta_config()
+        atlasmeta_config=get_meta_config(),
+        allowed_organism=get_user_species
     output:
         touch("{accession}/{accession}.reprocess.done")
     run:
@@ -263,19 +273,25 @@ rule produce_reprocess_call:
         pushd {input.working_directory}
         cp {params.lsf_config} lsf.yaml
 
-        snakemake --use-singularity --restart-times 1 --latency-wait 100 {config['sm_options']} --config \
-            accession={wildcards.accession} \
-            goal={params.goal} \
-            tool={get_tool(wildcards.accession)} \
-            metadata_summary=../{input.metadata} \
-            bioentities_properties={params.bioentities_properties} \
-            skip_steps_file={params.skip_steps_file} \
-            methods_base={params.methods_base} \
-            methods_dif={params.methods_dif} \
-            isl_dir={params.isl_dir} \
-            tmp_dir={params.tmp_dir} \
-            atlas_meta_config={params.atlasmeta_config} \
-            -s {workflow.basedir}/Snakefile-reprocess {params.log_handler_script}
+        if [[ "{params.allowed_organism}" == "True" ]]; then
+
+            snakemake --use-singularity --restart-times 1 --latency-wait 100 {config['sm_options']} --config \
+                accession={wildcards.accession} \
+                goal={params.goal} \
+                tool={get_tool(wildcards.accession)} \
+                metadata_summary=../{input.metadata} \
+                bioentities_properties={params.bioentities_properties} \
+                skip_steps_file={params.skip_steps_file} \
+                methods_base={params.methods_base} \
+                methods_dif={params.methods_dif} \
+                isl_dir={params.isl_dir} \
+                tmp_dir={params.tmp_dir} \
+                atlas_meta_config={params.atlasmeta_config} \
+                -s {workflow.basedir}/Snakefile-reprocess {params.log_handler_script}
+
+        else
+            echo "WARNING: Organism not allowed for reprocessing" 
+        fi
         popd
         """
         #print(command_line)
@@ -292,7 +308,8 @@ rule produce_recalculations_call:
         skip_steps_file=get_skip_steps_file(),
         lsf_config = get_lsf_config_file(),
         log_handler_script=get_log_handler_script(),
-        goal=get_goal()
+        goal=get_goal(),
+        allowed_organism=get_user_species
     output:
         touch("{accession}/{accession}.recalculations.done")
     run:
@@ -307,14 +324,20 @@ rule produce_recalculations_call:
             fi
         fi
 
-        snakemake --restart-times 4 --latency-wait 250 {config['sm_options']} --config \
-            accession={wildcards.accession} \
-            goal={params.goal} \
-            tool={get_tool(wildcards.accession)} \
-            metadata_summary=../{input.metadata} \
-            bioentities_properties={params.bioentities_properties} \
-            skip_steps_file={params.skip_steps_file} \
-            -s {workflow.basedir}/Snakefile-recalculations {params.log_handler_script}
+        if [[ "{params.allowed_organism}" == "True" ]]; then
+
+            snakemake --restart-times 4 --latency-wait 250 {config['sm_options']} --config \
+                accession={wildcards.accession} \
+                goal={params.goal} \
+                tool={get_tool(wildcards.accession)} \
+                metadata_summary=../{input.metadata} \
+                bioentities_properties={params.bioentities_properties} \
+                skip_steps_file={params.skip_steps_file} \
+                -s {workflow.basedir}/Snakefile-recalculations {params.log_handler_script}
+                
+        else
+            echo "WARNING: Organism not allowed for reprocessing" 
+        fi
         popd
         """
         #print(command_line)
