@@ -1778,5 +1778,10 @@ rule get_magetab_for_experiment:
         touch {output} 
         """
 
-
+# WIP
+rule delete_experiment:
+    """
+    Delete experiment from Atlas.
+    It should also remove its RUN IDs from ISL db.
+    """
 
