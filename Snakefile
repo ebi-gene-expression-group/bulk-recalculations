@@ -131,6 +131,14 @@ def get_meta_config():
     else:
         return None
 
+def get_db_params(param):
+    """Return config parameters to establish connection with isl db."""
+    if param in config:
+        return config[param]
+    else:
+        sys.exit(1)
+
+
 #metrics = get_metrics()
 plot_labels = {"go": "GO terms", "reactome": "Reactome Pathways", "interpro": "Interpro domains"}
 
@@ -550,10 +558,10 @@ rule add_runs_to_db:
     input:
         config_xml="{accession}-configuration.xml"
     params:
-        db=config['oracle_home'],
-        db_user=config['python_user'],
-        db_connect_string=config['python_connect_string'],
-        db_pass=config['python_password']
+        db=get_db_params('oracle_home'),
+        db_user=get_db_params('python_user'),
+        db_connect_string=get_db_params('python_connect_string'),
+        db_pass=get_db_params('python_password')
     output:
         temp("logs/{accession}-add_runs_to_db.done")
     shell:

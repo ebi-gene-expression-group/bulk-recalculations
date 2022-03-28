@@ -133,6 +133,14 @@ def get_user_species(wildcards):
     else:
         return 'True'
 
+def get_db_params(param):
+    """Return config parameters to establish connection with isl db."""
+    if param in config:
+        return config[param]
+    else:
+        sys.exit(1)
+
+
 def get_outputs():
     import os
     ACC=[]
@@ -263,10 +271,10 @@ rule produce_reprocess_call:
         goal=get_goal(),
         atlasmeta_config=get_meta_config(),
         allowed_organism=get_user_species,
-        oracle_home=config['oracle_home'],
-        python_user=config['python_user'],
-        python_connect_string=config['python_connect_string'],
-        python_password=config['python_password']
+        oracle_home=get_db_params('oracle_home'),
+        python_user=get_db_params('python_user'),
+        python_connect_string=get_db_params('python_connect_string'),
+        python_password=get_db_params('python_password')
 
     output:
         touch("{accession}/{accession}.reprocess.done")
