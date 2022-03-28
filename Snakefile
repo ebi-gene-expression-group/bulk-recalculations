@@ -541,11 +541,47 @@ rule atlas_experiment_summary:
 
 # baseline_rnaseq_experiment
 
+rule add_runs_to_db:
+    """
+    Get run ids from config file and add them to isl db.
+    """
+    conda: "envs/isl-db.yaml"
+    log: "logs/{accession}-add_runs_to_db.log"
+    input:
+        config_xml="{accession}-configuration.xml"
+    params:
+        db=config['oracle_home'],
+        db_user=config['python_user'],
+        db_connect_string=config['python_connect_string'],
+        db_pass=config['python_password']
+    output:
+        temp("logs/{accession}-add_runs_to_db.done")
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+        export TNS_ADMIN={params.db}/network/admin
+        export LD_LIBRARY_PATH={params.db}/lib:$LD_LIBRARY_PATH
+        export PATH={params.db}/bin:$PATH
+        export PYTHON_USER={params.db_user}
+        export PYTHON_CONNECT_STRING={params.db_connect_string}
+        export PYTHON_PASSWORD={params.db_pass}
+
+        python {workflow.basedir}/isl/db/scripts/get_run_ids_atlas_prod.py {input.config_xml}
+        if [ $? -ne 0 ]; then
+	        echo "ERROR: Failed to parse atlas config file and get run ids for {wildcards.accession} " >&2
+	        exit 1
+        fi
+        touch {output}
+        """
+
 rule copy_raw_gene_counts_from_isl:
     """
     Copy raw gene counts file.
     """
     log: "logs/{accession}-copy_raw_gene_counts_from_isl.log"
+    input:
+        rules.add_runs_to_db.output
     output:
         raw_counts_undecorated="{accession}-raw-counts.tsv.undecorated"
     params:

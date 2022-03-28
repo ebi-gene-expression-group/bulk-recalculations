@@ -262,7 +262,12 @@ rule produce_reprocess_call:
         log_handler_script=get_log_handler_script(),
         goal=get_goal(),
         atlasmeta_config=get_meta_config(),
-        allowed_organism=get_user_species
+        allowed_organism=get_user_species,
+        oracle_home=config['oracle_home'],
+        python_user=config['python_user'],
+        python_connect_string=config['python_connect_string'],
+        python_password=config['python_password']
+
     output:
         touch("{accession}/{accession}.reprocess.done")
     run:
@@ -287,6 +292,10 @@ rule produce_reprocess_call:
                 isl_dir={params.isl_dir} \
                 tmp_dir={params.tmp_dir} \
                 atlas_meta_config={params.atlasmeta_config} \
+                oracle_home={params.oracle_home} \
+                python_user={params.python_user} \
+                python_connect_string={params.python_connect_string} \
+                python_password={params.python_password} \
                 -s {workflow.basedir}/Snakefile-reprocess {params.log_handler_script}
 
         else
