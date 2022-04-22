@@ -255,6 +255,34 @@ def input_differential_tracks_and_gsea(wildcards):
         # No input file needed - trick to force rule execution
         return wildcards['accession']+'.metadata_summary.yaml'
 
+
+def input_atlas_experiment_summary(wildcards):
+    """
+    Return appropriate input for experiment type and analysis goal
+    for rule atlas_experiment_summary
+    """
+    if config['goal'] == 'reprocess':
+        if experiment_type =='rnaseq_mrna_baseline' or experiment_type=='rnaseq_mrna_differential': 
+            return [ wildcards['accession']+'-raw-counts.tsv.undecorated' ]
+        elif experiment_type == 'microarray_1colour_mrna_differential' or experiment_type =='microarray_1colour_microrna_differential':
+            inputs = []
+            arr_designs=get_array_design_from_xml()
+            for s in arr_designs:
+                inputs.append( wildcards['accession']+'_'+s+'-normalized-expressions.tsv.undecorated' )
+            return inputs
+        elif experiment_type =='microarray_2colour_mrna_differential':
+            inputs = []
+            arr_designs=get_array_design_from_xml()
+            for s in arr_designs:
+                inputs.append( wildcards['accession']+'_'+s+'-log-fold-changes.tsv.undecorated' )
+                inputs.append( wildcards['accession']+'_'+s+'-average-intensities.tsv.undecorated' )
+            return inputs
+        else:
+            return None
+    if config['goal'] == 'recalculations':
+        return wildcards['accession']+'-configuration.xml'
+
+
 def get_array_design_from_xml(wildcards):
     """
     Meant to be used within a rule. Parse xml config file here.
@@ -541,7 +569,7 @@ rule atlas_experiment_summary:
     resources: mem_mb=get_mem_mb
     input:
         sdrf=get_sdrf(),
-        input_files=get_input_atlas_summary
+        input_files=input_atlas_experiment_summary
     output:
         rsummary="{accession}-atlasExperimentSummary.Rdata"
     shell:
