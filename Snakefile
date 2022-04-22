@@ -131,12 +131,19 @@ def get_meta_config():
     else:
         return None
 
-def get_db_params(param):
-    """Return config parameters to establish connection with isl db."""
-    if param in config:
-        return config[param]
-    else:
-        sys.exit(1)
+def get_db_params():
+    """
+    When goal is reprocess, return config parameters to establish connection with isl db.
+    """
+    isl_vars=[ 'oracle_home', 'python_user', 'python_connect_string', 'python_password' ] 
+    db_params = []
+    for i in isl_vars:
+        if i in config:
+            db_params.append( config[i] )
+        else:
+            print(f" Missing db param: {i}")
+            #sys.exit()
+    return db_params
 
 
 #metrics = get_metrics()
@@ -225,8 +232,8 @@ def input_percentile_ranks(wildcards):
         else:
             return None
     if config['goal'] == 'recalculations':
-        # input files are already there
-        return ''
+        # No input file needed - trick to force rule execution
+        return wildcards['accession']+'.metadata_summary.yaml'
 
 def input_differential_tracks_and_gsea(wildcards):
     """
@@ -245,8 +252,8 @@ def input_differential_tracks_and_gsea(wildcards):
         else:
             return None
     if config['goal'] == 'recalculations':
-        # input files are already there
-        return ''
+        # No input file needed - trick to force rule execution
+        return wildcards['accession']+'.metadata_summary.yaml'
 
 def get_array_design_from_xml(wildcards):
     """
@@ -525,11 +532,16 @@ rule link_baseline_heatmap:
         """
 
 rule atlas_experiment_summary:
+    """
+    During (re)processing, some input files are necessary in addition to the XML and SDRF
+    for internal-ExpressionAtlas, and it depends on the experiment type.
+    """
     conda: "envs/atlas-internal.yaml"
     log: "logs/{accession}-atlas_experiment_summary.log"
     resources: mem_mb=get_mem_mb
     input:
-        sdrf=get_sdrf()
+        sdrf=get_sdrf(),
+        input_files=get_input_atlas_summary
     output:
         rsummary="{accession}-atlasExperimentSummary.Rdata"
     shell:
@@ -558,22 +570,19 @@ rule add_runs_to_db:
     input:
         config_xml="{accession}-configuration.xml"
     params:
-        db=get_db_params('oracle_home'),
-        db_user=get_db_params('python_user'),
-        db_connect_string=get_db_params('python_connect_string'),
-        db_pass=get_db_params('python_password')
+        db_params=get_db_params()
     output:
         temp("logs/{accession}-add_runs_to_db.done")
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
-        export TNS_ADMIN={params.db}/network/admin
-        export LD_LIBRARY_PATH={params.db}/lib:$LD_LIBRARY_PATH
-        export PATH={params.db}/bin:$PATH
-        export PYTHON_USER={params.db_user}
-        export PYTHON_CONNECT_STRING={params.db_connect_string}
-        export PYTHON_PASSWORD={params.db_pass}
+        export TNS_ADMIN={params.db_params[0]}/network/admin
+        export LD_LIBRARY_PATH={params.db_params[0]}/lib:$LD_LIBRARY_PATH
+        export PATH={params.db_params[0]}/bin:$PATH
+        export PYTHON_USER={params.db_params[1]}
+        export PYTHON_CONNECT_STRING={params.db_params[2]}
+        export PYTHON_PASSWORD={params.db_params[3]}
 
         python {workflow.basedir}/isl/db/scripts/get_run_ids_atlas_prod.py {input.config_xml}
         if [ $? -ne 0 ]; then
@@ -1781,17 +1790,22 @@ rule delete_intermediate_files_microarray:
 rule copy_experiment_from_analysis_to_atlas_exps:
     """
     Copy data to atlas_exps.
-    Its execution starting time depends on experiment_type.
+    Its execution timing depends on experiment_type.
     """
     conda: "envs/perl-atlas-modules.yaml"
     log: "logs/{accession}-copy_experiment_from_analysis_to_atlas_exps.log"
     input: get_checkpoints_cp_atlas_exps
+    params:
+        tmp_dir=get_tmp_dir()
     output:
         temp("logs/{accession}-copy_experiment_from_analysis_to_atlas_exps.done")
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
+        # temp folder - 2 lines below should be removed
+        TMPDIR={params.tmp_dir}
+        ATLAS_EXPS_TMP=$TMPDIR/atlas_exps_tmp/{wildcards.accession}
         # cp files to atlas_exps
 
         touch {output} 
@@ -1827,5 +1841,6 @@ rule delete_experiment:
     """
     Delete experiment from Atlas.
     It should also remove its RUN IDs from ISL db.
+    make goal='delete' in addtiion to 'recalculations and reprocessing'
     """
 
