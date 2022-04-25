@@ -319,7 +319,7 @@ def get_checkpoints_cp_atlas_exps(wildcards):
 
 
 
-localrules: check_differential_gsea, link_baseline_coexpression, link_baseline_heatmap, copy_raw_gene_counts_from_isl, copy_normalised_counts_from_isl, copy_transcript_files_from_isl, copy_transcript_relative_isoforms, create_tracks_symlinks, check_mvaPlot_rnaseq, check_normalized_expressions_microarray, delete_intermediate_files_microarray
+localrules: check_differential_gsea, link_baseline_coexpression, link_baseline_heatmap, copy_raw_gene_counts_from_isl, copy_normalised_counts_from_isl, copy_transcript_files_from_isl, copy_transcript_relative_isoforms, create_tracks_symlinks, check_mvaPlot_rnaseq, check_normalized_expressions_microarray, delete_intermediate_files_microarray, touch_inputs_baseline
 
 
 wildcard_constraints:
@@ -483,10 +483,11 @@ rule baseline_tracks:
     log: "logs/{accession}-{assay_id}-{metric}-baseline_tracks.log"
     resources: mem_mb=get_mem_mb
     params:
-        assay_label=get_assay_label
+        assay_label=get_assay_label,
+        analytics="{accession}-{metric}.tsv"
     input:
         gff=get_gff(),
-        analytics="{accession}-{metric}.tsv"
+        analytics=lambda wildcards: f"{wildcards.accession}-{wildcards.metric}.tsv" if 'reprocess' in config['goal'] else f"{wildcards.accession}-{wildcards.metric}-touch_inputs_baseline.done"
     output:
         bedGraph="{accession}.{assay_id}.genes.expressions_{metric}.bedGraph"
     shell:
@@ -495,16 +496,37 @@ rule baseline_tracks:
         exec &> {log:q}
         source {workflow.basedir}/bin/tracks_functions.sh
         echo "Past sourcing"
-        generate_baseline_tracks {wildcards.accession} {wildcards.assay_id} {input.analytics} {input.gff} ./ {params.assay_label:q}
+        generate_baseline_tracks {wildcards.accession} {wildcards.assay_id} {params.analytics} {input.gff} ./ {params.assay_label:q}
+        """
+
+rule touch_inputs_baseline:
+    """
+    Rule to avoid execution of upstream rules when forceall=true in baseline rna-seq recalculations.
+    """
+    log: "logs/{accession}-{metric}-touch_inputs_baseline.log"
+    output:
+        temp("{accession}-{metric}-touch_inputs_baseline.done")
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+
+        # Do not create the file if it does not exist (-c)
+        touch -c -m -a {wildcards.accession}-{wildcards.metric}.tsv
+        touch -c -m -a {wildcards.accession}-{wildcards.metric}.tsv.undecorated.aggregated
+
+        touch {output}
         """
 
 rule baseline_coexpression:
     conda: "envs/clusterseq.yaml"
     log: "logs/{accession}-{metric}-baseline_coexpression.log"
     resources: mem_mb=get_mem_mb
-    params: num_retries=5
-    input:
+    params:
+        num_retries=5,
         expression="{accession}-{metric}.tsv.undecorated.aggregated"
+    input:  
+        expression=lambda wildcards: f"{wildcards.accession}-{wildcards.metric}.tsv.undecorated.aggregated" if 'reprocess' in config['goal'] else f"{wildcards.accession}-{wildcards.metric}-touch_inputs_baseline.done"
     threads: 16
     output:
         coexpression_comp="{accession}-{metric}-coexpressions.tsv.gz"
@@ -512,7 +534,7 @@ rule baseline_coexpression:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
-        {workflow.basedir}/bin/run_coexpression_for_experiment.R {input.expression} {output.coexpression_comp} {workflow.basedir} {threads} {params.num_retries}
+        {workflow.basedir}/bin/run_coexpression_for_experiment.R {params.expression} {output.coexpression_comp} {workflow.basedir} {threads} {params.num_retries}
         """
 
 rule link_baseline_coexpression:
@@ -535,8 +557,9 @@ rule baseline_heatmap:
     conda: "envs/atlas-internal.yaml"
     log: "logs/{accession}-{metric}-baseline_heatmap.log"
     resources: mem_mb=get_mem_mb
+    params: expression="{accession}-{metric}.tsv"
     input:
-        expression="{accession}-{metric}.tsv"
+        expression=lambda wildcards: f"{wildcards.accession}-{wildcards.metric}.tsv" if 'reprocess' in config['goal'] else f"{wildcards.accession}-{wildcards.metric}-touch_inputs_baseline.done"
     output:
         heatmap="{accession}-heatmap-{metric}.pdf"
     shell:
@@ -544,7 +567,7 @@ rule baseline_heatmap:
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
         {workflow.basedir}/bin/generateBaselineHeatmap.R --configuration {wildcards.accession}-configuration.xml \
-		--input  {input.expression} \
+		--input  {params.expression} \
 		--output {output.heatmap}
         """
 
