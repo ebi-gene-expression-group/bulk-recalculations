@@ -1892,6 +1892,6 @@ rule delete_experiment:
     """
     Delete experiment from Atlas.
     It should also remove its RUN IDs from ISL db.
-    make goal='delete' in addtiion to 'recalculations and reprocessing'
+    make goal='delete' in addition to 'recalculations' and 'reprocessing'
     """
 
