@@ -303,7 +303,7 @@ def get_checkpoints_cp_atlas_exps(wildcards):
     if config['goal'] == 'reprocess':
         inputs = get_outputs()
         inputs.remove('logs/'+wildcards['accession']+'-copy_experiment_from_analysis_to_atlas_exps.done')
-        #inputs.remove('logs/'+wildcards['accession']+'-get_magetab_for_experiment.done')
+        inputs.remove('logs/'+wildcards['accession']+'-get_magetab_for_experiment.done')
         return inputs
     else:
         return None
@@ -1859,21 +1859,28 @@ rule copy_experiment_from_analysis_to_atlas_exps:
 rule get_magetab_for_experiment:
     """
     Generate condensed SDRF with Zooma mappings for the experiment - in atlas_exps.
+    NOTE: Use target_dir = config[atlas_exps] for production
     """
     conda: "envs/perl-atlas-modules.yaml"
     log: "logs/{accession}-get_magetab_for_experiment.log"
     input: rules.copy_experiment_from_analysis_to_atlas_exps.output
+    params:
+        target_dir=get_tmp_dir(),
+        exp_type=get_from_config_or_metadata_summary('experiment_type')
     output:
         temp("logs/{accession}-get_magetab_for_experiment.done")
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
+        export ATLAS_EXPS={params.target_dir}"/tmp"  # edit {params.target_dir} for production
         source {workflow.basedir}/bin/reprocessing_routines.sh
-        # define atlas_env 
+        # atlas_env -> 'prod' in bin/reprocessing_routines.sh
 
         echo "Retrieving magetab files for {wildcards.accession}"
-        get_magetab_for_experiment {wildcards.accession}
+
+        get_magetab_for_experiment {wildcards.accession} {params.exp_type} {workflow.basedir}/bin
+        
         echo "Retrieved magetab files for {wildcards.accession}"
 
         touch {output} 
