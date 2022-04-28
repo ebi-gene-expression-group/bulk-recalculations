@@ -1886,11 +1886,13 @@ rule get_magetab_for_experiment:
         touch {output} 
         """
 
-# WIP
+######################################################
+# Potential new rule, to be implemented
+
 rule delete_experiment:
     """
     Delete experiment from Atlas.
     It should also remove its RUN IDs from ISL db.
-    make goal='delete' in addition to 'recalculations' and 'reprocessing'
+    add goal='delete' in addition to 'recalculations' and 'reprocess'
     """
 

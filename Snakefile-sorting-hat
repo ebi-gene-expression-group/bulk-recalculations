@@ -83,10 +83,10 @@ def get_skip_steps_file():
         return None
 
 def get_check_sp_file():
-  if 'check_sp_file' in config:
-    return config['check_sp_file']
-  else:
-    return None
+    if 'check_sp_file' in config:
+        return config['check_sp_file']
+    else:
+        return None
 
 def get_methods_template_baseline():
     if 'methods_base' in config:
