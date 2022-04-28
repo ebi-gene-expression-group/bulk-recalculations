@@ -73,54 +73,9 @@ def get_gff_path(acc):
         fill_metadata(acc)
     return metadata[acc]['gff']
 
-def get_bioentities_property_path():
-    return config['bioentities_properties']
-
 def get_skip_steps_file():
     if 'skip_steps_file' in config:
         return config['skip_steps_file']
-    else:
-        return None
-
-def get_check_sp_file():
-    if 'check_sp_file' in config:
-        return config['check_sp_file']
-    else:
-        return None
-
-def get_methods_template_baseline():
-    if 'methods_base' in config:
-        return config['methods_base']
-    else:
-        return None
-
-def get_methods_template_differential():
-    if 'methods_dif' in config:
-        return config['methods_dif']
-    else:
-        return None
-
-def get_zooma_exclusions():
-    if 'zooma_exclusions' in config:
-        return config['zooma_exclusions']
-    else:
-        return None
-
-def get_isl_dir():
-    if 'isl_dir' in config:
-        return config['isl_dir']
-    else:
-        return None
-
-def get_tmp_dir():
-    if 'tmp_dir' in config:
-        return config['tmp_dir']
-    else:
-        return None
-
-def get_goal():
-    if 'goal' in config:
-        return config['goal']
     else:
         return None
 
@@ -194,7 +149,7 @@ rule get_experiment_metadata:
         atlas_meta_config = config['atlas_meta_config'],
         atlas_prod = config['atlas_prod'],
         atlas_exps = config['atlas_exps'],
-        check_species_file=get_check_sp_file()
+        check_species_file=config['check_sp_file']
     input:
         config_file = "{accession}/{accession}-configuration.xml",
         gtf_dir = config['gtf_dir']
@@ -266,16 +221,16 @@ rule produce_reprocess_call:
         working_directory = "{accession}"
     log: "{accession}/logs/produce_reprocess_call.log"
     params:
-        bioentities_properties=get_bioentities_property_path(),
+        bioentities_properties=config['bioentities_properties'],
         skip_steps_file=get_skip_steps_file(),
-        methods_base=get_methods_template_baseline(),
-        methods_dif=get_methods_template_differential(),
-        zooma_exclusions=get_zooma_exclusions(),
-        isl_dir=get_isl_dir(),
-        tmp_dir=get_tmp_dir(),
+        methods_base=config['methods_base'],
+        methods_dif=config['methods_dif'],
+        zooma_exclusions=config['zooma_exclusions'],
+        isl_dir=config['isl_dir'],
+        tmp_dir=config['tmp_dir'],
         lsf_config = get_lsf_config_file(),
         log_handler_script=get_log_handler_script(),
-        goal=get_goal(),
+        goal=config['goal'],
         atlasmeta_config=get_meta_config(),
         allowed_organism=get_user_species,
         oracle_home=get_db_params('oracle_home'),
@@ -329,11 +284,11 @@ rule produce_recalculations_call:
         working_directory = "{accession}"
     log: "{accession}/logs/produce_recalculations_call.log"
     params:
-        bioentities_properties=get_bioentities_property_path(),
+        bioentities_properties=config['bioentities_properties'],
         skip_steps_file=get_skip_steps_file(),
         lsf_config = get_lsf_config_file(),
         log_handler_script=get_log_handler_script(),
-        goal=get_goal(),
+        goal=config['goal'],
         allowed_organism=get_user_species,
         oracle_home=get_db_params('oracle_home'),
         python_user=get_db_params('python_user'),
