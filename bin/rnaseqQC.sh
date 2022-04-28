@@ -20,7 +20,7 @@ exitCode=$?
 
 
 if [ "$exitCode" -eq 1 ]; then
-  rm -rf ${expAcc}.qc.log
+    rm -rf ${expAcc}.qc.log
 	# The QC procedure succeeded but the experiment failed QC.
 	popd
 	#mv ${expTargetDir} ${ATLAS_PROD}/failedQC/rna-seq

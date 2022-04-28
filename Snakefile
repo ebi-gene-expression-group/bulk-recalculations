@@ -765,8 +765,9 @@ rule copy_transcript_relative_isoforms:
 
 rule rnaseq_qc:
     """
-    QC step for baseline rnaseq experiments.
-    (WIP)
+    QC step for rnaseq experiments.
+    Non-standard experiments for which there is no QC information stored in the database
+    should be added to 'skip_steps_file' to skip this rule.
     """
     conda: "envs/perl-atlas-modules.yaml"
     log: "logs/{accession}-rnaseq_qc.log"
@@ -786,10 +787,12 @@ rule rnaseq_qc:
             echo "ERROR: QC for {wildcards.accession} failed" >&2
             exit "$qcExitCode"
         fi
-        """
 
-# move_qc_folder
-# mv ${expTargetDir}/.qc ${expTargetDir}/qc
+        if [ -d .qc ]; then
+            # TODO: Temporary workaround until irap_single_lib is able to aggregate quality reports per study
+            mv .qc qc
+        fi
+        """
 
 rule quantile_normalise_expression:
     """
