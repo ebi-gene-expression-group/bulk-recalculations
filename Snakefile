@@ -29,6 +29,12 @@ def get_methods_template_differential():
     else:
         return None
 
+def get_zooma_exclusions():
+    if 'zooma_exclusions' in config:
+        return config['zooma_exclusions']
+    else:
+        return None
+
 def get_isl_dir():
     if 'isl_dir' in config:
         return config['isl_dir']
@@ -1866,7 +1872,8 @@ rule get_magetab_for_experiment:
     input: rules.copy_experiment_from_analysis_to_atlas_exps.output
     params:
         target_dir=get_tmp_dir(),
-        exp_type=get_from_config_or_metadata_summary('experiment_type')
+        exp_type=get_from_config_or_metadata_summary('experiment_type'),
+        zooma_exclusions=get_zooma_exclusions()
     output:
         temp("logs/{accession}-get_magetab_for_experiment.done")
     shell:
@@ -1879,7 +1886,7 @@ rule get_magetab_for_experiment:
 
         echo "Retrieving magetab files for {wildcards.accession}"
 
-        get_magetab_for_experiment {wildcards.accession} {params.exp_type} {workflow.basedir}/bin
+        get_magetab_for_experiment {wildcards.accession} {params.exp_type} {workflow.basedir} {params.zooma_exclusions}
         
         echo "Retrieved magetab files for {wildcards.accession}"
 

@@ -35,6 +35,7 @@ RESTART_TIMES=3
 SKIP_STEPS=$( pwd )/step_skip.yaml
 TEMPLATE_METHODS_BASELINE=$( pwd )/baseline_atlas_methods_template.conf
 TEMPLATE_METHODS_DIFFERENTIAL=$( pwd )/differential_atlas_methods_template.conf
+ZOOMA_EXCLUSIONS=$( pwd )/zooma_exclusions.yml
 ISL_DIR=path/to/isl_dir
 TMP_DIR=path/to/tmp_dir
 # CHECK_SPECIES file should come from a clone of the atlas-config repo in Jenkins:
@@ -92,6 +93,7 @@ snakemake --use-conda --conda-frontend mamba \
         skip_steps_file=$SKIP_STEPS \
         methods_base=$TEMPLATE_METHODS_BASELINE \
         methods_dif=$TEMPLATE_METHODS_DIFFERENTIAL \
+        zooma_exclusions=$ZOOMA_EXCLUSIONS \
         check_sp_file=$CHECK_SPECIES \
         oracle_home=$ORACLE_HOME \                                                                                                                        
         python_user=$PYTHON_USER \                                                                                                                        

@@ -12,3 +12,5 @@ dependencies:
  - bioconductor-biobase
  - bioconductor-deseq2
  
+ # this env can be replaced by container
+ # https://github.com/ebi-gene-expression-group/atlas-containers/blob/master/atlas-analysis-base/templated-conda-env.yaml

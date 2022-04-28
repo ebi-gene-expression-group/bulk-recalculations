@@ -72,26 +72,27 @@ get_transcriptFile_given_organism() {
 # Generate condensed SDRF with Zooma mappings for the experiment
 get_magetab_for_experiment() {
     expAcc=$1
-    pushd ${ATLAS_EXPS}
-
-    # Get the experiment type from the XML config.
-    expType=$2 #`${ATLAS_PROD}/sw/atlasinstall_prod/atlasprod/db/scripts/get_experiment_type_from_xml.pl $expAcc/$expAcc-configuration.xml`
-    scriptsDir=$3
-
     if [ $? -ne 0 ]; then
         echo "ERROR: failed to get $expAcc experiment type from XML config. Cannot generate condensed SDRF."
         exit 1
     fi
+    pushd ${ATLAS_EXPS}
+
+    # Get the experiment type from the XML config.
+    expType=$2 #`${ATLAS_PROD}/sw/atlasinstall_prod/atlasprod/db/scripts/get_experiment_type_from_xml.pl $expAcc/$expAcc-configuration.xml`
+    scriptsDir=$3/bin
+    zooma_exclusions_file=$4
+    echo "Using Zooma exclusions file $zooma_exclusions_file to generate condensed SDRF."
 
     # Now generate condensed sdrf containing ontology mappings from Zooma. This
     # will also copy IDF from ArrayExpress load directory (using "-i" option).
     # If this is a baseline experiment, pass the factors XML filename as well to ensure factors match in condensed SDRF.
     if [[ $expType == *baseline ]]; then
 
-        $scriptsDir/condense_sdrf.pl -e $expAcc -f $expAcc/$expAcc-factors.xml -z -i -o $expAcc
+        $scriptsDir/condense_sdrf.pl -e $expAcc -f $expAcc/$expAcc-factors.xml -z -i -o $expAcc -x $zooma_exclusions_file
         if [ $? -ne 0 ]; then
             echo "ERROR: Failed to generate $expAcc/${expAcc}.condensed-sdrf.tsv with Zooma mappings, trying without..."
-            $scriptsDir/condense_sdrf.pl -e $expAcc -f $expAcc/$expAcc-factors.xml -i -o $expAcc
+            $scriptsDir/condense_sdrf.pl -e $expAcc -f $expAcc/$expAcc-factors.xml -i -o $expAcc -x $zooma_exclusions_file
         fi
         if [ $? -ne 0 ]; then
             echo "ERROR: Failed to generate $expAcc/${expAcc}.condensed-sdrf.tsv"
@@ -99,10 +100,10 @@ get_magetab_for_experiment() {
         fi
     else
 
-        $scriptsDir/condense_sdrf.pl -e $expAcc -z -i -o $expAcc
+        $scriptsDir/condense_sdrf.pl -e $expAcc -z -i -o $expAcc -x $zooma_exclusions_file
         if [ $? -ne 0 ]; then
             echo "ERROR: Failed to generate $expAcc/${expAcc}.condensed-sdrf.tsv with Zooma mappings, trying without..."
-            $scriptsDir/condense_sdrf.pl -e $expAcc -i -o $expAcc
+            $scriptsDir/condense_sdrf.pl -e $expAcc -i -o $expAcc -x $zooma_exclusions_file
         fi
         if [ $? -ne 0 ]; then
             echo "ERROR: Failed to generate $expAcc/${expAcc}.condensed-sdrf.tsv"
@@ -173,7 +174,7 @@ applyFixes() {
     fileTypeToBeFixed=$3
     atlasEnv=$(atlas_env)
 
-    echo "NOTE: Fix will not be applied in lines of $fixesFile missing a tab character"
+    echo "NOTE: Fix will not be applied in lines of $fixesFile that miss a tab character"
     # Apply factor type fixes in ${fileTypeToBeFixed} file
     for l in $(cat $ATLAS_PROD/sw/atlasinstall_${atlasEnv}/atlasprod/experiment_metadata/$fixesFile | sed 's|[[:space:]]*$||g') ; do
 	    if [ ! -s "$exp/$exp.${fileTypeToBeFixed}" ]; then

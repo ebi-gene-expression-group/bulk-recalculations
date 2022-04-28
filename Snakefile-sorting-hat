@@ -100,6 +100,12 @@ def get_methods_template_differential():
     else:
         return None
 
+def get_zooma_exclusions():
+    if 'zooma_exclusions' in config:
+        return config['zooma_exclusions']
+    else:
+        return None
+
 def get_isl_dir():
     if 'isl_dir' in config:
         return config['isl_dir']
@@ -264,6 +270,7 @@ rule produce_reprocess_call:
         skip_steps_file=get_skip_steps_file(),
         methods_base=get_methods_template_baseline(),
         methods_dif=get_methods_template_differential(),
+        zooma_exclusions=get_zooma_exclusions(),
         isl_dir=get_isl_dir(),
         tmp_dir=get_tmp_dir(),
         lsf_config = get_lsf_config_file(),
@@ -297,6 +304,7 @@ rule produce_reprocess_call:
                 skip_steps_file={params.skip_steps_file} \
                 methods_base={params.methods_base} \
                 methods_dif={params.methods_dif} \
+                zooma_exclusions={params.zooma_exclusions} \
                 isl_dir={params.isl_dir} \
                 tmp_dir={params.tmp_dir} \
                 atlas_meta_config={params.atlasmeta_config} \
