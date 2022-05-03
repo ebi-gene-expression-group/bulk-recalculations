@@ -227,6 +227,7 @@ rule produce_reprocess_call:
         methods_dif=config['methods_dif'],
         zooma_exclusions=config['zooma_exclusions'],
         isl_dir=config['isl_dir'],
+        isl_genomes=config['isl_genomes'],
         tmp_dir=config['tmp_dir'],
         lsf_config = get_lsf_config_file(),
         log_handler_script=get_log_handler_script(),
@@ -261,6 +262,7 @@ rule produce_reprocess_call:
                 methods_dif={params.methods_dif} \
                 zooma_exclusions={params.zooma_exclusions} \
                 isl_dir={params.isl_dir} \
+                isl_genomes={params.isl_genomes} \
                 tmp_dir={params.tmp_dir} \
                 atlas_meta_config={params.atlasmeta_config} \
                 oracle_home={params.oracle_home} \

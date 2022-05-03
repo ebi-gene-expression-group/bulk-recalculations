@@ -41,6 +41,12 @@ def get_isl_dir():
     else:
         return None
 
+def get_isl_genomes():
+    if 'isl_genomes' in config:
+        return config['isl_genomes']
+    else:
+        return None
+
 def get_tmp_dir():
     if 'tmp_dir' in config:
         return config['tmp_dir']
@@ -965,7 +971,8 @@ rule generate_methods_baseline_rnaseq:
     params:
         organism=get_organism(),
         template=get_methods_template_baseline(),
-        isl_dir=get_isl_dir()  
+        isl_dir=get_isl_dir(),
+        isl_genomes=get_isl_genomes()
     output:
         methods=temp("{accession}-analysis-methods.tsv_baseline_rnaseq")
     shell:
@@ -981,6 +988,7 @@ rule generate_methods_baseline_rnaseq:
         source {workflow.basedir}/bin/reprocessing_routines.sh
         expIslDir={params.isl_dir}/{wildcards.accession}/{params.organism}
         echo "ISL dir: $expIslDir"
+        echo "ISL genome references: {params.isl_genomes}"
 
         [ ! -z $expIslDir+x ] || (echo "snakemake param exp_isl_dir needs to defined in rule" && exit 1)
 
@@ -1004,7 +1012,11 @@ rule generate_methods_baseline_rnaseq:
         echo $de_quantMethod
         echo $de_deMethod
 
-        perl {workflow.basedir}/bin/gxa_generate_methods.pl "$expIslDir/irap.versions.tsv" {wildcards.accession} {params.organism} {params.template} "${{baseline_mapper:?}}" "${{baseline_quantMethod:?}}" "${{de_mapper:?}}" "${{de_quantMethod:?}}" "${{de_deMethod:?}}" > {output.methods}
+        # not used, only for differential rnaseq
+        deseq2version='none'
+        echo $deseq2version
+
+        perl {workflow.basedir}/bin/gxa_generate_methods.pl "$expIslDir/irap.versions.tsv" {wildcards.accession} {params.organism} {params.template} "${{baseline_mapper:?}}" "${{baseline_quantMethod:?}}" "${{de_mapper:?}}" "${{de_quantMethod:?}}" "${{de_deMethod:?}}" "${{deseq2version:?}}" {params.isl_genomes} > {output.methods}
 
         if [ $? -ne 0 ]; then
             echo "ERROR: Failed to generate analysis methods for {wildcards.accession}" >&2
@@ -1257,7 +1269,8 @@ rule generate_methods_differential_rnaseq:
     params:
         organism=get_organism(),
         template=get_methods_template_differential(),
-        isl_dir=get_isl_dir()  
+        isl_dir=get_isl_dir(),
+        isl_genomes=get_isl_genomes()
     output:
         methods=temp("{accession}-analysis-methods.tsv_differential_rnaseq")
     shell:
@@ -1273,6 +1286,7 @@ rule generate_methods_differential_rnaseq:
         source {workflow.basedir}/bin/reprocessing_routines.sh
         expIslDir={params.isl_dir}/{wildcards.accession}/{params.organism}
         echo "ISL dir: $expIslDir"
+        echo "ISL genome references: {params.isl_genomes}"
 
         [ ! -z $expIslDir+x ] || (echo "snakemake param exp_isl_dir needs to defined in rule" && exit 1)
 
@@ -1299,7 +1313,7 @@ rule generate_methods_differential_rnaseq:
         deseq2version=`cat {input}`
         echo $deseq2version
 
-        perl {workflow.basedir}/bin/gxa_generate_methods.pl "$expIslDir/irap.versions.tsv" {wildcards.accession} {params.organism} {params.template} "${{baseline_mapper:?}}" "${{baseline_quantMethod:?}}" "${{de_mapper:?}}" "${{de_quantMethod:?}}" "${{de_deMethod:?}}" "${{deseq2version:?}}" > {output.methods}
+        perl {workflow.basedir}/bin/gxa_generate_methods.pl "$expIslDir/irap.versions.tsv" {wildcards.accession} {params.organism} {params.template} "${{baseline_mapper:?}}" "${{baseline_quantMethod:?}}" "${{de_mapper:?}}" "${{de_quantMethod:?}}" "${{de_deMethod:?}}" "${{deseq2version:?}}" {params.isl_genomes} > {output.methods}
 
         if [ $? -ne 0 ]; then
             echo "ERROR: Failed to generate analysis methods for {wildcards.accession}" >&2

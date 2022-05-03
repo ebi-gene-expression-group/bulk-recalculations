@@ -8,7 +8,7 @@ use Atlas::Common qw(
     create_atlas_site_config
 );
 
-$_ = shift for my ( $versionReferenceFile, $expAcc, $species, $template, $baselineMapper, $baselineQuantMethod, $deMapper, $deQuantMethod, $deDEMethod $deseq2version );
+$_ = shift for my ( $versionReferenceFile, $expAcc, $species, $template, $baselineMapper, $baselineQuantMethod, $deMapper, $deQuantMethod, $deDEMethod, $deseq2version, $isl_genomes );
 
 my $atlasProd = $ENV{'ATLAS_PROD'};
 my $irapSingleLib = $ENV{'IRAP_SINGLE_LIB'};
@@ -23,11 +23,12 @@ if (!$deMapper) { die "Set variable \$deMapper.\n" }
 if (!$deQuantMethod) { die "Set variable \$deQuantMethod.\n" }
 if (!$deDEMethod) { die "Set variable \$deDEMethod.\n" }
 if (!$deseq2version) { die "Set variable \$deseq2version.\n" }
+if (!$isl_genomes) { die "Set variable \$isl_genomes.\n" }
 
 my $atlasSiteConfig = create_atlas_site_config;
 
 # gxa.references.conf
-my $gxaReferencesConf = File::Spec->catfile( $atlasProd, $atlasSiteConfig->get_genome_references_config );
+my $gxaReferencesConf = $isl_genomes; #File::Spec->catfile( $atlasProd, $atlasSiteConfig->get_genome_references_config );
 
 # differential or baseline?
 my $diff = 0;
