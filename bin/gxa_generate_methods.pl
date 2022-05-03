@@ -8,7 +8,7 @@ use Atlas::Common qw(
     create_atlas_site_config
 );
 
-$_ = shift for my ( $versionReferenceFile, $expAcc, $species, $template, $baselineMapper, $baselineQuantMethod, $deMapper, $deQuantMethod, $deDEMethod );
+$_ = shift for my ( $versionReferenceFile, $expAcc, $species, $template, $baselineMapper, $baselineQuantMethod, $deMapper, $deQuantMethod, $deDEMethod $deseq2version );
 
 my $atlasProd = $ENV{'ATLAS_PROD'};
 my $irapSingleLib = $ENV{'IRAP_SINGLE_LIB'};
@@ -22,7 +22,7 @@ if (!$baselineQuantMethod) { die "Set variable \$baselineQuantMethod.\n" }
 if (!$deMapper) { die "Set variable \$deMapper.\n" }
 if (!$deQuantMethod) { die "Set variable \$deQuantMethod.\n" }
 if (!$deDEMethod) { die "Set variable \$deDEMethod.\n" }
-
+if (!$deseq2version) { die "Set variable \$deseq2version.\n" }
 
 my $atlasSiteConfig = create_atlas_site_config;
 
@@ -166,7 +166,7 @@ my $gseaVersion = `grep '^piano_version=' $atlasProd/irap_versions.mk | awk -F"=
 
 
 # Get differential expression package version from Atlas installation.
-my $deMethodVersion = _get_atlas_rnaseq_de_version( $deDEMethod, $atlasSiteConfig );
+my $deMethodVersion = $deseq2version; # _get_atlas_rnaseq_de_version( $deDEMethod, $atlasSiteConfig );
 
 # Set what mappers to possibly expect
 # Robert: we used to use star, but since tophat2 was fixed to deal with large genomes, we use tophat2 for all our species

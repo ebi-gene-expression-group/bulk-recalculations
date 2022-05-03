@@ -1162,7 +1162,8 @@ rule differential_statistics_rnaseq:
         tmp_dir=get_tmp_dir()
     output:
         differential_expression="{accession}-analytics.tsv.undecorated",
-        done=temp("logs/{accession}.differential_statistics_rnaseq.done")
+        done=temp("logs/{accession}.differential_statistics_rnaseq.done"),
+        deseq2version=temp("{accession}.differential_statistics_rnaseq.deseq2version")
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
@@ -1181,6 +1182,9 @@ rule differential_statistics_rnaseq:
 	        rm -rf *.png {wildcards.accession}-analytics.tsv.undecorated
 	        exit 1
         fi
+        
+        Rscript -e "library('DESeq2'); write.table(packageVersion('DESeq2'), file='{output.deseq2version}', quote=FALSE, col.names=FALSE, row.names = FALSE)" 
+
         touch {output.done}
         """
 
@@ -1248,6 +1252,8 @@ rule generate_methods_differential_rnaseq:
     """
     conda: "envs/perl-atlas-modules.yaml"
     log: "logs/{accession}-generate_methods_differential_rnaseq.log"
+    input:
+        rules.differential_statistics_rnaseq.output.deseq2version
     params:
         organism=get_organism(),
         template=get_methods_template_differential(),
@@ -1290,7 +1296,10 @@ rule generate_methods_differential_rnaseq:
         echo $de_quantMethod
         echo $de_deMethod
 
-        perl {workflow.basedir}/bin/gxa_generate_methods.pl "$expIslDir/irap.versions.tsv" {wildcards.accession} {params.organism} {params.template} "${{baseline_mapper:?}}" "${{baseline_quantMethod:?}}" "${{de_mapper:?}}" "${{de_quantMethod:?}}" "${{de_deMethod:?}}" > {output.methods}
+        deseq2version=`cat {input}`
+        echo $deseq2version
+
+        perl {workflow.basedir}/bin/gxa_generate_methods.pl "$expIslDir/irap.versions.tsv" {wildcards.accession} {params.organism} {params.template} "${{baseline_mapper:?}}" "${{baseline_quantMethod:?}}" "${{de_mapper:?}}" "${{de_quantMethod:?}}" "${{de_deMethod:?}}" "${{deseq2version:?}}" > {output.methods}
 
         if [ $? -ne 0 ]; then
             echo "ERROR: Failed to generate analysis methods for {wildcards.accession}" >&2
