@@ -1,4 +1,4 @@
-[submodule "/Users/pmadrigal/bulk-recalculations/isl"]
-	path = /Users/pmadrigal/bulk-recalculations/isl
-	url = https://pmb59@github.com/ebi-gene-expression-group/isl.git
+[submodule "isl"]
+	path = isl
+	url = https://github.com/ebi-gene-expression-group/isl
 	branch = develop_codon
