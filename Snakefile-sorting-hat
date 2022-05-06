@@ -228,6 +228,8 @@ rule produce_reprocess_call:
         zooma_exclusions=config['zooma_exclusions'],
         isl_dir=config['isl_dir'],
         isl_genomes=config['isl_genomes'],
+        irap_versions=config['irap_versions'],
+        irap_container=config['irap_container'],
         tmp_dir=config['tmp_dir'],
         lsf_config = get_lsf_config_file(),
         log_handler_script=get_log_handler_script(),
@@ -263,6 +265,8 @@ rule produce_reprocess_call:
                 zooma_exclusions={params.zooma_exclusions} \
                 isl_dir={params.isl_dir} \
                 isl_genomes={params.isl_genomes} \
+                irap_versions={params.irap_versions} \
+                irap_container={params.irap_container} \
                 tmp_dir={params.tmp_dir} \
                 atlas_meta_config={params.atlasmeta_config} \
                 oracle_home={params.oracle_home} \

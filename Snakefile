@@ -47,6 +47,18 @@ def get_isl_genomes():
     else:
         return None
 
+def get_irap_versions():
+    if 'irap_versions' in config:
+        return config['irap_versions']
+    else:
+        return None
+
+def get_irap_container():
+    if 'irap_container' in config:
+        return config['irap_container']
+    else:
+        return None
+
 def get_tmp_dir():
     if 'tmp_dir' in config:
         return config['tmp_dir']
@@ -972,7 +984,9 @@ rule generate_methods_baseline_rnaseq:
         organism=get_organism(),
         template=get_methods_template_baseline(),
         isl_dir=get_isl_dir(),
-        isl_genomes=get_isl_genomes()
+        isl_genomes=get_isl_genomes(),
+        irap_versions=get_irap_versions(),
+        irap_container=get_irap_container()
     output:
         methods=temp("{accession}-analysis-methods.tsv_baseline_rnaseq")
     shell:
@@ -1016,7 +1030,20 @@ rule generate_methods_baseline_rnaseq:
         deseq2version='none'
         echo $deseq2version
 
-        perl {workflow.basedir}/bin/gxa_generate_methods.pl "$expIslDir/irap.versions.tsv" {wildcards.accession} {params.organism} {params.template} "${{baseline_mapper:?}}" "${{baseline_quantMethod:?}}" "${{de_mapper:?}}" "${{de_quantMethod:?}}" "${{de_deMethod:?}}" "${{deseq2version:?}}" {params.isl_genomes} > {output.methods}
+        echo "Cheking if IRAP versions file: {params.irap_versions} exists.."
+
+        if [ ! -s {params.irap_versions} ] ; then
+            echo "it does not - attempting to transfer the file from the singularity container {params.irap_container}"
+            singularity exec {params.irap_container} cp /opt/irap/aux/mk/irap_versions.mk {params.irap_versions}
+            if [ ! -s {params.irap_versions} ] ; then
+                echo "ERROR: Failed to retrieve {params.irap_versions} from singularity" >&2
+                exit 1
+            fi
+        else
+            echo "The file {params.irap_versions} already exists."
+        fi
+
+        perl {workflow.basedir}/bin/gxa_generate_methods.pl "$expIslDir/irap.versions.tsv" {wildcards.accession} {params.organism} {params.template} "${{baseline_mapper:?}}" "${{baseline_quantMethod:?}}" "${{de_mapper:?}}" "${{de_quantMethod:?}}" "${{de_deMethod:?}}" "${{deseq2version:?}}" {params.isl_genomes} {params.irap_versions} > {output.methods}
 
         if [ $? -ne 0 ]; then
             echo "ERROR: Failed to generate analysis methods for {wildcards.accession}" >&2
@@ -1270,7 +1297,9 @@ rule generate_methods_differential_rnaseq:
         organism=get_organism(),
         template=get_methods_template_differential(),
         isl_dir=get_isl_dir(),
-        isl_genomes=get_isl_genomes()
+        isl_genomes=get_isl_genomes(),
+        irap_versions=get_irap_versions(),
+        irap_container=get_irap_container()
     output:
         methods=temp("{accession}-analysis-methods.tsv_differential_rnaseq")
     shell:
@@ -1313,7 +1342,20 @@ rule generate_methods_differential_rnaseq:
         deseq2version=`cat {input}`
         echo $deseq2version
 
-        perl {workflow.basedir}/bin/gxa_generate_methods.pl "$expIslDir/irap.versions.tsv" {wildcards.accession} {params.organism} {params.template} "${{baseline_mapper:?}}" "${{baseline_quantMethod:?}}" "${{de_mapper:?}}" "${{de_quantMethod:?}}" "${{de_deMethod:?}}" "${{deseq2version:?}}" {params.isl_genomes} > {output.methods}
+        echo "Cheking if IRAP versions file: {params.irap_versions} exists.."
+
+        if [ ! -s {params.irap_versions} ] ; then
+            echo "it does not - attempting to transfer the file from the singularity container {params.irap_container}"
+            singularity exec {params.irap_container} cp /opt/irap/aux/mk/irap_versions.mk {params.irap_versions}
+            if [ ! -s {params.irap_versions} ] ; then
+                echo "ERROR: Failed to retrieve {params.irap_versions} from singularity" >&2
+                exit 1
+            fi
+        else
+            echo "The file {params.irap_versions} already exists."
+        fi
+
+        perl {workflow.basedir}/bin/gxa_generate_methods.pl "$expIslDir/irap.versions.tsv" {wildcards.accession} {params.organism} {params.template} "${{baseline_mapper:?}}" "${{baseline_quantMethod:?}}" "${{de_mapper:?}}" "${{de_quantMethod:?}}" "${{de_deMethod:?}}" "${{deseq2version:?}}" {params.isl_genomes} {params.irap_versions} > {output.methods}
 
         if [ $? -ne 0 ]; then
             echo "ERROR: Failed to generate analysis methods for {wildcards.accession}" >&2

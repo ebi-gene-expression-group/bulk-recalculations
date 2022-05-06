@@ -38,6 +38,8 @@ TEMPLATE_METHODS_DIFFERENTIAL=$( pwd )/differential_atlas_methods_template.conf
 ZOOMA_EXCLUSIONS=$( pwd )/zooma_exclusions.yml
 ISL_DIR=path/to/isl_dir
 ISL_GENOMES_REFERENCES=$ISL_GENOMES
+IRAP_VERSIONS=path/to/atlasprod/irap_versions.mk
+IRAP_CONTAINER=path/to/singularity/*.sif
 TMP_DIR=path/to/tmp_dir
 # CHECK_SPECIES file should come from a clone of the atlas-config repo in Jenkins:
 CHECK_SPECIES=$( pwd )/atlas-species-name-mapping.yaml
@@ -96,6 +98,8 @@ snakemake --use-conda --conda-frontend mamba \
         methods_dif=$TEMPLATE_METHODS_DIFFERENTIAL \
         zooma_exclusions=$ZOOMA_EXCLUSIONS \
         isl_genomes=$ISL_GENOMES_REFERENCES \
+        irap_versions=$IRAP_VERSIONS \
+        irap_container=$IRAP_CONTAINER \
         check_sp_file=$CHECK_SPECIES \
         oracle_home=$ORACLE_HOME \                                                                                                                        
         python_user=$PYTHON_USER \                                                                                                                        

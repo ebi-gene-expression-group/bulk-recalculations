@@ -8,7 +8,7 @@ use Atlas::Common qw(
     create_atlas_site_config
 );
 
-$_ = shift for my ( $versionReferenceFile, $expAcc, $species, $template, $baselineMapper, $baselineQuantMethod, $deMapper, $deQuantMethod, $deDEMethod, $deseq2version, $isl_genomes );
+$_ = shift for my ( $versionReferenceFile, $expAcc, $species, $template, $baselineMapper, $baselineQuantMethod, $deMapper, $deQuantMethod, $deDEMethod, $deseq2version, $isl_genomes, $irap_versions );
 
 my $atlasProd = $ENV{'ATLAS_PROD'};
 my $irapSingleLib = $ENV{'IRAP_SINGLE_LIB'};
@@ -24,6 +24,8 @@ if (!$deQuantMethod) { die "Set variable \$deQuantMethod.\n" }
 if (!$deDEMethod) { die "Set variable \$deDEMethod.\n" }
 if (!$deseq2version) { die "Set variable \$deseq2version.\n" }
 if (!$isl_genomes) { die "Set variable \$isl_genomes.\n" }
+if (!$irap_versions) { die "Set variable \$irap_versions.\n" }
+
 
 my $atlasSiteConfig = create_atlas_site_config;
 
@@ -163,7 +165,7 @@ if( $tagsHash->{ "REF_NAME" } eq "Ensembl" ) {
 
 my @irapOut = `cat $versionReferenceFile`;
 #my $gseaVersion = `grep '^piano_version=' $irapProd/aux/mk/irap_versions.mk | awk -F"=" '{print \$NF}'`;
-my $gseaVersion = `grep '^piano_version=' $atlasProd/irap_versions.mk | awk -F"=" '{print \$NF}'`;
+my $gseaVersion = `grep '^piano_version=' $irap_versions | awk -F"=" '{print \$NF}'`;
 
 
 # Get differential expression package version from Atlas installation.
