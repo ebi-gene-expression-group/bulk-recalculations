@@ -125,6 +125,9 @@ def get_ext_db():
         return ["go", "reactome", "interpro"]
 
 def get_metrics_recalculations():
+    """
+    The logic is based on atlas production files. 
+    """
     import glob
     if 'metric' in config:
         return config['metric'].split(":")
@@ -141,13 +144,27 @@ def get_metrics_recalculations():
 
 def get_metrics_reprocess():
     """
-    This could be based on files retrieved from iRAP/ISL
+    The logic is based on files processed by iRAP/ISL.
     """
-    #import glob
+    import os
     if 'metric' in config:
         return config['metric'].split(":")
     else:
-        return ['tpms', 'fpkms']
+        metrics_reprocess = []
+        isl_dir = get_isl_dir()
+        organism = get_organism()
+        acc = config['accession']
+        files_ils_dir = os.listdir( f"{isl_dir}/{acc}/{organism}" )
+        # we only need one match, no need to traverse the full list
+        if next((s for s in files_ils_dir if '.tpm.' in s), None):
+            metrics_reprocess.append('tpms')
+        if next((s for s in files_ils_dir if '.fpkm.' in s), None):
+            metrics_reprocess.append('fpkms')
+
+        if not metrics_reprocess:
+            sys.exit("No metrics for reprocessing found in isl path.")
+        else:
+            return metrics_reprocess
 
 def get_meta_config():
     if 'atlas_meta_config' in config:
