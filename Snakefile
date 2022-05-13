@@ -310,14 +310,14 @@ def input_atlas_experiment_summary(wildcards):
             inputs = []
             arr_designs=get_array_design_from_xml()
             for s in arr_designs:
-                inputs.append( wildcards['accession']+'_'+s+'-normalized-expressions.tsv.undecorated' )
+                inputs.append( f"{wildcards['accession']}_{s}-normalized-expressions.tsv.undecorated" )
             return inputs
         elif experiment_type =='microarray_2colour_mrna_differential':
             inputs = []
             arr_designs=get_array_design_from_xml()
             for s in arr_designs:
-                inputs.append( wildcards['accession']+'_'+s+'-log-fold-changes.tsv.undecorated' )
-                inputs.append( wildcards['accession']+'_'+s+'-average-intensities.tsv.undecorated' )
+                inputs.append( f"{wildcards['accession']}_{s}-log-fold-changes.tsv.undecorated" )
+                inputs.append( f"{wildcards['accession']}_{s}-average-intensities.tsv.undecorated" )
             return inputs
         else:
             return None
