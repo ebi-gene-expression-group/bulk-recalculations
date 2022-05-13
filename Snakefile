@@ -263,7 +263,7 @@ def input_percentile_ranks(wildcards):
     """
     if config['goal'] == 'reprocess':
         if experiment_type=='rnaseq_mrna_differential':
-            return [ 'logs/'+wildcards['accession']+'-decorate_differential_rnaseq.done' ]
+            return [ f"logs/{wildcards['accession']}-decorate_differential_rnaseq.done" ]
         elif experiment_type == 'microarray_1colour_mrna_differential' or experiment_type =='microarray_2colour_mrna_differential' or experiment_type =='microarray_1colour_microrna_differential':
             inputs = []
             arr_designs=get_array_design_from_xml()
