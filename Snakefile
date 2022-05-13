@@ -182,7 +182,7 @@ def get_db_params():
         if i in config:
             db_params.append( config[i] )
         else:
-            print(f" Missing db param: {i}")
+            print(f" Missing ISL db param: {i}")
             #sys.exit()
     return db_params
 
