@@ -874,10 +874,6 @@ rule summarize_expression:
             --configuration {input.config_xml}  \
             < {input.qn_expression}  \
             > {output.sum_expression}
-        if [ $? -ne 0 ]; then
-	        echo "ERROR: Failed to summarize gene expression in {wildcards.metric} for {wildcards.accession} " >&2
-	        exit 1
-        fi
         """
 
 rule transcripts_na_check:
@@ -936,13 +932,7 @@ rule quantile_normalise_transcripts:
         echo {input.transcripts_na_check}
 
         if [ -s {params.transcripts} ] ; then
-
             {workflow.basedir}/bin/quantile_normalize.sh -c {input.xml} -s {params.transcripts} -d {params.qntranscripts} -b {workflow.basedir}/bin
-
-            if [ $? -ne 0 ]; then
-                echo "ERROR: Failed to quantile normalize for {params.transcripts}  " >&2
-                exit 1
-            fi
         else
             echo "File {params.transcripts} not found "
         fi
