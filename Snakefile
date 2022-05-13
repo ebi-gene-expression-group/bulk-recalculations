@@ -344,8 +344,8 @@ def get_checkpoints_cp_atlas_exps(wildcards):
     """
     if config['goal'] == 'reprocess':
         inputs = get_outputs()
-        inputs.remove('logs/'+wildcards['accession']+'-copy_experiment_from_analysis_to_atlas_exps.done')
-        inputs.remove('logs/'+wildcards['accession']+'-get_magetab_for_experiment.done')
+        inputs.remove( f"logs/{wildcards['accession']}-copy_experiment_from_analysis_to_atlas_exps.done" )
+        inputs.remove( f"logs/{wildcards['accession']}-get_magetab_for_experiment.done" )
         return inputs
     else:
         return None
