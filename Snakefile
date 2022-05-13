@@ -275,7 +275,7 @@ def input_percentile_ranks(wildcards):
             return None
     if config['goal'] == 'recalculations':
         # No input file needed - trick to force rule execution
-        return wildcards['accession']+'.metadata_summary.yaml'
+        return f"{wildcards['accession']}.metadata_summary.yaml"
 
 def input_differential_tracks_and_gsea(wildcards):
     """
