@@ -535,7 +535,8 @@ rule touch_inputs_baseline:
     """
     Rule to avoid execution of upstream rules when forceall=true in baseline rna-seq recalculations.
     """
-    log: "logs/{accession}-{metric}-touch_inputs_baseline.log"
+    log: 
+        "logs/{accession}-{metric}-touch_inputs_baseline.log"
     output:
         temp("{accession}-{metric}-touch_inputs_baseline.done")
     shell:
@@ -589,7 +590,6 @@ rule baseline_heatmap:
     conda: "envs/atlas-internal.yaml"
     log: "logs/{accession}-{metric}-baseline_heatmap.log"
     resources: mem_mb=get_mem_mb
-    params: expression="{accession}-{metric}.tsv"
     input:
         expression=lambda wildcards: f"{wildcards.accession}-{wildcards.metric}.tsv" if 'reprocess' in config['goal'] else f"{wildcards.accession}-{wildcards.metric}-touch_inputs_baseline.done"
     output:
@@ -599,7 +599,7 @@ rule baseline_heatmap:
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
         {workflow.basedir}/bin/generateBaselineHeatmap.R --configuration {wildcards.accession}-configuration.xml \
-		--input  {params.expression} \
+		--input  {wildcards.accession}-{wildcards.metric}.tsv \
 		--output {output.heatmap}
         """
 
