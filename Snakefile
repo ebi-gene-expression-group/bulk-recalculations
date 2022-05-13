@@ -968,10 +968,7 @@ rule summarize_transcripts:
                 --configuration {input.xml}  \
                 < {params.qn_transcripts}  \
                 > {params.agg_transcripts}
-            if [ $? -ne 0 ]; then
-                echo "ERROR: Failed to summarize transcript expressions TPMs for {params.qn_transcripts}  " >&2
-                exit 1
-            fi
+                
             # maintain previous behaviour - quantile_normalized files are temporary
             rm {params.qn_transcripts}
         else
