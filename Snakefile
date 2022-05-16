@@ -1087,10 +1087,10 @@ rule decorate_expression_baseline:
         # Ammonite REPL & Script-Runner
 
         amm -s {workflow.basedir}/bin/decorateFile.sc \
-        --geneNameFile "$geneNameFile" \
-        --source {input.expression} \
-        | awk 'NR == 1; NR > 1 {{print $0 | "sort -n"}}' \
-        > $decoratedFile.swp
+            --geneNameFile "$geneNameFile" \
+            --source {input.expression} \
+            | awk 'NR == 1; NR > 1 {{print $0 | "sort -n"}}' \
+            > $decoratedFile.swp
 
         decoratedFileLength=$(wc -l "$decoratedFile.swp" | cut -f 1 -d ' ' )
         if [ -s "$decoratedFile.swp" ] && [ "$decoratedFileLength" -gt 1 ]; then
