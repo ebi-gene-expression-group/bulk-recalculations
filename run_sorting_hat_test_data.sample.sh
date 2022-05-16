@@ -8,6 +8,7 @@ if [ "$GOAL" != 'reprocess' ] && [ "$GOAL" != 'recalculations' ]; then
 fi
 
 # only one, either ACCESSIONS or SPECIES can be defined
+# otherwise ACCESSIONS supersedes SPECIES
 # SPECIES=homo_sapiens:rattus_norvegicus
 
 if [ -z ${ACCESSIONS+x} ]; then 
@@ -57,8 +58,8 @@ export LOG_PATH=${LOG_PATH:-$( pwd )/sorting.log}
 USUAL_SM_ERR_OUT=${USUAL_SM_ERR_OUT:-$( pwd )/snakemake.log}
 
 # isl db
-ORACLE_BASE=
-ORACLE_HOME=
+ORACLE_BASE=path/to/oracle_base
+ORACLE_HOME=path/to/oracle_home
 PYTHON_USER=
 PYTHON_CONNECT_STRING=
 PYTHON_PASSWORD=
@@ -66,7 +67,7 @@ PYTHON_PASSWORD=
 #create conda envs only
 for yaml_file in $(ls $( pwd )/envs); do
   echo $yaml_file
-  snakemake --use-conda --conda-create-envs-only $CONDA_PREFIX_LINE  \
+  snakemake --use-conda --conda-create-envs-only $CONDA_PREFIX_LINE $PROFILE_LINE  \
             --conda-frontend mamba \
             --config \
             yamlFile=$( pwd )/envs/$yaml_file \
@@ -100,6 +101,7 @@ snakemake --use-conda --conda-frontend mamba \
         isl_genomes=$ISL_GENOMES_REFERENCES \
         irap_versions=$IRAP_VERSIONS \
         irap_container=$IRAP_CONTAINER \
+        tmp_dir=$TMP_DIR \
         check_sp_file=$CHECK_SPECIES \
         oracle_home=$ORACLE_HOME \                                                                                                                        
         python_user=$PYTHON_USER \                                                                                                                        
