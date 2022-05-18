@@ -1063,6 +1063,7 @@ rule decorate_expression_baseline:
     """
     container: "docker://quay.io/ebigxa/ensembl-update-env:amm1.1.2"
     log: "logs/{accession}-decorate_expression_baseline_{metric}.log"
+    resources: mem_mb=get_mem_mb   
     input:
         expression="{accession}-{metric}.tsv.undecorated.aggregated"
     params:
@@ -1084,8 +1085,9 @@ rule decorate_expression_baseline:
 
         decoratedFile={output.decoexpression} 
 
-        # Ammonite REPL & Script-Runner
 
+        # pass avail custom memory to JVM for Ammonite REPL
+        export JAVA_OPTS="-Xmx{resources.mem_mb}M"
         amm -s {workflow.basedir}/bin/decorateFile.sc \
             --geneNameFile "$geneNameFile" \
             --source {input.expression} \
@@ -1140,8 +1142,8 @@ rule decorate_transcripts_baseline:
 
             decoratedFile={params.decotranscripts} 
 
-            # Ammonite REPL & Script-Runner
-            #export JAVA_OPTS="-Xmx3000M"
+            # pass avail custom memory to JVM for Ammonite REPL
+            export JAVA_OPTS="-Xmx{resources.mem_mb}M"
             amm -s {workflow.basedir}/bin/decorateFile.sc \
                 --geneIdFile "$transcriptFile" \
                 --geneNameFile "$geneNameFile" \
@@ -1376,6 +1378,7 @@ rule decorate_differential_rnaseq:
     """
     container: "docker://quay.io/ebigxa/ensembl-update-env:amm1.1.2"
     log: "logs/{accession}-decorate_differential_rnaseq.log"
+    resources: mem_mb=get_mem_mb   
     input:
         "{accession}-analytics.tsv.undecorated",
         "{accession}-analytics.tsv.undecorated.unrounded",
@@ -1405,6 +1408,8 @@ rule decorate_differential_rnaseq:
             decoratedFile=`echo "${{i}}" | sed 's/\.undecorated//'`
             echo "$decoratedFile"
 
+            # pass avail custom memory to JVM for Ammonite REPL
+            export JAVA_OPTS="-Xmx{resources.mem_mb}M"
             amm -s {workflow.basedir}/bin/decorateFile.sc \
             --geneNameFile "$geneNameFile" \
             --source "${{i}}" \
@@ -1627,6 +1632,9 @@ rule decorate_temp_norm_expr_microarray:
         source {workflow.basedir}/bin/reprocessing_routines.sh
         source {workflow.basedir}/bin/decorate_microarray_routines.sh
 
+        # pass avail custom memory to JVM for Ammonite REPL
+        export JAVA_OPTS="-Xmx{resources.mem_mb}M"
+
         expPath=$(pwd)
         organism={params.organism}
         echo $expPath
@@ -1828,6 +1836,9 @@ rule decorate_differential_microarray:
         source {workflow.basedir}/bin/reprocessing_routines.sh
         source {workflow.basedir}/bin/decorate_microarray_routines.sh
 
+        # pass avail custom memory to JVM for Ammonite REPL
+        export JAVA_OPTS="-Xmx{resources.mem_mb}M"
+        
         expPath=$(pwd)
         organism={params.organism}
         echo $expPath
