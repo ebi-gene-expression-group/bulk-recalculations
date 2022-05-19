@@ -1214,12 +1214,9 @@ rule differential_statistics_rnaseq:
             mkdir $TMPDIR/tmp
         fi
 
+        rm -rf *.png {wildcards.accession}-analytics.tsv.undecorated
+
         perl {workflow.basedir}/bin/diffAtlas_DE.pl --experiment {wildcards.accession} --directory ./
-        if [ $? -ne 0 ]; then
-	        echo "ERROR: Failed to generate differential expression statistics and MvA plots for {wildcards.accession}" >&2
-	        rm -rf *.png {wildcards.accession}-analytics.tsv.undecorated
-	        exit 1
-        fi
         
         Rscript -e "library('DESeq2'); write.table(packageVersion('DESeq2'), file='{output.deseq2version}', quote=FALSE, col.names=FALSE, row.names = FALSE)" 
 
