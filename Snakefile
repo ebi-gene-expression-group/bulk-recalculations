@@ -1155,7 +1155,7 @@ rule decorate_transcripts_baseline:
                 mv $decoratedFile.swp $decoratedFile
             else
                 echo "ERROR: decorate_transcript_baseline_file for {wildcards.accession} and {wildcards.metric}"
-	        exit 1
+	            exit 1
             fi
         else
             echo "File {params.transcripts} not found. Decorate transcript for baseline rna-seq summary not performed "
@@ -1163,15 +1163,15 @@ rule decorate_transcripts_baseline:
         touch {output}
         """
 
-
 rule create_tracks_symlinks:
     """
     Create bedgraph tracks symlinks during reprocessing (only for tpms).
     """
-    log: "logs/{accession}.{assay_id}.create_tracks_symlinks_{metric}.log"
+    log: "logs/{accession}.{assay_id}.create_tracks_symlinks_tpms.log"
     input:
-        bedGraph="{accession}.{assay_id}.genes.expressions_{metric}.bedGraph"
-    output: "{accession}.{assay_id}.genes.expressions.bedGraph"
+        bedGraph="{accession}.{assay_id}.genes.expressions_tpms.bedGraph"
+    output: 
+        "{accession}.{assay_id}.genes.expressions.bedGraph"
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
@@ -1182,7 +1182,6 @@ rule create_tracks_symlinks:
 
         ln -s {input.bedGraph} {output}
         """
-
 
 
 # differential_rnaseq_experiment
