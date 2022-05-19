@@ -1848,10 +1848,6 @@ rule decorate_differential_microarray:
             decorate_if_exists "${{expPath}}/{wildcards.accession}_${{arrayDesign}}-log-fold-changes.tsv.undecorated" "$arrayDesignFile" "$geneNameFile"
             decorate_if_exists "${{expPath}}/{wildcards.accession}_${{arrayDesign}}-analytics.tsv.undecorated.unrounded" "$arrayDesignFile" "$geneNameFile"
         done
-        if [ $? -ne 0 ]; then
-            echo "ERROR: Failed to decorate {wildcards.accession} and array {wildcards.array_design}" >&2
-            exit 1
-        fi
         touch {output}                                                                                                                                                                                                   
         """                                                                                                                                                                                                                         
          
