@@ -1171,22 +1171,16 @@ rule create_tracks_symlinks:
     log: "logs/{accession}.{assay_id}.create_tracks_symlinks_{metric}.log"
     input:
         bedGraph="{accession}.{assay_id}.genes.expressions_{metric}.bedGraph"
-    params:
-        output="{accession}.{assay_id}.genes.expressions.bedGraph"
-    output:
-        temp("logs/{accession}.{assay_id}.create_tracks_symlinks_{metric}.done")
+    output: "{accession}.{assay_id}.genes.expressions.bedGraph"
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
 
         # remove if any old bedgraph files
-        if [ -s {params.output} ] ; then
-            rm {params.output} 
-        fi
+        rm -f {output} 
 
-        ln -s {input.bedGraph} {params.output}
-        touch {output}
+        ln -s {input.bedGraph} {output}
         """
 
 
