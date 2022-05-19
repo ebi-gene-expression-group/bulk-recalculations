@@ -52,9 +52,7 @@ normalizeArrayData <- function(inFile, mode, outFile, miRBaseFile) {
 		# background adjustment, normalization and probe set summarization (see
 		# below for details).
 		else if(mode == "affy") {
-
 			affymetrixArray( files, assayNames, outFile )
-
 		}
 	})
 
