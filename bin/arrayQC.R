@@ -40,16 +40,12 @@ atlasArrayQC <- function(annotationFile, exptType, exptAcc, arrayDesign, outDir,
 	# Illumina data.
 	# single channel data
 	else if(exptType == "lumi") {
-
 		dataSet <- illuminaQC( annotationFile )
-
 	}
 	# Agilent data.
 	# One-colour or Two color Agilent data
 	else if(exptType == "agil1" | exptType == "agil2") {
-
 		dataSet <- agilentQC(annotationFile, exptType, miRBaseFile)
-
 	}
 
 	# Something we don't recognise.
