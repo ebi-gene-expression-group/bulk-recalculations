@@ -1770,17 +1770,14 @@ rule round_log2_fold_changes_microarray:
         """                                                                                                                                                                                                    
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set                                                                                                                       
         exec &> "{log}"                                                                                                                                                                                        
-                                                                                                                                                                                                               
+
+        rm -rf {params.intermediate_rounded}  
+                                                                                                                                                                                                         
         {workflow.basedir}/bin/round_log2_fold_changes.R \
             --experiment_type {params.exp_type} \
             --input_to_round {params.analytics} \
             --intermediate_output {params.intermediate_rounded}                                                                                                                               
-                                                                                                                                                                                                               
-        if [ $? -ne 0 ]; then                                                                                                                                                                                  
-                echo "ERROR: Failed to round to one decimal place log2fold changes in {params.analytics} " >&2                                                                                                 
-                rm -rf {params.intermediate_rounded}                                                                                                                                                           
-                exit 1                                                                                                                                                                                         
-        fi                                                                                                                                                                                                     
+                                                                                                                                                                                                  
         mv {params.analytics} {output.unrounded}                                                                                                                                                                         
         mv {params.intermediate_rounded} {params.analytics} 
         touch {output.tmp}                                                                                                                                                 
