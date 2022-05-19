@@ -1155,7 +1155,7 @@ rule decorate_transcripts_baseline:
                 mv $decoratedFile.swp $decoratedFile
             else
                 echo "ERROR: decorate_transcript_baseline_file for {wildcards.accession} and {wildcards.metric}"
-	            exit 1
+	        exit 1
             fi
         else
             echo "File {params.transcripts} not found. Decorate transcript for baseline rna-seq summary not performed "
