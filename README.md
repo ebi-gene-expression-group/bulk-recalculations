@@ -9,7 +9,7 @@ It contains data analysis rules for:
 
 ## Prerequisites
 
- * [Snakemake](https://snakemake.readthedocs.io/) installed
+ * Snakemake (tested with version 6.6.1)
  * LSF batch scheduler
  * Set up configuration variables at `run_sorting_hat_test_data.sample.sh` for goal 'reprocess' or 'recalculations'.
 
