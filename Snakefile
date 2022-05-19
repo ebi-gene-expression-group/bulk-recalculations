@@ -1081,8 +1081,7 @@ rule decorate_expression_baseline:
         echo $geneNameFile
 
         test -s "$geneNameFile" || (  >&2 echo "$0 gene name file not found: $geneNameFile" ; exit 1 )
-        #test -s "$FPKMexpressionsFile" -o -s "$TPMexpressionsFile" || (  >&2 echo "$0 no data files for $e" ; exit 1 )
-
+   
         decoratedFile={output.decoexpression} 
 
 
@@ -1838,7 +1837,7 @@ rule decorate_differential_microarray:
 
         # pass avail custom memory to JVM for Ammonite REPL
         export JAVA_OPTS="-Xmx{resources.mem_mb}M"
-        
+
         expPath=$(pwd)
         organism={params.organism}
         echo $expPath
