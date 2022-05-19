@@ -48,6 +48,7 @@ def get_outputs():
     if experiment_type == 'rnaseq_mrna_baseline':
     #if config['tool']=="all-baseline" or 'baseline-tracks' in config['tool'] or 'baseline-heatmap' in config['tool'] or 'baseline-coexpression' in config['tool']:
         outputs.extend(expand("logs/"+f"{config['accession']}"+"-add_runs_to_db.done" ))
+        outputs.extend(expand("logs/"+f"{config['accession']}"+"-get_irap_versions_file.done" ))
         outputs.append(f"{config['accession']}-raw-counts.tsv.undecorated")
         outputs.extend(expand(config['accession']+"-{metric}.tsv.undecorated", metric=metrics))
         outputs.extend(expand(config['accession']+"-transcripts-{metric}.tsv.undecorated", metric=["tpms"] ))
@@ -79,6 +80,7 @@ def get_outputs():
     # collect output for differential rna-seq
     if experiment_type == 'rnaseq_mrna_differential':
         outputs.extend(expand("logs/"+f"{config['accession']}"+"-add_runs_to_db.done" ))
+        outputs.extend(expand("logs/"+f"{config['accession']}"+"-get_irap_versions_file.done" ))
         outputs.append(f"{config['accession']}-raw-counts.tsv.undecorated")
         outputs.extend(expand("qc/"+f"{config['accession']}-irap-single-lib-report.tsv" )) 
         outputs.append(f"{config['accession']}-analytics.tsv.undecorated")

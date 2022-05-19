@@ -977,6 +977,34 @@ rule summarize_transcripts:
         touch {output}
         """
 
+rule get_irap_versions_file:
+    """
+    If iRAP versions file not present, get it from the container.
+    """
+    log: 
+        "logs/{accession}-get_irap_versions_file.log"
+    params:
+        irap_versions=get_irap_versions(),
+        irap_container=get_irap_container()
+    output:
+        temp("logs/{accession}-get_irap_versions_file.done")
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+
+        if [ ! -s {params.irap_versions} ] ; then
+            echo "Attempting to transfer the file {params.irap_versions} from the singularity container {params.irap_container}"
+            singularity exec {params.irap_container} cp /opt/irap/aux/mk/irap_versions.mk {params.irap_versions}
+            if [ ! -s {params.irap_versions} ] ; then
+                echo "ERROR: Failed to retrieve {params.irap_versions} from the container" >&2
+                exit 1
+            fi
+        else
+            echo "The file {params.irap_versions} already exists."
+        fi
+        touch {output}
+        """
 
 rule generate_methods_baseline_rnaseq:
     """
@@ -985,13 +1013,14 @@ rule generate_methods_baseline_rnaseq:
     """
     conda: "envs/perl-atlas-modules.yaml"
     log: "logs/{accession}-generate_methods_baseline_rnaseq.log"
+    input:
+        rules.get_irap_versions_file.output
     params:
         organism=get_organism(),
         template=get_methods_template_baseline(),
         isl_dir=get_isl_dir(),
         isl_genomes=get_isl_genomes(),
-        irap_versions=get_irap_versions(),
-        irap_container=get_irap_container()
+        irap_versions=get_irap_versions()
     output:
         methods=temp("{accession}-analysis-methods.tsv_baseline_rnaseq")
     shell:
@@ -1034,19 +1063,6 @@ rule generate_methods_baseline_rnaseq:
         # not used, only for differential rnaseq
         deseq2version='none'
         echo $deseq2version
-
-        echo "Cheking if IRAP versions file: {params.irap_versions} exists.."
-
-        if [ ! -s {params.irap_versions} ] ; then
-            echo "it does not - attempting to transfer the file from the singularity container {params.irap_container}"
-            singularity exec {params.irap_container} cp /opt/irap/aux/mk/irap_versions.mk {params.irap_versions}
-            if [ ! -s {params.irap_versions} ] ; then
-                echo "ERROR: Failed to retrieve {params.irap_versions} from singularity" >&2
-                exit 1
-            fi
-        else
-            echo "The file {params.irap_versions} already exists."
-        fi
 
         perl {workflow.basedir}/bin/gxa_generate_methods.pl "$expIslDir/irap.versions.tsv" {wildcards.accession} {params.organism} {params.template} "${{baseline_mapper:?}}" "${{baseline_quantMethod:?}}" "${{de_mapper:?}}" "${{de_quantMethod:?}}" "${{de_deMethod:?}}" "${{deseq2version:?}}" {params.isl_genomes} {params.irap_versions} > {output.methods}
 
@@ -1285,14 +1301,14 @@ rule generate_methods_differential_rnaseq:
     conda: "envs/perl-atlas-modules.yaml"
     log: "logs/{accession}-generate_methods_differential_rnaseq.log"
     input:
-        rules.differential_statistics_rnaseq.output.deseq2version
+        deseq2version=rules.differential_statistics_rnaseq.output.deseq2version,
+        check_irap_done=rules.get_irap_versions_file.output
     params:
         organism=get_organism(),
         template=get_methods_template_differential(),
         isl_dir=get_isl_dir(),
         isl_genomes=get_isl_genomes(),
-        irap_versions=get_irap_versions(),
-        irap_container=get_irap_container()
+        irap_versions=get_irap_versions()
     output:
         methods=temp("{accession}-analysis-methods.tsv_differential_rnaseq")
     shell:
@@ -1332,21 +1348,8 @@ rule generate_methods_differential_rnaseq:
         echo $de_quantMethod
         echo $de_deMethod
 
-        deseq2version=`cat {input}`
+        deseq2version=`cat {input.deseq2version}`
         echo $deseq2version
-
-        echo "Cheking if IRAP versions file: {params.irap_versions} exists.."
-
-        if [ ! -s {params.irap_versions} ] ; then
-            echo "it does not - attempting to transfer the file from the singularity container {params.irap_container}"
-            singularity exec {params.irap_container} cp /opt/irap/aux/mk/irap_versions.mk {params.irap_versions}
-            if [ ! -s {params.irap_versions} ] ; then
-                echo "ERROR: Failed to retrieve {params.irap_versions} from singularity" >&2
-                exit 1
-            fi
-        else
-            echo "The file {params.irap_versions} already exists."
-        fi
 
         perl {workflow.basedir}/bin/gxa_generate_methods.pl "$expIslDir/irap.versions.tsv" {wildcards.accession} {params.organism} {params.template} "${{baseline_mapper:?}}" "${{baseline_quantMethod:?}}" "${{de_mapper:?}}" "${{de_quantMethod:?}}" "${{de_deMethod:?}}" "${{deseq2version:?}}" {params.isl_genomes} {params.irap_versions} > {output.methods}
 
