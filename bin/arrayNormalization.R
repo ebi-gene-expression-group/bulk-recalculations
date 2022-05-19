@@ -46,9 +46,7 @@ normalizeArrayData <- function(inFile, mode, outFile, miRBaseFile) {
 		# Illumina data 
 		# use lumi package for pre-processing of raw text data.
 		else if(mode == "lumi") {
-
 			illuminaArray( files, outFile )
-            
         }
 		# For Affymetrix data, use oligo package for pre-processing: this is
 		# background adjustment, normalization and probe set summarization (see
