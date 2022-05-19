@@ -1632,11 +1632,9 @@ rule decorate_temp_norm_expr_microarray:
             | sed "s/{wildcards.accession}_//" \
             | sed "s/-normalized-expressions.tsv.undecorated//" \
             | while read -r arrayDesign ; do
+            echo "Finding array design file..."
             arrayDesignFile=$(get_arraydesign_file ${{arrayDesign}} {params.organism}  )
-            if [ $? -ne 0 ]; then
-                echo "ERROR: Could not find array design: $arrayDesign" >&2
-                exit 1
-            fi
+            echo "...array design file found"
             # previously, however this has issues with organisms that share the array design
             # organism=$(get_organism_given_arraydesign_file ${{arrayDesignFile}} )
             if [ ! -z `echo $arrayDesignFile | grep mirbase` ]; then
@@ -1832,11 +1830,10 @@ rule decorate_differential_microarray:
             | sed "s/{wildcards.accession}_//" \
             | sed "s/-analytics.tsv.undecorated//" \
             | while read -r arrayDesign ; do
+            echo "Finding array design file..."
             arrayDesignFile=$(get_arraydesign_file ${{arrayDesign}} {params.organism}  )
-            if [ $? -ne 0 ]; then
-                echo "ERROR: Could not find array design: $arrayDesign" >&2
-                exit 1
-            fi
+            echo "...array design file found"
+
             # previously, however this has issues with organisms that share the array design
             # organism=$(get_organism_given_arraydesign_file ${{arrayDesignFile}} )
             if [ ! -z `echo $arrayDesignFile | grep mirbase` ]; then
