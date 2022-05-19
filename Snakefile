@@ -1452,10 +1452,7 @@ rule get_normalized_expressions_microarray:
 
         # Get normalized expressions
         perl {workflow.basedir}/bin/arrayNormalization.pl {wildcards.accession} $idf_filename $ae_dir $mirbase_dir {workflow.basedir} $(pwd)
-        if [ $? -ne 0 ]; then
-            echo "ERROR: Failed to calculate normalized expressions for {wildcards.accession}" >&2
-            exit 1
-        fi
+
         touch {output}
         """ 
 
