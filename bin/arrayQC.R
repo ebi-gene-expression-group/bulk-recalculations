@@ -34,7 +34,6 @@ atlasArrayQC <- function(annotationFile, exptType, exptAcc, arrayDesign, outDir,
 	# Read in raw data and add factor values to object created.
 	# Affymetrix data
 	if(exptType == "affy") {
-   
  		dataSet <- affymetrixQC( annotationFile )
 	}
 
