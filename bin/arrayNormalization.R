@@ -101,7 +101,6 @@ agilentArray <- function(files, mode, assayNames, outFile, miRBaseFile) {
 	dataSet <- backgroundCorrect(dataSet, method="normexp", offset=50)
 
 	if(mode == "agil1") {
-		
 		# Between-array normalization for 1-colour.
 		normData <- normalizeBetweenArrays(dataSet, method="quantile")
 	}
