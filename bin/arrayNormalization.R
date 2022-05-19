@@ -39,9 +39,7 @@ normalizeArrayData <- function(inFile, mode, outFile, miRBaseFile) {
 		# For 2-colour data, log2(fols change)s are written to one file and
 		# average intensities to another file.
 		if(mode == "agil1" | mode == "agil2") {
-	
 			agilentArray( files, mode, assayNames, outFile, miRBaseFile )
-
 		}
 		# Illumina data 
 		# use lumi package for pre-processing of raw text data.
