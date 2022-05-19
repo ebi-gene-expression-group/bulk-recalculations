@@ -1397,10 +1397,10 @@ rule decorate_differential_rnaseq:
             # pass avail custom memory to JVM for Ammonite REPL
             export JAVA_OPTS="-Xmx{resources.mem_mb}M"
             amm -s {workflow.basedir}/bin/decorateFile.sc \
-            --geneNameFile "$geneNameFile" \
-            --source "${{i}}" \
-            | awk 'NR == 1; NR > 1 {{print $0 | "sort -n"}}' \
-            > $decoratedFile.swp
+                --geneNameFile "$geneNameFile" \
+                --source "${{i}}" \
+                | awk 'NR == 1; NR > 1 {{print $0 | "sort -n"}}' \
+                > $decoratedFile.swp
 
             decoratedFileLength=$(wc -l "$decoratedFile.swp" | cut -f 1 -d ' ' )
             if [ -s "$decoratedFile.swp" ] && [ "$decoratedFileLength" -gt 1 ]; then
