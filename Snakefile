@@ -1737,10 +1737,6 @@ rule check_nas_microarray:
         do
             if [ -s "{wildcards.accession}_${{p}}-analytics.tsv.undecorated" ]; then
                 {workflow.basedir}/bin/check_na_pvals.R "{wildcards.accession}_${{p}}-analytics.tsv.undecorated"
-                if [ $? -ne 0 ]; then
-                    echo "ERROR: no non-NA p-values found in {wildcards.accession}_${{p}}-analytics.tsv.undecorated" >&2
-                    exit 1
-                fi
             else
                 echo "ERROR: {wildcards.accession}_${{p}}-analytics.tsv.undecorated does not exist"
                 exit 1
