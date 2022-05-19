@@ -1710,12 +1710,9 @@ rule differential_statistics_microarray:
             mkdir $TMPDIR/tmp
         fi
         # Calculate analytics
+        rm -rf *.png *-analytics.tsv.undecorated
         perl {workflow.basedir}/bin/diffAtlas_DE.pl --experiment {wildcards.accession} --directory ./
-        if [ $? -ne 0 ]; then
-	        echo "ERROR: Failed to calculate analytics for {wildcards.accession}" >&2
-	        rm -rf *.png *-analytics.tsv.undecorated
-	        exit 1
-        fi
+
         touch {output.done}
         """
 
