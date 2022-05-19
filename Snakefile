@@ -1269,16 +1269,13 @@ rule round_log2_fold_changes_rnaseq:
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
 
+        rm -rf {params.intermediate_rounded}
+
         {workflow.basedir}/bin/round_log2_fold_changes.R \
             --experiment_type {params.exp_type} \
             --input_to_round {input} \
             --intermediate_output {params.intermediate_rounded}  
 
-        if [ $? -ne 0 ]; then
-	        echo "ERROR: Failed to round to one decimal place log2fold changes in {input} " >&2
-	        rm -rf {params.intermediate_rounded}
-	        exit 1
-        fi
         mv {input} {output.unrounded}
         mv {params.intermediate_rounded} {input}
         """
