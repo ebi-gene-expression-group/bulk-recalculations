@@ -1650,10 +1650,6 @@ rule decorate_temp_norm_expr_microarray:
             # generate temp decorated file normalized-expressions.tsv
             decorate_if_exists_norm "${{expPath}}/{wildcards.accession}_${{arrayDesign}}-normalized-expressions.tsv.undecorated" "$arrayDesignFile" "$geneNameFile"
         done
-        if [ $? -ne 0 ]; then
-            echo "ERROR: Generate temp decorated files for {wildcards.accession}" >&2
-            exit 1
-        fi
         touch {output}
         """
 
