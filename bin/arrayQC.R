@@ -245,9 +245,7 @@ agilentQC <- function(annotationFile, exptType, miRBaseFile) {
 			dataSet <- subsetProbes(dataSet, miRBaseFile)
 		}
 	}
-
 	return(dataSet)
-
 }
 
 # Copied this from normalizeOneExperiment.R but should prob take it out to a
