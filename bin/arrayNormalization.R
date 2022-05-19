@@ -71,13 +71,11 @@ agilentArray <- function(files, mode, assayNames, outFile, miRBaseFile) {
 
 	# read files
 	if(mode == "agil1") {
-
 		print("Reading Agilent 1-colour data")
 		# for 1-colour Agilent data we only have a green channel.
 		dataSet <- try({read.maimages(files, source="agilent", green.only=TRUE)})
 	}
 	else if(mode == "agil2") {
-		
 		print("Reading Agilent 2-colour data")
 		dataSet <- try({read.maimages(files, source="agilent")})
 	}
