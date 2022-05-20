@@ -2,32 +2,6 @@
 
 GOAL='recalculations'
 
-if [ "$GOAL" != 'reprocess' ] && [ "$GOAL" != 'recalculations' ]; then
-        echo "'$GOAL' is not a valid analysis for GXA"
-        exit 1
-fi
-
-# only one, either ACCESSIONS or SPECIES can be defined
-# otherwise ACCESSIONS supersedes SPECIES
-# SPECIES=homo_sapiens:rattus_norvegicus
-
-if [ -z ${ACCESSIONS+x} ]; then 
-        ACC=""
-else 
-        ACC="accessions="$ACCESSIONS
-fi
-
-if [ -z ${SPECIES+x} ]; then 
-        SPE=""
-else 
-        if [ -z ${ACCESSIONS+x} ]; then 
-                SPE="species="$SPECIES
-        else 
-                SPE=""
-        fi
-fi
-
-
 NEXPS=${NEXPS:-30}
 NJOBS=${NJOBS:-10}
 GTF=$( pwd )/test-data/gff
@@ -51,18 +25,46 @@ SN_CONDA_PREFIX=${SN_CONDA_PREFIX:-$( pwd )/conda_installs}
 PROFILE_LINE="--profile profilename"
 LSF_CONFIG=${LSF_CONFIG:-$( pwd )/lsf.yaml}
 
-if [ "$FORCEALL" = true ]; then FORCE_ALL="--forceall"; else FORCE_ALL=""; fi
-
 CONDA_PREFIX_LINE="--conda-prefix $SN_CONDA_PREFIX"
 export LOG_PATH=${LOG_PATH:-$( pwd )/sorting.log}
 USUAL_SM_ERR_OUT=${USUAL_SM_ERR_OUT:-$( pwd )/snakemake.log}
-
 # isl db
 ORACLE_BASE=path/to/oracle_base
 ORACLE_HOME=path/to/oracle_home
 PYTHON_USER=
 PYTHON_CONNECT_STRING=
 PYTHON_PASSWORD=
+# Optionally one, either ACCESSIONS or SPECIES can be defined
+# otherwise ACCESSIONS supersedes SPECIES
+# SPECIES=homo_sapiens:rattus_norvegicus
+# ACCESSIONS=E-MTAB-2812
+
+###
+
+if [ "$FORCEALL" = true ]; then FORCE_ALL="--forceall"; else FORCE_ALL=""; fi
+
+if [ "$GOAL" != 'reprocess' ] && [ "$GOAL" != 'recalculations' ]; then
+        echo "'$GOAL' is not a valid analysis for GXA"
+        exit 1
+fi
+
+if [ -z ${ACCESSIONS+x} ]; then 
+        ACC=""
+else 
+        ACC="accessions="$ACCESSIONS
+fi
+
+if [ -z ${SPECIES+x} ]; then 
+        SPE=""
+else 
+        if [ -z ${ACCESSIONS+x} ]; then 
+                SPE="species="$SPECIES
+        else 
+                SPE=""
+        fi
+fi
+
+
 
 #create conda envs only
 for yaml_file in $(ls $( pwd )/envs); do
@@ -80,7 +82,7 @@ touch $LOG_PATH
 tail -f $LOG_PATH &
 
 start=`date +%s`
-echo 'starting bulk-recalculations...'
+echo 'starting bulk '$GOAL'...'
 
 snakemake --use-conda --conda-frontend mamba \
         --log-handler-script $LOG_HANDLER \
@@ -111,7 +113,7 @@ snakemake --use-conda --conda-frontend mamba \
         bioentities_properties=$BIOENTITIES_PROPERTIES -j $NEXPS -s $SORTING_HAT &> $USUAL_SM_ERR_OUT
 
 end=`date +%s`
-echo "bulk-recalculations took: "`expr $end - $start`" s"
+echo "bulk '$GOAL' took: "`expr $end - $start`" s"
 
 sleep 5
 # remove tail process

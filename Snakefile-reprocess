@@ -16,7 +16,6 @@ def get_array_design_from_xml():
     return array_designs_grabbed
 
 
-
 # This script used to rerun studies that have new matrices generated from IRAP/ISL
 
 def get_outputs():
