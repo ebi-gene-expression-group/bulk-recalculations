@@ -73,21 +73,33 @@ def get_gff_path(acc):
         fill_metadata(acc)
     return metadata[acc]['gff']
 
-def get_bioentities_property_path():
-    return config['bioentities_properties']
-
 def get_skip_steps_file():
     if 'skip_steps_file' in config:
         return config['skip_steps_file']
     else:
         return None
 
-def get_check_sp_file():
-  if 'check_sp_file' in config:
-    return config['check_sp_file']
-  else:
-    return None
+def get_meta_config():
+    if 'atlas_meta_config' in config:
+        return config['atlas_meta_config']
+    else:
+        return None
 
+def get_user_species(wildcards):
+    if 'species' in config:
+        if get_organism( wildcards['accession'] ) in config['species'].split(":"):
+            return 'True'
+        else:
+            return 'False'
+    else:
+        return 'True'
+
+def get_db_params(param):
+    """Return config parameters to establish connection with isl db."""
+    if param in config:
+        return config[param]
+    else:
+        sys.exit(1)
 
 
 def get_outputs():
@@ -137,7 +149,7 @@ rule get_experiment_metadata:
         atlas_meta_config = config['atlas_meta_config'],
         atlas_prod = config['atlas_prod'],
         atlas_exps = config['atlas_exps'],
-        check_species_file=get_check_sp_file()
+        check_species_file=config['check_sp_file']
     input:
         config_file = "{accession}/{accession}-configuration.xml",
         gtf_dir = config['gtf_dir']
@@ -209,10 +221,26 @@ rule produce_reprocess_call:
         working_directory = "{accession}"
     log: "{accession}/logs/produce_reprocess_call.log"
     params:
-        bioentities_properties=get_bioentities_property_path(),
+        bioentities_properties=config['bioentities_properties'],
         skip_steps_file=get_skip_steps_file(),
+        methods_base=config['methods_base'],
+        methods_dif=config['methods_dif'],
+        zooma_exclusions=config['zooma_exclusions'],
+        isl_dir=config['isl_dir'],
+        isl_genomes=config['isl_genomes'],
+        irap_versions=config['irap_versions'],
+        irap_container=config['irap_container'],
+        tmp_dir=config['tmp_dir'],
         lsf_config = get_lsf_config_file(),
-        log_handler_script=get_log_handler_script()
+        log_handler_script=get_log_handler_script(),
+        goal=config['goal'],
+        atlasmeta_config=get_meta_config(),
+        allowed_organism=get_user_species,
+        oracle_home=get_db_params('oracle_home'),
+        python_user=get_db_params('python_user'),
+        python_connect_string=get_db_params('python_connect_string'),
+        python_password=get_db_params('python_password')
+
     output:
         touch("{accession}/{accession}.reprocess.done")
     run:
@@ -223,13 +251,33 @@ rule produce_reprocess_call:
         pushd {input.working_directory}
         cp {params.lsf_config} lsf.yaml
 
-        snakemake --restart-times 1 --latency-wait 100 {config['sm_options']} --config \
-            accession={wildcards.accession} \
-            tool={get_tool(wildcards.accession)} \
-            metadata_summary=../{input.metadata} \
-            bioentities_properties={params.bioentities_properties} \
-            skip_steps_file={params.skip_steps_file} \
-            -s {workflow.basedir}/Snakefile-reprocess {params.log_handler_script}
+        if [[ "{params.allowed_organism}" == "True" ]]; then
+
+            snakemake --use-singularity --restart-times 1 --latency-wait 100 {config['sm_options']} --config \
+                accession={wildcards.accession} \
+                goal={params.goal} \
+                tool={get_tool(wildcards.accession)} \
+                metadata_summary=../{input.metadata} \
+                bioentities_properties={params.bioentities_properties} \
+                skip_steps_file={params.skip_steps_file} \
+                methods_base={params.methods_base} \
+                methods_dif={params.methods_dif} \
+                zooma_exclusions={params.zooma_exclusions} \
+                isl_dir={params.isl_dir} \
+                isl_genomes={params.isl_genomes} \
+                irap_versions={params.irap_versions} \
+                irap_container={params.irap_container} \
+                tmp_dir={params.tmp_dir} \
+                atlas_meta_config={params.atlasmeta_config} \
+                oracle_home={params.oracle_home} \
+                python_user={params.python_user} \
+                python_connect_string={params.python_connect_string} \
+                python_password={params.python_password} \
+                -s {workflow.basedir}/Snakefile-reprocess {params.log_handler_script}
+
+        else
+            echo "WARNING: Organism not allowed for reprocessing" 
+        fi
         popd
         """
         #print(command_line)
@@ -242,10 +290,16 @@ rule produce_recalculations_call:
         working_directory = "{accession}"
     log: "{accession}/logs/produce_recalculations_call.log"
     params:
-        bioentities_properties=get_bioentities_property_path(),
+        bioentities_properties=config['bioentities_properties'],
         skip_steps_file=get_skip_steps_file(),
         lsf_config = get_lsf_config_file(),
-        log_handler_script=get_log_handler_script()
+        log_handler_script=get_log_handler_script(),
+        goal=config['goal'],
+        allowed_organism=get_user_species,
+        oracle_home=get_db_params('oracle_home'),
+        python_user=get_db_params('python_user'),
+        python_connect_string=get_db_params('python_connect_string'),
+        python_password=get_db_params('python_password')
     output:
         touch("{accession}/{accession}.recalculations.done")
     run:
@@ -260,13 +314,24 @@ rule produce_recalculations_call:
             fi
         fi
 
-        snakemake --restart-times 4 --latency-wait 250 {config['sm_options']} --config \
-            accession={wildcards.accession} \
-            tool={get_tool(wildcards.accession)} \
-            metadata_summary=../{input.metadata} \
-            bioentities_properties={params.bioentities_properties} \
-            skip_steps_file={params.skip_steps_file} \
-            -s {workflow.basedir}/Snakefile-recalculations {params.log_handler_script}
+        if [[ "{params.allowed_organism}" == "True" ]]; then
+
+            snakemake --restart-times 4 --latency-wait 250 {config['sm_options']} --config \
+                accession={wildcards.accession} \
+                goal={params.goal} \
+                tool={get_tool(wildcards.accession)} \
+                metadata_summary=../{input.metadata} \
+                bioentities_properties={params.bioentities_properties} \
+                skip_steps_file={params.skip_steps_file} \
+                oracle_home={params.oracle_home} \
+                python_user={params.python_user} \
+                python_connect_string={params.python_connect_string} \
+                python_password={params.python_password} \
+                -s {workflow.basedir}/Snakefile-recalculations {params.log_handler_script}
+                
+        else
+            echo "WARNING: Organism not allowed for reprocessing" 
+        fi
         popd
         """
         #print(command_line)

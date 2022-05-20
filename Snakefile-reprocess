@@ -1,26 +1,165 @@
 include: "Snakefile"
+include: "Snakefile-proteomics"
 
 # atom: set grammar=python:
 
+def get_array_design_from_xml():
+    """
+    Parse xml config file here.
+    """
+    from xml.dom import minidom
+    xmldoc = minidom.parse( config['accession']+'-configuration.xml' )
+    itemlist = xmldoc.getElementsByTagName('array_design')
+    array_designs_grabbed = []
+    for s in itemlist:
+        array_designs_grabbed.append( " ".join(s.firstChild.nodeValue.split() ) )
+    return array_designs_grabbed
+
+
+# This script used to rerun studies that have new matrices generated from IRAP/ISL
+
 def get_outputs():
-     """
-     First method to be executed since it is run by rule all.
-     """
-     import os.path
-     import datetime
-     print('Starting getting list of outputs..' + str(datetime.datetime.now()))
+    """
+    First method to be executed since it is run by rule all.
+    """
+    import os.path
+    import datetime
+    print('Starting getting list of outputs..' + str(datetime.datetime.now()))
 
-     outputs = []
-     # collect output for reprocessing
-     outputs.append('TBD')
+    outputs = []
+    #get metrics only for baseline
+    global metrics
+    if get_from_config_or_metadata_summary('experiment_type') == 'rnaseq_mrna_baseline':
+        metrics = get_metrics_reprocess()
 
-     print(outputs)
-     print('Getting list of outputs.. done')
-     print(datetime.datetime.now())
+    # Read this now so that it is available for all other needs
+    read_metadata_summary()
+    global skip_accession
+    skip_accession = read_skip_steps_file()
+    required_config=['tool']
+    check_config_required(fields=required_config)
 
-     return outputs
+    global experiment_type
+    experiment_type=get_from_config_or_metadata_summary('experiment_type')
+
+    print(experiment_type)
+    # collect output for reprocessing
+    if experiment_type == 'rnaseq_mrna_baseline':
+    #if config['tool']=="all-baseline" or 'baseline-tracks' in config['tool'] or 'baseline-heatmap' in config['tool'] or 'baseline-coexpression' in config['tool']:
+        outputs.extend(expand("logs/"+f"{config['accession']}"+"-add_runs_to_db.done" ))
+        outputs.extend(expand("logs/"+f"{config['accession']}"+"-get_irap_versions_file.done" ))
+        outputs.append(f"{config['accession']}-raw-counts.tsv.undecorated")
+        outputs.extend(expand(config['accession']+"-{metric}.tsv.undecorated", metric=metrics))
+        outputs.extend(expand(config['accession']+"-transcripts-{metric}.tsv.undecorated", metric=["tpms"] ))
+        outputs.extend(expand("logs/"+f"{config['accession']}-copy_transcript_relative_isoforms.done" ))
+        outputs.extend(expand("qc/"+f"{config['accession']}-irap-single-lib-report.tsv" )) 
+        outputs.extend(expand(config['accession']+"-{metric}.tsv.undecorated.quantile_normalized", metric=metrics))
+        outputs.extend(expand(config['accession']+"-{metric}.tsv.undecorated.aggregated", metric=metrics))
+        outputs.extend(expand("logs/"+f"{config['accession']}"+"-rule-transcripts_na_check_{metric}.done", metric=["tpms"] ))
+        outputs.extend(expand("logs/"+f"{config['accession']}"+"-quantile_normalise_transcripts_{metric}.done", metric=["tpms"] )) 
+        outputs.extend(expand("logs/"+f"{config['accession']}"+"-summarize_transcripts_{metric}.done", metric=["tpms"] ))
+        outputs.append(f"{config['accession']}-analysis-methods.tsv_baseline_rnaseq")
+        outputs.append(f"{config['accession']}-atlasExperimentSummary.Rdata")
+        outputs.extend(expand(config['accession']+"-{metric}.tsv", metric=metrics))
+        outputs.extend(expand("logs/"+f"{config['accession']}"+"-transcripts-{metric}.tsv.done", metric=["tpms"] ))
+        outputs.extend(expand(f"{config['accession']}"+"-heatmap-{metric}.pdf", metric=metrics ))
+        outputs.append(f"{config['accession']}-heatmap.pdf")
+        # baseline tracks
+        check_config_required(fields=['metadata_summary'], method='baseline-tracks')
+        outputs.extend(expand(config['accession']+".{a_id}.genes.expressions_{metric}.bedGraph",
+                            a_id=get_assay_ids(),
+                            metric=metrics))
+        outputs.extend(expand(  f"{config['accession']}"+".{a_id}.genes.expressions.bedGraph", a_id=get_assay_ids() ) ) #symlink only for tpms
+
+        # generating coexpressions matrix for baseline experiment
+        outputs.extend(expand(f"{config['accession']}"+"-{metric}-coexpressions.tsv.gz", metric=metrics ))
+        outputs.append(f"{config['accession']}-coexpressions.tsv.gz")
 
 
- rule all:
+    # collect output for differential rna-seq
+    if experiment_type == 'rnaseq_mrna_differential':
+        outputs.extend(expand("logs/"+f"{config['accession']}"+"-add_runs_to_db.done" ))
+        outputs.extend(expand("logs/"+f"{config['accession']}"+"-get_irap_versions_file.done" ))
+        outputs.append(f"{config['accession']}-raw-counts.tsv.undecorated")
+        outputs.extend(expand("qc/"+f"{config['accession']}-irap-single-lib-report.tsv" )) 
+        outputs.append(f"{config['accession']}-analytics.tsv.undecorated")
+        outputs.extend(expand("logs/"+f"{config['accession']}"+"-{c_id}-mvaPlot.png.done", c_id=get_contrast_ids() ))
+        outputs.append(f"{config['accession']}-analytics.tsv.undecorated.unrounded")
+        outputs.append(f"{config['accession']}-analysis-methods.tsv_differential_rnaseq")
+        outputs.append(f"{config['accession']}-atlasExperimentSummary.Rdata")
+        outputs.append(f"{config['accession']}-analytics.tsv")
+        outputs.append(f"{config['accession']}-analytics.tsv.unrounded")
+        outputs.extend(expand("logs/"+f"{config['accession']}"+".differential_statistics_rnaseq.done" ))
+        outputs.append(f"{config['accession']}-raw-counts.tsv")
+        outputs.append(f"{config['accession']}-percentile-ranks.tsv")
+        # differential gsea
+        check_config_required(fields=['bioentities_properties'], method='differential-gsea')
+        outputs.extend( expand( config['accession']+".{c_id}.{ext_db}.{type}",
+                        c_id=get_contrast_ids(),
+                        ext_db=get_ext_db(),
+                        type=["gsea.tsv", "gsea_list.tsv"]))
+        outputs.extend( expand("logs/"+config['accession']+".{c_id}.{ext_db}.{type}",
+                        c_id=get_contrast_ids(),
+                        ext_db=get_ext_db(),
+                        type=["check_differential_gsea.done", "check_differential_gsea_list.done"]))
+        # generate Genome browser tracks (bedGraph) for the experiment
+        outputs.extend(expand(config['accession']+".{id}.{type}", id=get_contrast_ids(), type=["genes.pval.bedGraph", "genes.log2foldchange.bedGraph"]))
+        outputs.extend(expand("logs/"+f"{config['accession']}"+"-decorate_differential_rnaseq.done" ))
+
+    # collect output for differential microarrays
+    if experiment_type == 'microarray_1colour_mrna_differential' or experiment_type =='microarray_2colour_mrna_differential' or experiment_type =='microarray_1colour_microrna_differential':
+        outputs.extend(expand("logs/"+f"{config['accession']}"+"-get_normalized_expressions_microarray.done" ))
+        outputs.extend(expand("logs/"+f"{config['accession']}"+"-check_normalized_expressions_microarray.done" ))
+        outputs.extend(expand("logs/"+f"{config['accession']}"+"-microarray_qc.done" ))
+        outputs.append(f"{config['accession']}-analysis-methods.tsv")
+        outputs.extend(expand("logs/"+f"{config['accession']}"+"-decorate_temp_norm_expr_microarray.done" ))
+        outputs.extend(expand("logs/"+f"{config['accession']}"+"-merge_probe_ids_microarray.done" ))
+        #outputs.extend(expand(config['accession']+"_{ad}-normalized-expressions.tsv.undecorated", ad=get_array_design_from_xml()  ))
+        outputs.extend(expand("logs/"+f"{config['accession']}"+"-differential_statistics_microarray.done" ))
+        outputs.extend(expand("logs/"+f"{config['accession']}"+"-check_nas_microarray.done" ))
+        outputs.extend(expand(config['accession']+"_{ad}-analytics.tsv.undecorated.unrounded", ad=get_array_design_from_xml()  ))
+        outputs.extend(expand("logs/"+f"{config['accession']}"+"_{ad}-round_log2_fold_changes_microarray.done" ,ad=get_array_design_from_xml()    ))
+        outputs.append(f"{config['accession']}-atlasExperimentSummary.Rdata")
+        # decorate
+        outputs.extend(expand(config['accession']+"_{ad}-analytics.tsv", ad=get_array_design_from_xml()  ))
+        outputs.extend(expand("logs/"+f"{config['accession']}"+"_{ad}-decorate_differential_microarray.done" ,ad=get_array_design_from_xml()   ))
+        outputs.append(f"{config['accession']}-percentile-ranks.tsv")
+        # differential gsea
+        check_config_required(fields=['bioentities_properties'], method='differential-gsea')
+        outputs.extend( expand( config['accession']+".{c_id}.{ext_db}.{type}",
+                        c_id=get_contrast_ids(),
+                        ext_db=get_ext_db(),
+                        type=["gsea.tsv", "gsea_list.tsv"]))
+        outputs.extend( expand("logs/"+config['accession']+".{c_id}.{ext_db}.{type}",
+                        c_id=get_contrast_ids(),
+                        ext_db=get_ext_db(),
+                        type=["check_differential_gsea.done", "check_differential_gsea_list.done"]))
+        # generate Genome browser tracks (bedGraph) for the experiment
+        outputs.extend(expand(config['accession']+".{id}.{type}", id=get_contrast_ids(), type=["genes.pval.bedGraph", "genes.log2foldchange.bedGraph"]))
+        # delete intermediate files
+        outputs.extend(expand("logs/"+f"{config['accession']}"+"-delete_intermediate_files_microarray.done" ))
+
+
+    # collect output for baseline proteomics
+    #if experiment_type == 'proteomics_baseline' or experiment_type =='proteomics_baseline_dia':
+
+    # collect output for differential proteomics
+    #if experiment_type == 'proteomics_differential':
+
+
+    # For all experiment types, move data to atlas_exps and create condensed SDRF
+    outputs.extend(expand("logs/"+f"{config['accession']}"+"-copy_experiment_from_analysis_to_atlas_exps.done" ))
+    outputs.extend(expand("logs/"+f"{config['accession']}"+"-get_magetab_for_experiment.done" ))
+
+    print(outputs)
+    print('Getting list of outputs.. done')
+    print(datetime.datetime.now())
+
+    return outputs
+
+
+rule all:
     input:
         required_outputs=get_outputs()
+
+

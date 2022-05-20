@@ -1,43 +1,26 @@
-# Atlas Bulk Recalculations
+# Expression Atlas Bulk (re)processing and recalculations
 
-This set of Snakemake workflows aims to replace the Atlas recalculations operations done from Atlas-Prod codebase which had direct involvement of the LSF CLI and could only run on the original cluster. Recalculations are the operations that need to happen on load or after an E! Update.
+This set of Snakemake workflows replaces the Atlas new experiments processing, reprocessing and recalculations operations done from Atlas-Prod codebase which had direct involvement of the LSF CLI and could only run on the original cluster. 
 
-It deals with:
-- Microarray recalculations
-- RNA-Seq differential recalculations
-- RNA-Seq baseline recalculations
+It contains data analysis rules for:
+- RNA-Seq baseline analysis
+- Microarray differential analysis
+- RNA-Seq differential analysis
 
-Ongoing features to handle Reprocessing. Reprocess RNA-seq experiments (baseline or differential), to be used when the experiment has been reprocessed in iRAP Single Lib (ISL), for instance due to a change in assembly or annotation.
+A recalculations run requires that reprocess has been performed a priori. Recalculations are the operations that need to happen on load or after an E! Update, and generate a subset of the outputs produced during (re)processing.
 
+## Prerequisites
 
-## Temporary comments
+ * Snakemake (tested with version 6.6.1)
+ * LSF batch scheduler
+ * Set up configuration variables at `run_sorting_hat_test_data.sample.sh` for goal 'reprocess' or 'recalculations'.
 
-Run like:
-
-```
-atlas-bulk-recalculations/test-data/E-MTAB-5577 on  master [?] via 🅒 snakemake on ☁️
-❯ snakemake --config accession="E-MTAB-5577" tool="all" --use-conda --conda-frontend mamba -j 2 -s ../../Snakefile
-```
+## Run pipeline
 
 ```
-snakemake --dry-run --config accession="E-MTAB-5577" tool="all" contrast_ids="g1_g2:g1_g3" contrast_labels="'PATL1 siRNA' vs 'HBB siRNA (control)':'C1' vs 'C2'" gff_file="../gff/organism.gtf" -j 2 -s ../../Snakefile
+./run_sorting_hat_test_data.sh EXPS_DIR
 ```
 
-Example microarray differential run, standing on analysis/E-MTAB-5577 (test-data/E-MTAB-5577 in this case)
+The experiments path contains one or more directories with Atlas accession names E-* (e.g. E-MTAB-5577), having at least congifuration files in xml format after curation process.
 
-```
-snakemake --dry-run --config accession="E-MTAB-5577" tool="all-diff" contrast_ids="g1_g2:g1_g3" contrast_labels="'PATL1 siRNA' vs 'HBB siRNA (control)':'C1' vs 'C2'" gff_file="../gff/organism.gtf" -j 2 -s ../../Snakefile
-```
-
-```
-snakemake --dry-run --config accession="E-MTAB-5577" tool="all-diff" contrast_ids="g1_g2:g1_g3" contrast_labels="'PATL1 siRNA' vs 'HBB siRNA (control)':'C1' vs 'C2'" gff_file="../gff/organism.gtf" organism='arabidopsis_thaliana' BIOENTITIES_PROPERTIES_PATH=../bioentities -j 2 -s ../../Snakefile
-```
-
-```
-snakemake --dry-run --config accession="E-MTAB-5577" tool="all-baseline" assay_ids="g1:g1" assay_labels="Assay1:Assay2" gff_file="../gff/organism.gtf" metric="tpm:fpkm" organism='arabidopsis_thaliana' -j 2 -s ../../Snakefile
-```
-
-To run sorting hat, which will produce running calls for all studies in the working directory:
-```
-snakemake --use-conda --conda-frontend mamba --config gtf_dir=gff sm_options="--use-conda --conda-frontend mamba -j 2" -j 1 -s ../Snakefile-sorting-hat
-```
+Optionally, worflow execution can be tailored to specifc accessions or species by defining these variables in the sorting hat script.
