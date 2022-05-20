@@ -269,7 +269,6 @@ def input_percentile_ranks(wildcards):
             arr_designs=get_array_design_from_xml()
             for s in arr_designs:
                 inputs.append( f"logs/{wildcards['accession']}_{s}-decorate_differential_microarray.done" )
-                inputs.append( f"logs/{wildcards['accession']}_{s}-decorate_differential_microarray.done" )
             return inputs
         else:
             return None
@@ -968,7 +967,7 @@ rule summarize_transcripts:
                 --configuration {input.xml}  \
                 < {params.qn_transcripts}  \
                 > {params.agg_transcripts}
-                
+
             # maintain previous behaviour - quantile_normalized files are temporary
             rm {params.qn_transcripts}
         else
