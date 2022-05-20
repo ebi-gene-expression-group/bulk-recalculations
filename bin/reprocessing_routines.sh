@@ -364,3 +364,12 @@ copy_experiment() {
     	rsyncExperimentFolders --prune-empty-dirs -b --backup-dir "archive" --suffix ".1" "$source_dir/*" "$target_dir"
     fi
 }
+
+mktemp_dir() {
+  TMPDIR=$1
+  echo $TMPDIR"/tmp"
+  if [ ! -d "$TMPDIR"/tmp ]; then
+    mkdir $TMPDIR/tmp
+  fi
+}
+

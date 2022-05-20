@@ -1224,11 +1224,8 @@ rule differential_statistics_rnaseq:
         exec &> "{log}"
         PATH=$PATH:{workflow.basedir}/bin
         
-        TMPDIR={params.tmp_dir}
-        echo $TMPDIR"/tmp"
-        if [ ! -d "$TMPDIR"/tmp ]; then
-            mkdir $TMPDIR/tmp
-        fi
+        source {workflow.basedir}/bin/reprocessing_routines.sh
+        mktemp_dir {params.tmp_dir}
 
         rm -rf *.png {wildcards.accession}-analytics.tsv.undecorated
 
@@ -1435,11 +1432,8 @@ rule get_normalized_expressions_microarray:
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
 
-        TMPDIR={params.tmp_dir}
-        echo $TMPDIR"/tmp"
-        if [ ! -d "$TMPDIR"/tmp ]; then
-            mkdir $TMPDIR/tmp
-        fi
+        source {workflow.basedir}/bin/reprocessing_routines.sh
+        mktemp_dir {params.tmp_dir}
 
         ## get path to IDF file name and Array Express load directory
         # -i flag will retrieve path to idf filename 
@@ -1707,11 +1701,9 @@ rule differential_statistics_microarray:
         exec &> "{log}"
         PATH=$PATH:{workflow.basedir}/bin
         
-        TMPDIR={params.tmp_dir}
-        echo $TMPDIR"/tmp"
-        if [ ! -d "$TMPDIR"/tmp ]; then
-            mkdir $TMPDIR/tmp
-        fi
+        source {workflow.basedir}/bin/reprocessing_routines.sh
+        mktemp_dir {params.tmp_dir}
+
         # Calculate analytics
         rm -rf *.png *-analytics.tsv.undecorated
         perl {workflow.basedir}/bin/diffAtlas_DE.pl --experiment {wildcards.accession} --directory ./
