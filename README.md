@@ -1,11 +1,13 @@
-# Atlas Bulk (re)processing and recalculations
+# Expression Atlas Bulk (re)processing and recalculations
 
-This set of Snakemake workflows aims to replace the Atlas new experiments processing, reprocessing and recalculations operations done from Atlas-Prod codebase which had direct involvement of the LSF CLI and could only run on the original cluster. Recalculations are the operations that need to happen on load or after an E! Update.
+This set of Snakemake workflows replaces the Atlas new experiments processing, reprocessing and recalculations operations done from Atlas-Prod codebase which had direct involvement of the LSF CLI and could only run on the original cluster. 
 
 It contains data analysis rules for:
 - RNA-Seq baseline analysis
 - Microarray differential analysis
 - RNA-Seq differential analysis
+
+A recalculations run requires that reprocess has been performed a priori. Recalculations are the operations that need to happen on load or after an E! Update, and generate a subset of the outputs produced during (re)processing.
 
 ## Prerequisites
 
@@ -16,9 +18,9 @@ It contains data analysis rules for:
 ## Run pipeline
 
 ```
-./run_sorting_hat_test_data.sh $experiments_dir
+./run_sorting_hat_test_data.sh EXPS_DIR
 ```
 
-The experiments path contains directories with Atlas accession names E-* (e.g. E-MTAB-5577), containing at least congifuration files in xml format after curation process.
+The experiments path contains one or more directories with Atlas accession names E-* (e.g. E-MTAB-5577), having at least congifuration files in xml format after curation process.
 
-A recalculations run requires that reprocess has been performed a priori. Recalaculations out produces a subset of the outputs produced during (re)processing.
+Optionally, worflow execution can be tailored to specifc accessions or species by defining these variables in the sorting hat script.
