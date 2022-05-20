@@ -15,7 +15,8 @@ ISL_DIR=path/to/isl_dir
 ISL_GENOMES_REFERENCES=$ISL_GENOMES
 IRAP_VERSIONS=path/to/atlasprod/irap_versions.mk
 IRAP_CONTAINER=path/to/singularity/*.sif
-TMP_DIR=path/to/tmp_dir
+TMP_DEFINED=path/to/tmp_dir
+TMP_DIR=${TMP_DEFINED:-$(mktemp -d)}
 # CHECK_SPECIES file should come from a clone of the atlas-config repo in Jenkins:
 CHECK_SPECIES=$( pwd )/atlas-species-name-mapping.yaml
 BIOENTITIES_PROPERTIES=$( pwd )/test-data/bioentity_properties
