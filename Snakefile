@@ -465,7 +465,6 @@ rule differential_gsea:
         fi
         """
 
-
 rule check_differential_gsea:
     """
     Whether there is a lack of annotation for 'ext_db' in rule differential_gsea, or the
@@ -507,7 +506,6 @@ rule check_differential_gsea:
         touch {output.temp_gsea}
         touch {output.temp_gsea_list}
         """
-
 
 rule baseline_tracks:
     conda: "envs/irap.yaml"
@@ -636,7 +634,6 @@ rule atlas_experiment_summary:
 	          --accession {wildcards.accession} \
 	          --output {output.rsummary}
         """
-
 
 
 # rules below are specific for reprocessing
