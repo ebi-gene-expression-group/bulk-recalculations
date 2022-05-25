@@ -8,3 +8,8 @@
         url = https://github.com/ebi-gene-expression-group/atlas-analysis
         branch = develop
 
+[submodule "atlas-bash-util"]
+        path = atlas-bash-util
+        url = https://github.com/ebi-gene-expression-group/atlas-bash-util
+        branch = develop
+
