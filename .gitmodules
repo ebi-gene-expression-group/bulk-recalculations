@@ -1,11 +1,11 @@
 [submodule "isl"]
 	path = isl
-	url = https://github.com/ebi-gene-expression-group/isl
+	url = https://github.com/ebi-gene-expression-group/isl.git
 	branch = develop_codon
 
 [submodule "atlas-analysis"]
-        path = atlas-analysis
-        url = https://github.com/ebi-gene-expression-group/atlas-analysis
+	path = atlas-analysis
+	url = https://github.com/ebi-gene-expression-group/atlas-analysis.git
         branch = develop
 
 [submodule "atlas-bash-util"]
