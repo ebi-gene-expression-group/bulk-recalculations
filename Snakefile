@@ -1087,6 +1087,7 @@ rule decorate_expression_baseline:
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
         source {workflow.basedir}/bin/reprocessing_routines.sh
+        source {workflow.basedir}/atlas-bash-util/generic_routines.sh
 
         geneNameFile=$( get_geneNameFile_given_organism {params.organism}  )
 
@@ -1136,6 +1137,7 @@ rule decorate_transcripts_baseline:
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
         source {workflow.basedir}/bin/reprocessing_routines.sh
+        source {workflow.basedir}/atlas-bash-util/generic_routines.sh
 
         # transcripts undecorated-aggregated rule done
         echo {input.getagg}
@@ -1377,6 +1379,7 @@ rule decorate_differential_rnaseq:
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
         source {workflow.basedir}/bin/reprocessing_routines.sh
+        source {workflow.basedir}/atlas-bash-util/generic_routines.sh
 
         geneNameFile=$( get_geneNameFile_given_organism {params.organism}  )
 
@@ -1607,6 +1610,7 @@ rule decorate_temp_norm_expr_microarray:
 
         source {workflow.basedir}/bin/reprocessing_routines.sh
         source {workflow.basedir}/bin/decorate_microarray_routines.sh
+        source {workflow.basedir}/atlas-bash-util/generic_routines.sh
 
         # pass avail custom memory to JVM for Ammonite REPL
         export JAVA_OPTS="-Xmx{resources.mem_mb}M"
@@ -1793,6 +1797,7 @@ rule decorate_differential_microarray:
 
         source {workflow.basedir}/bin/reprocessing_routines.sh
         source {workflow.basedir}/bin/decorate_microarray_routines.sh
+        source {workflow.basedir}/atlas-bash-util/generic_routines.sh
 
         # pass avail custom memory to JVM for Ammonite REPL
         export JAVA_OPTS="-Xmx{resources.mem_mb}M"
