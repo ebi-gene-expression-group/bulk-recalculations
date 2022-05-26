@@ -208,10 +208,6 @@ atlas_env() {
 # copy_experiment_from_analysis_to_atlas_exps
 # and related functions
 
-get_analysis_path_for_experiment_accession(){
-	[ "$1" ] && find $ATLAS_PROD/analysis -maxdepth 4 -type d -name "$1" -print -quit
-}
-
 # 7: see directory, see its contents, can write (fg_atlas only)
 # 5: see directory, see its contents: public read-only directory
 experiment_directory_permissions_from_peach_api_privacy() {
