@@ -228,29 +228,6 @@ experiment_directory_permissions_from_peach_api_privacy() {
     esac
 }
 
-
-## get privacy status for any experiments
-## -MTAB- experiments loaded by AE/Annotare uis checked by peach API
-## -GEOD-/-ERAD-/-ENAD- are loaded as public from now on
-peach_api_privacy_status(){
-    expAcc=$1
-    exp_import=`echo $expAcc | awk -F"-" '{print $2}'`
-
-    if [ $exp_import == "MTAB" ]; then
-        response=`curl -s "http://peach.ebi.ac.uk:8480/api/privacy.txt?acc=$expAcc"`
-        if [ -z "$response" ]; then
-            echo "WARNING: Got empty response from http://peach.ebi.ac.uk:8480/api/privacy.txt?acc=$expAcc" >&2
-            exit 0
-        fi
-        privacyStatus=`echo $response | awk '{print $2}' | awk -F":" '{print $2}'`
-
-    ## if not MTAB, ie. GEOD or ENAD or ERAD are all loaded as public
-    else
-        privacyStatus=`echo "public"`
-    fi
-    echo $privacyStatus
-}
-
 copy_experiment_from_analysis_to_atlas_exps(){
     expAcc=$1
     sourceDir=$(get_analysis_path_for_experiment_accession "$expAcc" )
@@ -263,6 +240,7 @@ copy_experiment_from_analysis_to_atlas_exps(){
       echo "copy_experiment_from_analysis_to_atlas_exps ERROR: Failed to retrieve public/private status for $expAcc" >&2
       exit 1
     fi
+    echo "source dir is: $sourceDir"
     copy_experiment -c "$mode" -s "$sourceDir" -t "${ATLAS_EXPS}/$expAcc"
     if [ $? -ne 0 ]; then
         echo "copy_experiment_from_analysis_to_atlas_exps ERROR: Command failed: copy_experiment -c $mode -s $sourceDir -t ${ATLAS_EXPS}/$expAcc" >&2
@@ -271,7 +249,6 @@ copy_experiment_from_analysis_to_atlas_exps(){
 
 }
 
-
 #Copy experiment into the target folder
 # - archive previous content of the target in target_dir/archive
 # - preserve timestamps (through rsync -a )
@@ -279,9 +256,11 @@ copy_experiment_from_analysis_to_atlas_exps(){
 copy_experiment() {
     rsyncExperimentFolders(){
     	rsync -a --copy-links --out-format="%n%L" \
-    		--include '*/' \
     		--exclude '*archive/**' \
     		--exclude '*condensed-sdrf*' \
+    	    --exclude '*lsf*' \
+            --exclude 'logs' \
+    		--include '*/' \
     		--include '*.tsv' \
     		--include 'qc/**' \
     		--include '*.xml' \
@@ -291,8 +270,6 @@ copy_experiment() {
     		--include '*.Rdata' \
     		--include '*.pdf' \
     		--include '*.tsv.gz' \
-            --exclude 'logs/**' \
-    	    --exclude 'lsf.yaml' \
     	    --exclude '*' \
     		$@
     }
