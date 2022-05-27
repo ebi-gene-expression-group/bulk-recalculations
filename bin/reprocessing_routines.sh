@@ -256,20 +256,20 @@ copy_experiment_from_analysis_to_atlas_exps(){
 copy_experiment() {
     rsyncExperimentFolders(){
     	rsync -a --copy-links --out-format="%n%L" \
-    		--exclude '*archive/**' \
-    		--exclude '*condensed-sdrf*' \
+    	    --exclude '*archive/**' \
+    	    --exclude '*condensed-sdrf*' \
     	    --exclude '*lsf*' \
             --exclude 'logs' \
-    		--include '*/' \
-    		--include '*.tsv' \
-    		--include 'qc/**' \
-    		--include '*.xml' \
-    		--include '*.txt' \
-    		--include '*.png' \
-    		--include '*.bedGraph'\
-    		--include '*.Rdata' \
-    		--include '*.pdf' \
-    		--include '*.tsv.gz' \
+    	    --include '*/' \
+    	    --include '*.tsv' \
+    	    --include 'qc/**' \
+    	    --include '*.xml' \
+    	    --include '*.txt' \
+    	    --include '*.png' \
+    	    --include '*.bedGraph'\
+    	    --include '*.Rdata' \
+    	    --include '*.pdf' \
+    	    --include '*.tsv.gz' \
     	    --exclude '*' \
     		$@
     }
