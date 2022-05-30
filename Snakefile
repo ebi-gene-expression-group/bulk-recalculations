@@ -1930,7 +1930,9 @@ rule get_magetab_for_experiment:
 
         echo "Retrieving magetab files for {wildcards.accession}"
 
-        get_magetab_for_experiment {wildcards.accession} {params.exp_type} {workflow.basedir} {params.zooma_exclusions}
+        idf_filename=$(perl {workflow.basedir}/bin/get_magetab_paths.pl -e {wildcards.accession} -i) 
+
+        get_magetab_for_experiment {wildcards.accession} {params.exp_type} {workflow.basedir} {params.zooma_exclusions} $idf_filename
         
         echo "Retrieved magetab files for {wildcards.accession}"
 
