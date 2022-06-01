@@ -38,12 +38,12 @@ for my $k1 (keys %{$data}) {
     }
 }
 
-print " Number of occurences: $found \n ";
+print "Number of occurences: $found\n";
 
 if ($found eq 0){
-  print " $input_sp \n ";
+  print "$input_sp\n";
 } else {
-  print "$output_sp \n ";
+  print "$output_sp\n";
 }
 
 

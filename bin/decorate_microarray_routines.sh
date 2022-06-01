@@ -57,17 +57,6 @@ decorate_normalized_file() {
     fi
 }
 
-# /bash_util/generic_routines.sh
-get_arraydesign_file() {
-  arraydesign=$1
-  organism=$2
-  if [ -z ${2+x} ]; then
-    find -L ${ATLAS_PROD}/bioentity_properties/array_designs -type f -name "*.${arraydesign}.tsv" | head -n1
-  else
-    find -L ${ATLAS_PROD}/bioentity_properties/array_designs -type f -name "${organism}.${arraydesign}.tsv" | head -n1
-  fi
-}
-
 # bioentity_annotations/decorate_microarray_experiment.sh
 decorate_if_exists() {
     fileToDecorate=$1

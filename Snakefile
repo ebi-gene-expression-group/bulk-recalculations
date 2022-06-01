@@ -309,7 +309,7 @@ def input_atlas_experiment_summary(wildcards):
             inputs = []
             arr_designs=get_array_design_from_xml()
             for s in arr_designs:
-                inputs.append( f"{wildcards['accession']}_{s}-normalized-expressions.tsv.undecorated" )
+                inputs.append( f"logs/{wildcards['accession']}_{s}-decorate_differential_microarray.done" )
             return inputs
         elif experiment_type =='microarray_2colour_mrna_differential':
             inputs = []
@@ -450,7 +450,7 @@ rule differential_gsea:
             analyticsFile={wildcards.accession}-analytics.tsv
         fi
         set -e
-        annotationFile=$(find_properties_file {params.organism} {wildcards.ext_db})
+        annotationFile=$(find_properties_file_gsea {params.organism} {wildcards.ext_db})
         if [ -s "$annotationFile" ]; then
             pvalColNum=$(get_contrast_colnum $analyticsFile {wildcards.contrast_id} "p-value")
             log2foldchangeColNum=$(get_contrast_colnum $analyticsFile {wildcards.contrast_id} "log2foldchange")
@@ -464,7 +464,6 @@ rule differential_gsea:
             touch {wildcards.accession}.{wildcards.contrast_id}.{wildcards.ext_db}.gsea_list.tsv
         fi
         """
-
 
 rule check_differential_gsea:
     """
@@ -507,7 +506,6 @@ rule check_differential_gsea:
         touch {output.temp_gsea}
         touch {output.temp_gsea_list}
         """
-
 
 rule baseline_tracks:
     conda: "envs/irap.yaml"
@@ -636,7 +634,6 @@ rule atlas_experiment_summary:
 	          --accession {wildcards.accession} \
 	          --output {output.rsummary}
         """
-
 
 
 # rules below are specific for reprocessing
@@ -845,7 +842,7 @@ rule quantile_normalise_expression:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
-        {workflow.basedir}/bin/quantile_normalize.sh  -c {input.config_xml} -s {input.expression} -d {output.qn_expression} -b {workflow.basedir}/bin
+        {workflow.basedir}/bin/quantile_normalize.sh  -c {input.config_xml} -s {input.expression} -d {output.qn_expression} -b {workflow.basedir}
         if [ $? -ne 0 ]; then
             echo "ERROR: Failed to quantile normalize {wildcards.metric} for {wildcards.accession}  " >&2
             exit 1
@@ -931,7 +928,7 @@ rule quantile_normalise_transcripts:
         echo {input.transcripts_na_check}
 
         if [ -s {params.transcripts} ] ; then
-            {workflow.basedir}/bin/quantile_normalize.sh -c {input.xml} -s {params.transcripts} -d {params.qntranscripts} -b {workflow.basedir}/bin
+            {workflow.basedir}/bin/quantile_normalize.sh -c {input.xml} -s {params.transcripts} -d {params.qntranscripts} -b {workflow.basedir}
         else
             echo "File {params.transcripts} not found "
         fi
@@ -1090,6 +1087,7 @@ rule decorate_expression_baseline:
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
         source {workflow.basedir}/bin/reprocessing_routines.sh
+        source {workflow.basedir}/atlas-bash-util/generic_routines.sh
 
         geneNameFile=$( get_geneNameFile_given_organism {params.organism}  )
 
@@ -1139,6 +1137,7 @@ rule decorate_transcripts_baseline:
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
         source {workflow.basedir}/bin/reprocessing_routines.sh
+        source {workflow.basedir}/atlas-bash-util/generic_routines.sh
 
         # transcripts undecorated-aggregated rule done
         echo {input.getagg}
@@ -1380,6 +1379,7 @@ rule decorate_differential_rnaseq:
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
         source {workflow.basedir}/bin/reprocessing_routines.sh
+        source {workflow.basedir}/atlas-bash-util/generic_routines.sh
 
         geneNameFile=$( get_geneNameFile_given_organism {params.organism}  )
 
@@ -1610,6 +1610,7 @@ rule decorate_temp_norm_expr_microarray:
 
         source {workflow.basedir}/bin/reprocessing_routines.sh
         source {workflow.basedir}/bin/decorate_microarray_routines.sh
+        source {workflow.basedir}/atlas-bash-util/generic_routines.sh
 
         # pass avail custom memory to JVM for Ammonite REPL
         export JAVA_OPTS="-Xmx{resources.mem_mb}M"
@@ -1796,6 +1797,7 @@ rule decorate_differential_microarray:
 
         source {workflow.basedir}/bin/reprocessing_routines.sh
         source {workflow.basedir}/bin/decorate_microarray_routines.sh
+        source {workflow.basedir}/atlas-bash-util/generic_routines.sh
 
         # pass avail custom memory to JVM for Ammonite REPL
         export JAVA_OPTS="-Xmx{resources.mem_mb}M"
@@ -1890,9 +1892,11 @@ rule copy_experiment_from_analysis_to_atlas_exps:
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
         export ATLAS_EXPS={params.target_dir}"/tmp" # {params.target_dir} for production
+        export PEACH_API_URI='http://peach.ebi.ac.uk:8480/api'
         source {workflow.basedir}/bin/reprocessing_routines.sh
+        source {workflow.basedir}/atlas-bash-util/generic_routines.sh
 
-        echo "Copying data to stage for: {wildcards.accession}"
+        echo "Copying data to stage for: {wildcards.accession} to $ATLAS_EXPS"
 
         copy_experiment_from_analysis_to_atlas_exps {wildcards.accession}
 
@@ -1922,11 +1926,13 @@ rule get_magetab_for_experiment:
         exec &> "{log}"
         export ATLAS_EXPS={params.target_dir}"/tmp"  # edit {params.target_dir} for production
         source {workflow.basedir}/bin/reprocessing_routines.sh
-        # atlas_env -> 'prod' in bin/reprocessing_routines.sh
+        source {workflow.basedir}/atlas-bash-util/generic_routines.sh
 
         echo "Retrieving magetab files for {wildcards.accession}"
 
-        get_magetab_for_experiment {wildcards.accession} {params.exp_type} {workflow.basedir} {params.zooma_exclusions}
+        idf_filename=$(perl {workflow.basedir}/bin/get_magetab_paths.pl -e {wildcards.accession} -i) 
+
+        get_magetab_for_experiment {wildcards.accession} {params.exp_type} {workflow.basedir} {params.zooma_exclusions} $idf_filename
         
         echo "Retrieved magetab files for {wildcards.accession}"
 
