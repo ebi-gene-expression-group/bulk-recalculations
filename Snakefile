@@ -1926,7 +1926,7 @@ rule get_magetab_for_experiment:
         exec &> "{log}"
         export ATLAS_EXPS={params.target_dir}"/tmp"  # edit {params.target_dir} for production
         source {workflow.basedir}/bin/reprocessing_routines.sh
-        # atlas_env -> 'prod' in bin/reprocessing_routines.sh
+        source {workflow.basedir}/atlas-bash-util/generic_routines.sh
 
         echo "Retrieving magetab files for {wildcards.accession}"
 
