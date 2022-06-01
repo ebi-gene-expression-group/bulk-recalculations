@@ -12,7 +12,7 @@ get_contrast_colnum() {
     done
 }
 
-find_properties_file() {
+find_properties_file_gsea() {
     organism=$1
     property=$2
 

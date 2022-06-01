@@ -450,7 +450,7 @@ rule differential_gsea:
             analyticsFile={wildcards.accession}-analytics.tsv
         fi
         set -e
-        annotationFile=$(find_properties_file {params.organism} {wildcards.ext_db})
+        annotationFile=$(find_properties_file_gsea {params.organism} {wildcards.ext_db})
         if [ -s "$annotationFile" ]; then
             pvalColNum=$(get_contrast_colnum $analyticsFile {wildcards.contrast_id} "p-value")
             log2foldchangeColNum=$(get_contrast_colnum $analyticsFile {wildcards.contrast_id} "log2foldchange")
