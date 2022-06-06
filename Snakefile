@@ -16,7 +16,6 @@ def read_metadata_summary():
 
 read_metadata_summary()
 
-
 def get_methods_template_baseline():
     if 'methods_base' in config:
         return config['methods_base']
