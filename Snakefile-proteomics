@@ -3,3 +3,75 @@
 
 # atom: set grammar=python:
 
+# baseline proteomics rules
+
+## This wf looks for curated config files and protein expression matrices
+## provided by PRIDE and performs intermediate steps of renaming files, aggregation of
+## technical replicates, estimate median values, decoration, generation of condensed sdrf,
+## deploying to staging and loading on wwwdev using webAPI.
+
+rule init_check_tsv_data_file_not_empty_of_data:
+    """
+    First lets check if the .tsv.undecorated and .tsv.undecorated.aggregated are not empty of data
+    These tsv files will normally contain a first column with the gene identifier
+    and then the data either in the 2nd (undecorated flavours) or 3rd column
+    (for the decorated flavours, where the 2nd column here is for the gene symbol)
+    """
+
+rule rename_files:
+    """
+
+    """
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+        # We skip some steps for older proteomics datasets that break otherwise
+
+        # rename analysis methods
+
+        # remove quotes and gename and make matrix in tsv format.
+        # remove genename column as we will decorate using recent Ensembl annotations.
+
+        """
+
+rule aggregate technical replicates:
+    """
+    Aggregate technical replicates
+    Append columns with .WithInSampleAbundance and pick median value of quartiles
+    """
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+
+        # aggregate technical replicates
+        echo "summarise expression for $expAcc.."
+        gxa_summarize_expression.pl \
+            --aggregate-quartiles \
+            --configuration ${expAcc}-configuration.xml \
+            < ${expAcc}.tsv.undecorated \
+            > ${expAcc}.tsv.undecorated.aggregated
+
+        # append columns with .WithInSampleAbundance and pick median value of quartiles
+        echo "median values pick up and appending columns with sample abundance.."
+        appendColnamesInDataMatrix.R ${expAcc}.tsv.undecorated.aggregated
+        """
+
+rule decorate_baseline_proteomics_experiment:
+    """
+    This step performs decoration by mapping Ensembl ids with gene names with latest
+    annotations from Ensembl.
+    """
+
+rule final_check_tsv_data_file_not_empty_of_data:
+    """
+    Check that the dataset was not harmed in the process.
+    """
+
+# rule copy_experiment_from_analysis_to_atlas_exps:
+
+# rule get_magetab_for_experiment:
+
+
+# differential proteomics rules
