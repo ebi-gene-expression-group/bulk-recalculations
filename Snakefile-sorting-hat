@@ -3,6 +3,9 @@ import glob
 
 # atom: set grammar=python:
 
+# set minimum snakemake version
+min_version("6.6.1")
+
 metadata = {}
 
 def get_lsf_config_file():
