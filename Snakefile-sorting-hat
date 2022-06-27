@@ -1,5 +1,6 @@
 import yaml
 import glob
+from snakemake.utils import min_version
 
 # atom: set grammar=python:
 
