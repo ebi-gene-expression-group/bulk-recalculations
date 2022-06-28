@@ -628,7 +628,7 @@ rule atlas_experiment_summary:
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
         export SDRF_PATH={input.sdrf}
-        {workflow.basedir}/bin/createAtlasExperimentSummary.R \
+        {workflow.basedir}/atlas-analysis/createAtlasExperimentSummary.R \
 	          --source ./ \
 	          --accession {wildcards.accession} \
 	          --output {output.rsummary}
