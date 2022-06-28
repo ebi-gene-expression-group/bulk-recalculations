@@ -563,7 +563,7 @@ rule baseline_coexpression:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
-        {workflow.basedir}/atlas-analysis/run_coexpression_for_experiment.R {params.expression} {output.coexpression_comp} {workflow.basedir} {threads} {params.num_retries}
+        {workflow.basedir}/atlas-analysis/run_coexpression_for_experiment.R {params.expression} {output.coexpression_comp} {workflow.basedir}/atlas-analysis/ {threads} {params.num_retries}
         """
 
 rule link_baseline_coexpression:
