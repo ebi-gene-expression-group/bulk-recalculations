@@ -1515,7 +1515,7 @@ rule microarray_qc:
 
         # arrayQualityMetrics should be > 3.32.0
 
-        {workflow.basedir}/bin/arrayQC.sh $(pwd) $idf_filename $ae_dir $mirbase_dir {workflow.basedir}/bin
+        {workflow.basedir}/atlas-analysis/arrays/arrayQC.sh $(pwd) $idf_filename $ae_dir $mirbase_dir {workflow.basedir}/atlas-analysis/arrays
         qcExitCode=$?
 
         if [ "$qcExitCode" -eq 2 ]; then
