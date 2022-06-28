@@ -370,7 +370,7 @@ rule percentile_ranks:
         exec &> "{log}"
         rm -f {wildcards.accession}*-percentile-ranks.tsv
         for analytics in $(ls {wildcards.accession}*-analytics.tsv.unrounded); do
-            {workflow.basedir}/bin/calculate_percentile_ranks.R $analytics
+            {workflow.basedir}/atlas-analysis/calculate_percentile_ranks.R $analytics
         done
         # multiple ranks file will be generated for the microarray case,
         # in that case these need to be merged by gene id (first column),
