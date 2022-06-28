@@ -1730,7 +1730,7 @@ rule check_nas_microarray:
         for p in {params.array_designs}
         do
             if [ -s "{wildcards.accession}_${{p}}-analytics.tsv.undecorated" ]; then
-                {workflow.basedir}/bin/check_na_pvals.R "{wildcards.accession}_${{p}}-analytics.tsv.undecorated"
+                {workflow.basedir}/atlas-analysis/differential/check_na_pvals.R "{wildcards.accession}_${{p}}-analytics.tsv.undecorated"
             else
                 echo "ERROR: {wildcards.accession}_${{p}}-analytics.tsv.undecorated does not exist"
                 exit 1
