@@ -1670,7 +1670,7 @@ rule merge_probe_ids_microarray:
         do
             if [ -s "{wildcards.accession}_${{p}}-normalized-expressions.tsv.decorated.tmp" ]; then
                 echo "Merging probe ids with highest mean per gene for {wildcards.accession} and array design ${{p}}"
-                {workflow.basedir}/bin/highestMeanProbeIdsPerGene.R "{wildcards.accession}_${{p}}-normalized-expressions.tsv.decorated.tmp"
+                {workflow.basedir}/atlas-analysis/arrays/highestMeanProbeIdsPerGene.R "{wildcards.accession}_${{p}}-normalized-expressions.tsv.decorated.tmp"
             else
                 echo "ERROR: {wildcards.accession}_${{p}}-normalized-expressions.tsv.decorated.tmp doesn't exist"
                 exit 1
