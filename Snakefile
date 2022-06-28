@@ -594,7 +594,7 @@ rule baseline_heatmap:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
-        {workflow.basedir}/bin/generateBaselineHeatmap.R --configuration {wildcards.accession}-configuration.xml \
+        {workflow.basedir}/atlas-analysis/generateBaselineHeatmap.R --configuration {wildcards.accession}-configuration.xml \
 		--input  {wildcards.accession}-{wildcards.metric}.tsv \
 		--output {output.heatmap}
         """
