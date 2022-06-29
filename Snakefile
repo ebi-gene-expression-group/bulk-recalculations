@@ -1219,7 +1219,7 @@ rule differential_statistics_rnaseq:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
-        PATH=$PATH:{workflow.basedir}/bin
+        PATH=$PATH:{workflow.basedir}/atlas-analysis/differential
         
         source {workflow.basedir}/bin/reprocessing_routines.sh
         mktemp_dir {params.tmp_dir}
@@ -1698,7 +1698,7 @@ rule differential_statistics_microarray:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
-        PATH=$PATH:{workflow.basedir}/bin
+        PATH=$PATH:{workflow.basedir}/atlas-analysis/differential
         
         source {workflow.basedir}/bin/reprocessing_routines.sh
         mktemp_dir {params.tmp_dir}
