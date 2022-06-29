@@ -1446,7 +1446,7 @@ rule get_normalized_expressions_microarray:
         echo $mirbase_dir
 
         # Get normalized expressions
-        perl {workflow.basedir}/bin/arrayNormalization.pl {wildcards.accession} $idf_filename $ae_dir $mirbase_dir {workflow.basedir} $(pwd)
+        perl {workflow.basedir}/atlas-analysis/norm/arrayNormalization.pl {wildcards.accession} $idf_filename $ae_dir $mirbase_dir {workflow.basedir} $(pwd)
 
         touch {output}
         """ 
