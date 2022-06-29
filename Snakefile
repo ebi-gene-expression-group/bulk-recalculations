@@ -841,7 +841,7 @@ rule quantile_normalise_expression:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
-        {workflow.basedir}/bin/quantile_normalize.sh  -c {input.config_xml} -s {input.expression} -d {output.qn_expression} -b {workflow.basedir}
+        {workflow.basedir}/atlas-analysis/norm/quantile_normalize.sh  -c {input.config_xml} -s {input.expression} -d {output.qn_expression} -b {workflow.basedir}
         if [ $? -ne 0 ]; then
             echo "ERROR: Failed to quantile normalize {wildcards.metric} for {wildcards.accession}  " >&2
             exit 1
@@ -927,7 +927,7 @@ rule quantile_normalise_transcripts:
         echo {input.transcripts_na_check}
 
         if [ -s {params.transcripts} ] ; then
-            {workflow.basedir}/bin/quantile_normalize.sh -c {input.xml} -s {params.transcripts} -d {params.qntranscripts} -b {workflow.basedir}
+            {workflow.basedir}/atlas-analysis/norm/quantile_normalize.sh -c {input.xml} -s {params.transcripts} -d {params.qntranscripts} -b {workflow.basedir}
         else
             echo "File {params.transcripts} not found "
         fi
