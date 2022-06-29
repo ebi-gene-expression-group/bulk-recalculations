@@ -1278,7 +1278,7 @@ rule round_log2_fold_changes_rnaseq:
 
         rm -rf {params.intermediate_rounded}
 
-        {workflow.basedir}/bin/round_log2_fold_changes.R \
+        {workflow.basedir}/atlas-analysis/differential/round_log2_fold_changes.R \
             --experiment_type {params.exp_type} \
             --input_to_round {input} \
             --intermediate_output {params.intermediate_rounded}  
@@ -1763,7 +1763,7 @@ rule round_log2_fold_changes_microarray:
 
         rm -rf {params.intermediate_rounded}  
                                                                                                                                                                                                          
-        {workflow.basedir}/bin/round_log2_fold_changes.R \
+        {workflow.basedir}/atlas-analysis/differential/round_log2_fold_changes.R \
             --experiment_type {params.exp_type} \
             --input_to_round {params.analytics} \
             --intermediate_output {params.intermediate_rounded}                                                                                                                               
