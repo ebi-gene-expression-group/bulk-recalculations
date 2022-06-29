@@ -895,7 +895,7 @@ rule transcripts_na_check:
         [ ! -z $expIslDir+x ] || (echo "snakemake param exp_isl_dir needs to defined in rule" && exit 1)
 
         if [ -s "$expIslDir/transcripts.raw.kallisto.tsv" ] ; then
-            {workflow.basedir}/bin/transcripts_expr_values_check.R {input.transcripts} $expIslDir/transcripts.raw.kallisto.tsv
+            {workflow.basedir}/atlas-analysis/transcripts_expr_values_check.R {input.transcripts} $expIslDir/transcripts.raw.kallisto.tsv
             echo "transcripts NA check -  executed for {input.transcripts} "
         else
             echo "$expIslDir/transcripts.raw.kallisto.tsv not found for {wildcards.accession} - skipping rule_transcripts_na_check for {input.transcripts}"
