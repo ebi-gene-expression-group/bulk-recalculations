@@ -1226,7 +1226,7 @@ rule differential_statistics_rnaseq:
 
         rm -rf *.png {wildcards.accession}-analytics.tsv.undecorated
 
-        perl {workflow.basedir}/bin/diffAtlas_DE.pl --experiment {wildcards.accession} --directory ./
+        perl {workflow.basedir}/atlas-analysis/differential/diffAtlas_DE.pl --experiment {wildcards.accession} --directory ./
         
         Rscript -e "library('DESeq2'); write.table(packageVersion('DESeq2'), file='{output.deseq2version}', quote=FALSE, col.names=FALSE, row.names = FALSE)" 
 
@@ -1705,7 +1705,7 @@ rule differential_statistics_microarray:
 
         # Calculate analytics
         rm -rf *.png *-analytics.tsv.undecorated
-        perl {workflow.basedir}/bin/diffAtlas_DE.pl --experiment {wildcards.accession} --directory ./
+        perl {workflow.basedir}/atlas-analysis/differential/diffAtlas_DE.pl --experiment {wildcards.accession} --directory ./
 
         touch {output.done}
         """
