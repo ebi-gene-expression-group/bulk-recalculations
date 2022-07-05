@@ -1,22 +1,42 @@
 
 # set of rules for baseline proteomics and differential proteomics
 
-# atom: set grammar=python:
-
-# baseline proteomics rules
-
 ## This wf looks for curated config files and protein expression matrices
 ## provided by PRIDE and performs intermediate steps of renaming files, aggregation of
 ## technical replicates, estimate median values, decoration, generation of condensed sdrf,
-## deploying to staging and loading on wwwdev using webAPI.
+## deploying to staging and loading on wwwdev using webAPI. 
 
-rule init_check_tsv_data_file_not_empty_of_data:
+# baseline proteomics rules
+
+rule check_pride_tsv_files:
     """
     First lets check if the .tsv.undecorated and .tsv.undecorated.aggregated are not empty of data
     These tsv files will normally contain a first column with the gene identifier
     and then the data either in the 2nd (undecorated flavours) or 3rd column
     (for the decorated flavours, where the 2nd column here is for the gene symbol)
     """
+    log: "logs/{accession}-check_pride_tsv_files.log"
+    input:
+        "{accession}.tsv.undecorated",
+        "{accession}.tsv.undecorated.aggregated",
+        "{accession}.tsv"
+    output:
+        temp("logs/{accession}-check_pride_tsv_files.done")
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+
+        source {workflow.basedir}/bin/proteomics_functions.sh
+
+        check_tsv_data_file_not_empty_of_data {wildcards.accession}.tsv.undecorated 2
+        check_tsv_data_file_not_empty_of_data {wildcards.accession}.tsv.undecorated.aggregated 2
+        check_tsv_data_file_not_empty_of_data {wildcards.accession}.tsv 3
+        touch {output}
+        """
+
+
+
 
 rule rename_files:
     """
