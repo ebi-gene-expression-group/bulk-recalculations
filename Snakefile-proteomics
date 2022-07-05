@@ -1,3 +1,4 @@
+import os.path
 
 # set of rules for baseline proteomics and differential proteomics
 
@@ -8,6 +9,9 @@
 
 # baseline proteomics rules
 
+is_old_proteomics_dataset = os.path.exists( f"{wildcards['accession']}.old_proteomics_dataset" )
+
+
 rule check_pride_tsv_files:
     """
     First lets check if the .tsv.undecorated and .tsv.undecorated.aggregated are not empty of data
@@ -16,6 +20,8 @@ rule check_pride_tsv_files:
     (for the decorated flavours, where the 2nd column here is for the gene symbol)
     """
     log: "logs/{accession}-check_pride_tsv_files.log"
+    params:
+        is_old=is_old_proteomics_dataset
     input:
         "{accession}.tsv.undecorated",
         "{accession}.tsv.undecorated.aggregated",
@@ -32,51 +38,72 @@ rule check_pride_tsv_files:
         check_tsv_data_file_not_empty_of_data {wildcards.accession}.tsv.undecorated 2
         check_tsv_data_file_not_empty_of_data {wildcards.accession}.tsv.undecorated.aggregated 2
         check_tsv_data_file_not_empty_of_data {wildcards.accession}.tsv 3
+
+        # We skip some steps for older proteomics datasets that break otherwise
+        if [ {params.old} == "False" ]; then
+            echo "Skipping: "
+            echo "- rename_files"
+            echo "- removeGeneNamesInDataMatrix.R"
+            echo "- gxa_summarize_expression.pl"
+            echo "- appendColnamesInDataMatrix.R"
+            echo "...as the study is an old proteomics dataset and this sets would break that."
+        else
+            touch {wildcards.accession}.new.dataset
+        fi
         touch {output}
         """
 
 
-
-
-rule rename_files:
+rule processing_steps_newer_datasets:
     """
-
+    rename analysis methods, format matrix in tsv format, 
+    aggregate technical replicates, append columns with .WithInSampleAbundance
+    and pick median value of quartiles
     """
+    conda: "envs/proteomics_processing.yaml"
+    log: "logs/{accession}-processing_steps_newer_datasets.log"
+    input:
+        rules.check_pride_tsv_files.output,
+        "{accession}.new.dataset"
+    output:
+        analysis_methods="{accession}-analysis-methods.tsv",
+        backup_undecorated="{accession}-.tsv.undecorated.backup",
+        done=temp("logs/{accession}-processing_steps_newer_datasets")
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
-        # We skip some steps for older proteomics datasets that break otherwise
 
         # rename analysis methods
+        echo "renaming {wildcards.accession}"
+        rename_files {wildcards.accession}
 
         # remove quotes and gename and make matrix in tsv format.
         # remove genename column as we will decorate using recent Ensembl annotations.
-
-        """
-
-rule aggregate technical replicates:
-    """
-    Aggregate technical replicates
-    Append columns with .WithInSampleAbundance and pick median value of quartiles
-    """
-    shell:
-        """
-        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
-        exec &> "{log}"
+        if [ -f "{wildcards.accession}.tsv.undecorated.backup" ]; then
+            echo "Remove genes names and make the matrix to tsv for {wildcards.accession}"
+            {workflow.basedir}/proteomics-import/bin/removeGeneNamesInDataMatrix.R {wildcards.accession}.tsv.undecorated.backup
+            # modifies existing {wildcards.accession}.tsv.undecorated
+        fi
 
         # aggregate technical replicates
-        echo "summarise expression for $expAcc.."
-        gxa_summarize_expression.pl \
+        echo "summarise expression for {wildcards.accession}"
+        perl {workflow.basedir}/bin \
             --aggregate-quartiles \
-            --configuration ${expAcc}-configuration.xml \
-            < ${expAcc}.tsv.undecorated \
-            > ${expAcc}.tsv.undecorated.aggregated
+            --configuration {wildcards.accession}-configuration.xml \
+            < {wildcards.accession}.tsv.undecorated \
+            > {wildcards.accession}.tsv.undecorated.aggregated
 
         # append columns with .WithInSampleAbundance and pick median value of quartiles
         echo "median values pick up and appending columns with sample abundance.."
-        appendColnamesInDataMatrix.R ${expAcc}.tsv.undecorated.aggregated
+        {workflow.basedir}/proteomics-import/bin/appendColnamesInDataMatrix.R {wildcards.accession}.tsv.undecorated.aggregated
+
+        touch {output.done}
         """
+
+
+
+
 
 rule decorate_baseline_proteomics_experiment:
     """

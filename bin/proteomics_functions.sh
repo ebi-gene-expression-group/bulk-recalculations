@@ -18,3 +18,22 @@ check_tsv_data_file_not_empty_of_data() {
   fi
 }
 
+rename_files(){
+  expAcc=$1
+
+  targetAnalysisMethods=${expAcc}-analysis-methods.tsv
+  if [ -s "analysis-methods.tsv" ]; then
+    mv analysis-methods.tsv $targetAnalysisMethods
+  elif [ ! -f "$targetAnalysisMethods" ]; then
+    # Only show an error if the target file to produce is not there.
+    echo "ERROR: analysis-methods.tsv file doesn't exist for $expAcc to produce $targetAnalysisMethods"
+    exit 1;
+  fi
+
+  data_files=( *MappedToGeneID*.txt )
+  if [ -f "${data_files[0]}" ]; then
+    echo "Found MappedToGeneID files, copying..."
+    cp ${data_files[0]} ${expAcc}.tsv.undecorated.backup
+  fi
+}
+
