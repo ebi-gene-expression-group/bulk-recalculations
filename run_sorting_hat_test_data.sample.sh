@@ -39,6 +39,9 @@ PYTHON_PASSWORD=
 # otherwise ACCESSIONS supersedes SPECIES
 # SPECIES=homo_sapiens:rattus_norvegicus
 # ACCESSIONS=E-MTAB-2812
+TOMCAT_HOST_USERNAME=$TOMCAT_U
+TOMCAT_HOST_PASSWORD=$TOMCAT_P
+[ ! -z ${TOMCAT_HOST+x} ] || ( echo "Env var TOMCAT_HOST ie. ves:8080 needs to be defined." && exit 1 )
 
 ###
 
@@ -109,7 +112,10 @@ snakemake --use-conda --conda-frontend mamba \
         oracle_home=$ORACLE_HOME \                                                                                                                        
         python_user=$PYTHON_USER \                                                                                                                        
         python_connect_string=$PYTHON_CONNECT_STRING \                                                                                                    
-        python_password=$PYTHON_PASSWORD \     
+        python_password=$PYTHON_PASSWORD \
+        tomcat_host_username=$TOMCAT_HOST_USERNAME \     
+        tomcat_host_password=$TOMCAT_HOST_PASSWORD \
+        tomcat_host=$TOMCAT_HOST \
         sm_options="--use-conda --conda-frontend mamba --keep-going $PROFILE_LINE -j $NJOBS $CONDA_PREFIX_LINE $FORCE_ALL --restart-times $RESTART_TIMES " \
         bioentities_properties=$BIOENTITIES_PROPERTIES -j $NEXPS -s $SORTING_HAT &> $USUAL_SM_ERR_OUT
 
