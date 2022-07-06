@@ -16,7 +16,6 @@ def read_metadata_summary():
 
 read_metadata_summary()
 
-
 def get_methods_template_baseline():
     if 'methods_base' in config:
         return config['methods_base']
@@ -371,7 +370,7 @@ rule percentile_ranks:
         exec &> "{log}"
         rm -f {wildcards.accession}*-percentile-ranks.tsv
         for analytics in $(ls {wildcards.accession}*-analytics.tsv.unrounded); do
-            {workflow.basedir}/bin/calculate_percentile_ranks.R $analytics
+            {workflow.basedir}/atlas-analysis/calculate_percentile_ranks.R $analytics
         done
         # multiple ranks file will be generated for the microarray case,
         # in that case these need to be merged by gene id (first column),
@@ -380,7 +379,7 @@ rule percentile_ranks:
         percentile_ranks=( $(ls {wildcards.accession}*-percentile-ranks.tsv) )
         if [ ${{#percentile_ranks[@]}} -gt 1 ]; then
             # more than one file, requires merging by Gene.ID
-            {workflow.basedir}/bin/merge_by_gene_id.R {output.percentile_ranks_merged} {wildcards.accession}_*-percentile-ranks.tsv
+            {workflow.basedir}/atlas-analysis/merge_by_gene_id.R {output.percentile_ranks_merged} {wildcards.accession}_*-percentile-ranks.tsv
             # remove only microarray derived multiple percentile ranks
             # (per array design <accession>_<arraydesign>-percentile-ranks.tsv)
             rm -f {wildcards.accession}_*-percentile-ranks.tsv
@@ -564,7 +563,7 @@ rule baseline_coexpression:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
-        {workflow.basedir}/bin/run_coexpression_for_experiment.R {params.expression} {output.coexpression_comp} {workflow.basedir} {threads} {params.num_retries}
+        {workflow.basedir}/atlas-analysis/run_coexpression_for_experiment.R {params.expression} {output.coexpression_comp} {workflow.basedir}/atlas-analysis/ {threads} {params.num_retries}
         """
 
 rule link_baseline_coexpression:
@@ -595,7 +594,7 @@ rule baseline_heatmap:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
-        {workflow.basedir}/bin/generateBaselineHeatmap.R --configuration {wildcards.accession}-configuration.xml \
+        {workflow.basedir}/atlas-analysis/generateBaselineHeatmap.R --configuration {wildcards.accession}-configuration.xml \
 		--input  {wildcards.accession}-{wildcards.metric}.tsv \
 		--output {output.heatmap}
         """
@@ -629,7 +628,7 @@ rule atlas_experiment_summary:
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
         export SDRF_PATH={input.sdrf}
-        {workflow.basedir}/bin/createAtlasExperimentSummary.R \
+        {workflow.basedir}/atlas-analysis/atlasExperimentInR/createAtlasExperimentSummary.R \
 	          --source ./ \
 	          --accession {wildcards.accession} \
 	          --output {output.rsummary}
@@ -809,7 +808,7 @@ rule rnaseq_qc:
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
 
-        {workflow.basedir}/bin/rnaseqQC.sh {wildcards.accession} {workflow.basedir}
+        {workflow.basedir}/atlas-analysis/qc/rnaseqQC.sh {wildcards.accession} {workflow.basedir}/atlas-analysis/qc
         qcExitCode=$?
 
         if [ "$qcExitCode" -eq 2 ]; then
@@ -842,7 +841,7 @@ rule quantile_normalise_expression:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
-        {workflow.basedir}/bin/quantile_normalize.sh  -c {input.config_xml} -s {input.expression} -d {output.qn_expression} -b {workflow.basedir}
+        {workflow.basedir}/atlas-analysis/norm/quantile_normalize.sh  -c {input.config_xml} -s {input.expression} -d {output.qn_expression} -b {workflow.basedir}
         if [ $? -ne 0 ]; then
             echo "ERROR: Failed to quantile normalize {wildcards.metric} for {wildcards.accession}  " >&2
             exit 1
@@ -896,7 +895,7 @@ rule transcripts_na_check:
         [ ! -z $expIslDir+x ] || (echo "snakemake param exp_isl_dir needs to defined in rule" && exit 1)
 
         if [ -s "$expIslDir/transcripts.raw.kallisto.tsv" ] ; then
-            {workflow.basedir}/bin/transcripts_expr_values_check.R {input.transcripts} $expIslDir/transcripts.raw.kallisto.tsv
+            {workflow.basedir}/atlas-analysis/transcripts_expr_values_check.R {input.transcripts} $expIslDir/transcripts.raw.kallisto.tsv
             echo "transcripts NA check -  executed for {input.transcripts} "
         else
             echo "$expIslDir/transcripts.raw.kallisto.tsv not found for {wildcards.accession} - skipping rule_transcripts_na_check for {input.transcripts}"
@@ -928,7 +927,7 @@ rule quantile_normalise_transcripts:
         echo {input.transcripts_na_check}
 
         if [ -s {params.transcripts} ] ; then
-            {workflow.basedir}/bin/quantile_normalize.sh -c {input.xml} -s {params.transcripts} -d {params.qntranscripts} -b {workflow.basedir}
+            {workflow.basedir}/atlas-analysis/norm/quantile_normalize.sh -c {input.xml} -s {params.transcripts} -d {params.qntranscripts} -b {workflow.basedir}
         else
             echo "File {params.transcripts} not found "
         fi
@@ -1220,14 +1219,14 @@ rule differential_statistics_rnaseq:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
-        PATH=$PATH:{workflow.basedir}/bin
+        PATH=$PATH:{workflow.basedir}/atlas-analysis/differential
         
         source {workflow.basedir}/bin/reprocessing_routines.sh
         mktemp_dir {params.tmp_dir}
 
         rm -rf *.png {wildcards.accession}-analytics.tsv.undecorated
 
-        perl {workflow.basedir}/bin/diffAtlas_DE.pl --experiment {wildcards.accession} --directory ./
+        perl {workflow.basedir}/atlas-analysis/differential/diffAtlas_DE.pl --experiment {wildcards.accession} --directory ./
         
         Rscript -e "library('DESeq2'); write.table(packageVersion('DESeq2'), file='{output.deseq2version}', quote=FALSE, col.names=FALSE, row.names = FALSE)" 
 
@@ -1279,7 +1278,7 @@ rule round_log2_fold_changes_rnaseq:
 
         rm -rf {params.intermediate_rounded}
 
-        {workflow.basedir}/bin/round_log2_fold_changes.R \
+        {workflow.basedir}/atlas-analysis/differential/round_log2_fold_changes.R \
             --experiment_type {params.exp_type} \
             --input_to_round {input} \
             --intermediate_output {params.intermediate_rounded}  
@@ -1447,7 +1446,7 @@ rule get_normalized_expressions_microarray:
         echo $mirbase_dir
 
         # Get normalized expressions
-        perl {workflow.basedir}/bin/arrayNormalization.pl {wildcards.accession} $idf_filename $ae_dir $mirbase_dir {workflow.basedir} $(pwd)
+        perl {workflow.basedir}/atlas-analysis/norm/arrayNormalization.pl {wildcards.accession} $idf_filename $ae_dir $mirbase_dir {workflow.basedir} $(pwd)
 
         touch {output}
         """ 
@@ -1516,7 +1515,7 @@ rule microarray_qc:
 
         # arrayQualityMetrics should be > 3.32.0
 
-        {workflow.basedir}/bin/arrayQC.sh $(pwd) $idf_filename $ae_dir $mirbase_dir {workflow.basedir}/bin
+        {workflow.basedir}/atlas-analysis/arrays/arrayQC.sh $(pwd) $idf_filename $ae_dir $mirbase_dir {workflow.basedir}/atlas-analysis/arrays
         qcExitCode=$?
 
         if [ "$qcExitCode" -eq 2 ]; then
@@ -1671,7 +1670,7 @@ rule merge_probe_ids_microarray:
         do
             if [ -s "{wildcards.accession}_${{p}}-normalized-expressions.tsv.decorated.tmp" ]; then
                 echo "Merging probe ids with highest mean per gene for {wildcards.accession} and array design ${{p}}"
-                {workflow.basedir}/bin/highestMeanProbeIdsPerGene.R "{wildcards.accession}_${{p}}-normalized-expressions.tsv.decorated.tmp"
+                {workflow.basedir}/atlas-analysis/arrays/highestMeanProbeIdsPerGene.R "{wildcards.accession}_${{p}}-normalized-expressions.tsv.decorated.tmp"
             else
                 echo "ERROR: {wildcards.accession}_${{p}}-normalized-expressions.tsv.decorated.tmp doesn't exist"
                 exit 1
@@ -1699,14 +1698,14 @@ rule differential_statistics_microarray:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
-        PATH=$PATH:{workflow.basedir}/bin
+        PATH=$PATH:{workflow.basedir}/atlas-analysis/differential
         
         source {workflow.basedir}/bin/reprocessing_routines.sh
         mktemp_dir {params.tmp_dir}
 
         # Calculate analytics
         rm -rf *.png *-analytics.tsv.undecorated
-        perl {workflow.basedir}/bin/diffAtlas_DE.pl --experiment {wildcards.accession} --directory ./
+        perl {workflow.basedir}/atlas-analysis/differential/diffAtlas_DE.pl --experiment {wildcards.accession} --directory ./
 
         touch {output.done}
         """
@@ -1731,7 +1730,7 @@ rule check_nas_microarray:
         for p in {params.array_designs}
         do
             if [ -s "{wildcards.accession}_${{p}}-analytics.tsv.undecorated" ]; then
-                {workflow.basedir}/bin/check_na_pvals.R "{wildcards.accession}_${{p}}-analytics.tsv.undecorated"
+                {workflow.basedir}/atlas-analysis/differential/check_na_pvals.R "{wildcards.accession}_${{p}}-analytics.tsv.undecorated"
             else
                 echo "ERROR: {wildcards.accession}_${{p}}-analytics.tsv.undecorated does not exist"
                 exit 1
@@ -1764,7 +1763,7 @@ rule round_log2_fold_changes_microarray:
 
         rm -rf {params.intermediate_rounded}  
                                                                                                                                                                                                          
-        {workflow.basedir}/bin/round_log2_fold_changes.R \
+        {workflow.basedir}/atlas-analysis/differential/round_log2_fold_changes.R \
             --experiment_type {params.exp_type} \
             --input_to_round {params.analytics} \
             --intermediate_output {params.intermediate_rounded}                                                                                                                               
