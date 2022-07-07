@@ -2,6 +2,6 @@ channels:
  - conda-forge
  - ebi-gene-expression-group
 dependencies:
- - irap-components
- - grep
- - bioconductor-piano
+ - irap-components=0.0.1
+ - grep=3.4
+ - bioconductor-piano=1.22.0
