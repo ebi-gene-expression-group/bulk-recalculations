@@ -141,7 +141,8 @@ def get_outputs():
 
 
     # collect output for baseline proteomics
-    #if experiment_type == 'proteomics_baseline' or experiment_type =='proteomics_baseline_dia':
+    if experiment_type == 'proteomics_baseline' or experiment_type =='proteomics_baseline_dia':
+        outputs.extend(expand("logs/"+f"{config['accession']}"+"-decorate_baseline_proteomics_experiment" ))
 
     # collect output for differential proteomics
     #if experiment_type == 'proteomics_differential':

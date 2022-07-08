@@ -101,24 +101,87 @@ rule processing_steps_newer_datasets:
         touch {output.done}
         """
 
-
-
-
-
 rule decorate_baseline_proteomics_experiment:
     """
     This step performs decoration by mapping Ensembl ids with gene names with latest
-    annotations from Ensembl.
+    annotations from Ensembl
     """
+    container: "docker://quay.io/ebigxa/ensembl-update-env:amm1.1.2"
+    log: "logs/{accession}-decorate_baseline_proteomics_experiment.log"
+    resources: mem_mb=get_mem_mb   
+    input:
+        preprocess_done=rules.processing_steps_newer_datasets.output.done,
+        proteinExpressionsFile="{accession}.tsv.undecorated.aggregated"
+    output:
+        decoexpression="{accession}.tsv",
+        done=temp("logs/{accession}-decorate_baseline_proteomics_experiment")
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+        source {workflow.basedir}/bin/reprocessing_routines.sh
+        #source {workflow.basedir}/atlas-bash-util/generic_routines.sh
+
+        # This script decorates a baseline proteomics experiment with gene name from the latest Ensembl release
+        organism=$({workflow.basedir}/atlas-bash-util/get_organism.sh {wildcards.accession}  || (  >&2 echo "Error: failed to retrieve organism!" ; exit 1 ) )
+        geneNameFile=$( get_geneNameFile_given_organism $organism  )
+        echo $organism
+        echo $geneNameFile
+
+        test -s "$geneNameFile" || (  >&2 echo "$0 gene name file not found: $geneNameFile" ; exit 1 )
+
+        decoratedFile={output.decoexpression} 
+
+        # pass avail custom memory to JVM for Ammonite REPL
+        export JAVA_OPTS="-Xmx{resources.mem_mb}M"
+        amm -s {workflow.basedir}/bin/decorateFile.sc \
+            --geneNameFile "$geneNameFile" \
+            --source {input.proteinExpressionsFile} \
+            | awk 'NR == 1; NR > 1 {{print $0 | "sort -n"}}' \
+            > $decoratedFile.swp
+
+        decoratedFileLength=$(wc -l "$decoratedFile.swp" | cut -f 1 -d ' ' )
+        if [ -s "$decoratedFile.swp" ] && [ "$decoratedFileLength" -gt 1 ]; then
+            mv $decoratedFile.swp $decoratedFile
+        else
+            echo "ERROR: decorate_rnaseq_file baseline for base proteomics accession {wildcards.accession}"
+            exit 1
+        fi
+        touch {output.done}
+        """
 
 rule final_check_tsv_data_file_not_empty_of_data:
     """
-    Check that the dataset was not harmed in the process.
+    Check that the dataset was not harmed in the process
     """
+    log: "logs/{accession}-final_check_tsv_data_file_not_empty_of_data.log" 
+    input:
+        decorate_done=decorate_baseline_proteomics_experiment,
+        "{accession}.tsv.undecorated",
+        "{accession}.tsv.undecorated.aggregated",
+        "{accession}.tsv"
+    output:
+        temp("logs/{accession}-decorate_baseline_proteomics_experiment")
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+
+        source {workflow.basedir}/bin/proteomics_functions.sh
+
+        check_tsv_data_file_not_empty_of_data {wildcards.accession}.tsv.undecorated 2
+        check_tsv_data_file_not_empty_of_data {wildcards.accession}.tsv.undecorated.aggregated 2
+        check_tsv_data_file_not_empty_of_data {wildcards.accession}.tsv 3
+
+        touch {output}
+        """
+
 
 # rule copy_experiment_from_analysis_to_atlas_exps:
 
 # rule get_magetab_for_experiment:
+
+
 
 
 # differential proteomics rules
