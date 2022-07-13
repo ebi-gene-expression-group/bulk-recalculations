@@ -39,9 +39,10 @@ PYTHON_PASSWORD=
 # otherwise ACCESSIONS supersedes SPECIES
 # SPECIES=homo_sapiens:rattus_norvegicus
 # ACCESSIONS=E-MTAB-2812
-TOMCAT_HOST_USERNAME=$TOMCAT_U
-TOMCAT_HOST_PASSWORD=$TOMCAT_P
-[ ! -z ${TOMCAT_HOST+x} ] || ( echo "Env var TOMCAT_HOST ie. ves:8080 needs to be defined." && exit 1 )
+TOMCAT_HOST=
+TOMCAT_HOST_USERNAME=
+TOMCAT_HOST_PASSWORD=
+
 
 ###
 

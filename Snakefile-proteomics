@@ -20,8 +20,6 @@ rule check_pride_tsv_files:
     (for the decorated flavours, where the 2nd column here is for the gene symbol)
     """
     log: "logs/{accession}-check_pride_tsv_files.log"
-    params:
-        is_old=is_old_proteomics_dataset
     input:
         "{accession}.tsv.undecorated",
         "{accession}.tsv.undecorated.aggregated",
@@ -39,66 +37,78 @@ rule check_pride_tsv_files:
         check_tsv_data_file_not_empty_of_data {wildcards.accession}.tsv.undecorated.aggregated 2
         check_tsv_data_file_not_empty_of_data {wildcards.accession}.tsv 3
 
-        # We skip some steps for older proteomics datasets that break otherwise
-        if [ {params.old} == "False" ]; then
-            echo "Skipping: "
-            echo "- rename_files"
-            echo "- removeGeneNamesInDataMatrix.R"
-            echo "- gxa_summarize_expression.pl"
-            echo "- appendColnamesInDataMatrix.R"
-            echo "...as the study is an old proteomics dataset and this sets would break that."
-        else
-            touch {wildcards.accession}.new.dataset
-        fi
         touch {output}
         """
 
 
 rule processing_steps_newer_datasets:
     """
-    rename analysis methods, format matrix in tsv format, 
+    Rename analysis methods, format matrix in tsv format, 
     aggregate technical replicates, append columns with .WithInSampleAbundance
-    and pick median value of quartiles
+    and pick median value of quartiles - for newer datasets
     """
     conda: "envs/proteomics_processing.yaml"
     log: "logs/{accession}-processing_steps_newer_datasets.log"
     input:
-        rules.check_pride_tsv_files.output,
-        "{accession}.new.dataset"
+        rules.check_pride_tsv_files.output
+    params:
+        is_old=is_old_proteomics_dataset
     output:
-        analysis_methods="{accession}-analysis-methods.tsv",
-        backup_undecorated="{accession}-.tsv.undecorated.backup",
-        done=temp("logs/{accession}-processing_steps_newer_datasets")
+        temp("logs/{accession}-processing_steps_newer_datasets")
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
 
-        # rename analysis methods
-        echo "renaming {wildcards.accession}"
-        rename_files {wildcards.accession}
+        # skip some steps for older proteomics datasets that break otherwise
 
-        # remove quotes and gename and make matrix in tsv format.
-        # remove genename column as we will decorate using recent Ensembl annotations.
-        if [ -f "{wildcards.accession}.tsv.undecorated.backup" ]; then
-            echo "Remove genes names and make the matrix to tsv for {wildcards.accession}"
-            {workflow.basedir}/proteomics-import/bin/removeGeneNamesInDataMatrix.R {wildcards.accession}.tsv.undecorated.backup
-            # modifies existing {wildcards.accession}.tsv.undecorated
+        if [ {params.is_old} == "False" ]; then
+            echo "Skipping: "
+            echo "- rename_files"
+            echo "- removeGeneNamesInDataMatrix.R"
+            echo "- gxa_summarize_expression.pl"
+            echo "- appendColnamesInDataMatrix.R"
+            echo "...as the study is an old proteomics dataset and this sets would break that."
+
+        else
+
+            # rename analysis methods
+            echo "renaming {wildcards.accession}"
+            rename_files {wildcards.accession}
+
+            # remove quotes and gename and make matrix in tsv format.
+            # remove genename column as we will decorate using recent Ensembl annotations.
+            if [ -f "{wildcards.accession}.tsv.undecorated.backup" ]; then
+                echo "Remove genes names and make the matrix to tsv for {wildcards.accession}"
+                {workflow.basedir}/proteomics-import/bin/removeGeneNamesInDataMatrix.R {wildcards.accession}.tsv.undecorated.backup
+                # writes or rewrites {wildcards.accession}.tsv.undecorated
+            fi
+
+            if [ ! -s {wildcards.accession}.tsv.undecorated ] ; then
+                echo "Missing file {wildcards.accession}.tsv.undecorated "
+                exit 1
+            fi
+
+            if [ ! -s {wildcards.accession}-configuration.xml ] ; then
+                echo "Missing file {wildcards.accession}-configuration.xml "
+                exit 1
+            fi
+
+            # aggregate technical replicates
+            echo "summarise expression for {wildcards.accession}"
+            perl {workflow.basedir}/bin \
+                --aggregate-quartiles \
+                --configuration {wildcards.accession}-configuration.xml \
+                < {wildcards.accession}.tsv.undecorated \
+                > {wildcards.accession}.tsv.undecorated.aggregated
+
+            # append columns with .WithInSampleAbundance and pick median value of quartiles
+            echo "median values pick up and appending columns with sample abundance.."
+            {workflow.basedir}/proteomics-import/bin/appendColnamesInDataMatrix.R {wildcards.accession}.tsv.undecorated.aggregated
+
         fi
 
-        # aggregate technical replicates
-        echo "summarise expression for {wildcards.accession}"
-        perl {workflow.basedir}/bin \
-            --aggregate-quartiles \
-            --configuration {wildcards.accession}-configuration.xml \
-            < {wildcards.accession}.tsv.undecorated \
-            > {wildcards.accession}.tsv.undecorated.aggregated
-
-        # append columns with .WithInSampleAbundance and pick median value of quartiles
-        echo "median values pick up and appending columns with sample abundance.."
-        {workflow.basedir}/proteomics-import/bin/appendColnamesInDataMatrix.R {wildcards.accession}.tsv.undecorated.aggregated
-
-        touch {output.done}
+        touch {output}
         """
 
 rule decorate_baseline_proteomics_experiment:
@@ -110,7 +120,7 @@ rule decorate_baseline_proteomics_experiment:
     log: "logs/{accession}-decorate_baseline_proteomics_experiment.log"
     resources: mem_mb=get_mem_mb   
     input:
-        preprocess_done=rules.processing_steps_newer_datasets.output.done,
+        preprocess_done=rules.processing_steps_newer_datasets.output,
         proteinExpressionsFile="{accession}.tsv.undecorated.aggregated"
     output:
         decoexpression="{accession}.tsv",
@@ -120,10 +130,10 @@ rule decorate_baseline_proteomics_experiment:
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
         source {workflow.basedir}/bin/reprocessing_routines.sh
-        #source {workflow.basedir}/atlas-bash-util/generic_routines.sh
+        source {workflow.basedir}/atlas-bash-util/generic_routines.sh
 
         # This script decorates a baseline proteomics experiment with gene name from the latest Ensembl release
-        organism=$({workflow.basedir}/atlas-bash-util/get_organism.sh {wildcards.accession}  || (  >&2 echo "Error: failed to retrieve organism!" ; exit 1 ) )
+        organism=$({workflow.basedir}/bin/get_organism.sh {wildcards.accession} {workflow.basedir}/bin  || (  >&2 echo "Error: failed to retrieve organism!" ; exit 1 ) )
         geneNameFile=$( get_geneNameFile_given_organism $organism  )
         echo $organism
         echo $geneNameFile
@@ -144,7 +154,7 @@ rule decorate_baseline_proteomics_experiment:
         if [ -s "$decoratedFile.swp" ] && [ "$decoratedFileLength" -gt 1 ]; then
             mv $decoratedFile.swp $decoratedFile
         else
-            echo "ERROR: decorate_rnaseq_file baseline for base proteomics accession {wildcards.accession}"
+            echo "ERROR: decorate baseline proteomics for accession {wildcards.accession}"
             exit 1
         fi
         touch {output.done}
@@ -161,7 +171,7 @@ rule final_check_tsv_data_file_not_empty_of_data:
         "{accession}.tsv.undecorated.aggregated",
         "{accession}.tsv"
     output:
-        temp("logs/{accession}-decorate_baseline_proteomics_experiment")
+        temp("logs/{accession}-final_check_tsv_data_file_not_empty_of_data")
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
