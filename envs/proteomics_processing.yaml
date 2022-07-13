@@ -1,0 +1,6 @@
+channels:
+ - conda-forge
+ - bioconda
+dependencies:
+ - r
+ - perl-atlas-modules >=0.3.1

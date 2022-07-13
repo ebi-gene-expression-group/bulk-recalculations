@@ -39,6 +39,10 @@ PYTHON_PASSWORD=
 # otherwise ACCESSIONS supersedes SPECIES
 # SPECIES=homo_sapiens:rattus_norvegicus
 # ACCESSIONS=E-MTAB-2812
+TOMCAT_HOST=
+TOMCAT_HOST_USERNAME=
+TOMCAT_HOST_PASSWORD=
+
 
 ###
 
@@ -109,7 +113,10 @@ snakemake --use-conda --conda-frontend mamba \
         oracle_home=$ORACLE_HOME \                                                                                                                        
         python_user=$PYTHON_USER \                                                                                                                        
         python_connect_string=$PYTHON_CONNECT_STRING \                                                                                                    
-        python_password=$PYTHON_PASSWORD \     
+        python_password=$PYTHON_PASSWORD \
+        tomcat_host_username=$TOMCAT_HOST_USERNAME \     
+        tomcat_host_password=$TOMCAT_HOST_PASSWORD \
+        tomcat_host=$TOMCAT_HOST \
         sm_options="--use-conda --conda-frontend mamba --keep-going $PROFILE_LINE -j $NJOBS $CONDA_PREFIX_LINE $FORCE_ALL --restart-times $RESTART_TIMES " \
         bioentities_properties=$BIOENTITIES_PROPERTIES -j $NEXPS -s $SORTING_HAT &> $USUAL_SM_ERR_OUT
 

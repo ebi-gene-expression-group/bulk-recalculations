@@ -141,7 +141,8 @@ def get_outputs():
 
 
     # collect output for baseline proteomics
-    #if experiment_type == 'proteomics_baseline' or experiment_type =='proteomics_baseline_dia':
+    if experiment_type == 'proteomics_baseline' or experiment_type =='proteomics_baseline_dia':
+        outputs.extend(expand("logs/"+f"{config['accession']}"+"-final_check_tsv_data_file_not_empty_of_data" ))
 
     # collect output for differential proteomics
     #if experiment_type == 'proteomics_differential':
