@@ -808,7 +808,7 @@ rule rnaseq_qc:
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
 
-        {workflow.basedir}/atlas-analysis/qc/rnaseqQC.sh {wildcards.accession} {workflow.basedir}/atlas-analysis/qc
+        {workflow.basedir}/atlas-analysis/qc/rnaseqQC.sh {wildcards.accession}
         qcExitCode=$?
 
         if [ "$qcExitCode" -eq 2 ]; then
