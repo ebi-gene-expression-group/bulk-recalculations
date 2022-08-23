@@ -1,7 +1,14 @@
 include: "Snakefile"
 include: "Snakefile-proteomics"
 
-# atom: set grammar=python:
+experiment_type=get_from_config_or_metadata_summary('experiment_type')
+
+# Proteomics experiments might need to be recalculated for new version 
+# of bioentities in each Ensembl update
+if experiment_type == 'proteomics_baseline' or experiment_type =='proteomics_baseline_dia' or experiment_type =='proteomics_differential':
+    print(f"Recalculations not currently implemented for proteomics experiment: {experiment_type}")
+    sys.exit(1)
+
 
 
 def get_outputs():

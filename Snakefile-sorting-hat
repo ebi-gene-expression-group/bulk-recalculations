@@ -1,7 +1,6 @@
 import yaml
 import glob
 
-# atom: set grammar=python:
 
 metadata = {}
 
@@ -118,8 +117,12 @@ def get_outputs():
                 valid_acc_dir = next(os.walk( config['atlas_exps'] ))[1]
                 # intersection of the two lists
                 pass_ACC = list(set(ACC) & set(valid_acc_dir))
+                # filter E-PROT-* as no recalculations are needed for these
+                
                 return expand("{accession}/{accession}.recalculations.done", accession=pass_ACC)
             else:
+                # filter E-PROT-* as no recalculations are needed for these
+
                 return expand("{accession}/{accession}.recalculations.done", accession=ACC)
         elif config['goal'] == 'reprocess':
             return expand("{accession}/{accession}.reprocess.done", accession=ACC)
@@ -167,7 +170,18 @@ rule get_experiment_metadata:
         export ATLAS_EXPS={params.atlas_exps}
         source {workflow.basedir}/atlas-bash-util/generic_routines.sh
 
-        perl {workflow.basedir}/bin/get_exptype_contrasts_assays.pl {wildcards.accession} {input.config_file} {output.metadata}
+
+        # proteomics experiments do not need to include exptype contrasts assays in the summary yaml
+        prot_exp_type='experimentType="proteomics'
+        if grep -q "$prot_exp_type" {input.config_file} ; then
+            rm -f {output.metadata}
+            echo "---" >> {output.metadata}
+            echo "experiment_type: "$(grep "$prot_exp_type" {input.config_file}  | cut -d'"' -f 2) >> {output.metadata}
+        else
+            perl {workflow.basedir}/bin/get_exptype_contrasts_assays.pl {wildcards.accession} {input.config_file} {output.metadata}
+        fi
+
+
         if [ -e "{params.atlas_exps}/{wildcards.accession}/{wildcards.accession}.condensed-sdrf.tsv" ]; then
             echo "Trying with condensed in atlas_exps..."
             organism=$(get_organism_from_condensed_sdrf "{params.atlas_exps}/{wildcards.accession}/{wildcards.accession}.condensed-sdrf.tsv")
@@ -187,7 +201,7 @@ rule get_experiment_metadata:
             echo "$line"
             DIR=$line
         done < <(perl {workflow.basedir}/bin/bulk_recalculations_check_species_names.pl $(echo $organism) {params.check_species_file}  )
-	organism_check=$(echo $DIR)
+        organism_check=$(echo $DIR)
 
         ##echo $organism "check-> "$organism_check >> organisms.txt
         organism=$organism_check
@@ -196,22 +210,30 @@ rule get_experiment_metadata:
         if [ -z "$gff_file" ]; then
             gff_file=$( find {input.gtf_dir}/$organism -iname "$organism_*.gff3" | head -n1)
         fi
-	echo "GTF file location sourced"
-        magetabfiles=$( perl {workflow.basedir}/bin/get_experiment_info.pl --experiment {wildcards.accession} --xmlfile {wildcards.accession}/{wildcards.accession}-configuration.xml --magetabfiles --not-strict)
-	echo "MAGETAB location sourced"
-        idf=$( echo $magetabfiles | awk -F',' '{{ print $1 }}' )
-        sdrf=$( echo $magetabfiles | awk -F',' '{{ print $2 }}' )
-        if [ -z "$gff_file" ] || [ -z "$idf" ] || [ -z "$sdrf" ]; then
-            echo "GFF: $gff_file"
-            echo "IDF: $idf"
-            echo "SDRF: $sdrf"
-            echo "GFF, IDF or SDRF not found. YAML not created...Exiting with error"
-            exit 1
-        else
+	    echo "GTF file location sourced"
+
+        if grep -q "$prot_exp_type" {input.config_file} ; then
+            echo "Experiment type is proteomics. Skipping IDF and SDRF files in the summary yaml"
             echo "organism: $organism" >> {output.metadata}
             echo "gff: $gff_file" >> {output.metadata}
-            echo "idf: $idf" >> {output.metadata}
-            echo "sdrf: $sdrf" >> {output.metadata}
+        else
+            magetabfiles=$( perl {workflow.basedir}/bin/get_experiment_info.pl --experiment {wildcards.accession} --xmlfile {wildcards.accession}/{wildcards.accession}-configuration.xml --magetabfiles --not-strict)
+	    
+            echo "MAGETAB location sourced"
+            idf=$( echo $magetabfiles | awk -F',' '{{ print $1 }}' )
+            sdrf=$( echo $magetabfiles | awk -F',' '{{ print $2 }}' )
+            if [ -z "$gff_file" ] || [ -z "$idf" ] || [ -z "$sdrf" ]; then
+                echo "GFF: $gff_file"
+                echo "IDF: $idf"
+                echo "SDRF: $sdrf"
+                echo "GFF, IDF or SDRF not found. YAML not created...Exiting with error"
+                exit 1
+            else
+                echo "organism: $organism" >> {output.metadata}
+                echo "gff: $gff_file" >> {output.metadata}
+                echo "idf: $idf" >> {output.metadata}
+                echo "sdrf: $sdrf" >> {output.metadata}
+            fi
         fi
         """
 

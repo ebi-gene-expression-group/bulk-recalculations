@@ -1,7 +1,6 @@
 include: "Snakefile"
 include: "Snakefile-proteomics"
 
-# atom: set grammar=python:
 
 def get_array_design_from_xml():
     """

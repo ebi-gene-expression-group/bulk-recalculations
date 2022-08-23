@@ -2,14 +2,18 @@ import os.path
 
 # set of rules for baseline proteomics and differential proteomics
 
-## This wf looks for curated config files and protein expression matrices
+## This workflow looks for curated config files and protein expression matrices
 ## provided by PRIDE and performs intermediate steps of renaming files, aggregation of
 ## technical replicates, estimate median values, decoration, generation of condensed sdrf,
 ## deploying to staging and loading on wwwdev using webAPI. 
 
 # baseline proteomics rules
 
-is_old_proteomics_dataset = os.path.exists( f"{wildcards['accession']}.old_proteomics_dataset" )
+#wildcard_constraints:
+#    accession="E-\D+-\d+"
+#
+#is_old_proteomics_dataset = os.path.exists( f"{wildcards['accession']}.old_proteomics_dataset" )
+is_old_proteomics_dataset = os.path.exists( f"{config['accession']}.old_proteomics_dataset" )
 
 
 rule check_pride_tsv_files:
@@ -40,7 +44,6 @@ rule check_pride_tsv_files:
         touch {output}
         """
 
-
 rule processing_steps_newer_datasets:
     """
     Rename analysis methods, format matrix in tsv format, 
@@ -60,6 +63,8 @@ rule processing_steps_newer_datasets:
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
 
+        echo "Is old dataset: {params.is_old}"  
+
         # skip some steps for older proteomics datasets that break otherwise
 
         if [ {params.is_old} == "False" ]; then
@@ -71,13 +76,14 @@ rule processing_steps_newer_datasets:
             echo "...as the study is an old proteomics dataset and this sets would break that."
 
         else
-
+            source {workflow.basedir}/bin/proteomics_functions.sh
             # rename analysis methods
             echo "renaming {wildcards.accession}"
-            rename_files {wildcards.accession}
+            rename_files_baseline {wildcards.accession}
 
             # remove quotes and gename and make matrix in tsv format.
             # remove genename column as we will decorate using recent Ensembl annotations.
+
             if [ -f "{wildcards.accession}.tsv.undecorated.backup" ]; then
                 echo "Remove genes names and make the matrix to tsv for {wildcards.accession}"
                 {workflow.basedir}/proteomics-import/bin/removeGeneNamesInDataMatrix.R {wildcards.accession}.tsv.undecorated.backup
@@ -133,6 +139,9 @@ rule decorate_baseline_proteomics_experiment:
         source {workflow.basedir}/atlas-bash-util/generic_routines.sh
 
         # This script decorates a baseline proteomics experiment with gene name from the latest Ensembl release
+
+        echo "Decorating .undecorated data files for experiment: {wildcards.accession}"
+
         organism=$({workflow.basedir}/bin/get_organism.sh {wildcards.accession} {workflow.basedir}/bin  || (  >&2 echo "Error: failed to retrieve organism!" ; exit 1 ) )
         geneNameFile=$( get_geneNameFile_given_organism $organism  )
         echo $organism
@@ -166,7 +175,7 @@ rule final_check_tsv_data_file_not_empty_of_data:
     """
     log: "logs/{accession}-final_check_tsv_data_file_not_empty_of_data.log" 
     input:
-        decorate_done=decorate_baseline_proteomics_experiment,
+        rules.decorate_baseline_proteomics_experiment.output.done,
         "{accession}.tsv.undecorated",
         "{accession}.tsv.undecorated.aggregated",
         "{accession}.tsv"
@@ -186,12 +195,11 @@ rule final_check_tsv_data_file_not_empty_of_data:
         touch {output}
         """
 
-
-# rule copy_experiment_from_analysis_to_atlas_exps:
-
-# rule get_magetab_for_experiment:
-
-
+# rules copy_experiment_from_analysis_to_atlas_exps and get_magetab_for_experiment
+# are common for all experiments types and
+# will run after the final_check_tsv_data_file_not_empty_of_data rule
+# See Snakefile for details
 
 
 # differential proteomics rules
+

@@ -6,8 +6,10 @@ It contains data analysis rules for:
 - RNA-Seq baseline analysis
 - Microarray differential analysis
 - RNA-Seq differential analysis
+- Proteomics baseline analysis
+- Proteomics differential analysis
 
-A recalculations run requires that reprocess has been performed a priori. Recalculations are the operations that need to happen on load or after an E! Update, and generate a subset of the outputs produced during (re)processing.
+A recalculations run requires that reprocess has been performed a priori, and it is currently not available for proteomics experiments. Recalculations are the operations that need to happen on load or after an E! Update, and generate a subset of the outputs produced during (re)processing.
 
 ## Prerequisites
 
@@ -21,6 +23,6 @@ A recalculations run requires that reprocess has been performed a priori. Recalc
 ./run_sorting_hat_test_data.sh EXPS_DIR
 ```
 
-The experiments path contains one or more directories with Atlas accession names E-* (e.g. E-MTAB-5577), having at least congifuration files in xml format after curation process.
+The experiments path contains one or more directories with Atlas accession names E-* (e.g. E-MTAB-5577), having at least configuration files in xml format after curation process.
 
 Optionally, worflow execution can be tailored to specifc accessions or species by defining these variables in the sorting hat script.
