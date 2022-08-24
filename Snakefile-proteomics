@@ -37,6 +37,7 @@ rule check_pride_tsv_files:
 
         source {workflow.basedir}/bin/proteomics_functions.sh
 
+        # currently this does not exit if the files do not exist
         check_tsv_data_file_not_empty_of_data {wildcards.accession}.tsv.undecorated 2
         check_tsv_data_file_not_empty_of_data {wildcards.accession}.tsv.undecorated.aggregated 2
         check_tsv_data_file_not_empty_of_data {wildcards.accession}.tsv 3
