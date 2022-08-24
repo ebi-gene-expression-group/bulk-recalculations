@@ -203,3 +203,86 @@ rule final_check_tsv_data_file_not_empty_of_data:
 
 # differential proteomics rules
 
+rule rename_differential_proteomics_files:
+
+    conda: "envs/proteomics_processing.yaml"
+    log: "logs/{accession}-rename_differential_proteomics_files.log"
+    output:
+        temp("{accession}-rename_differential_proteomics_files.done")
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+
+        source {workflow.basedir}/bin/proteomics_functions.sh
+        echo "renaming files for {wildcards.accession}"
+        rename_files_differential {wildcards.accession}
+        touch {output}
+        """
+
+# rule round_log2_fold_changes_rnaseq (Snakefile use as well for diff proteomics)
+
+rule decorate_differential_proteomics:
+    """
+    Decorate differential proteomics experiment with gene name from the latest Ensembl release
+    """
+    container: "docker://quay.io/ebigxa/ensembl-update-env:amm1.1.2"
+    log: "logs/{accession}-decorate_differential_proteomics.log"
+    resources: mem_mb=get_mem_mb   
+    input:
+        rules.round_log2_fold_changes_rnaseq.output.unrounded,
+        "{accession}-analytics.tsv.undecorated"
+    params:
+        organism=get_organism()
+    output:
+        "{accession}-analytics.tsv",
+        "{accession}-analytics.tsv.unrounded",
+        temp("logs/{accession}-decorate_differential_proteomics.done")
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+        source {workflow.basedir}/bin/reprocessing_routines.sh
+        source {workflow.basedir}/atlas-bash-util/generic_routines.sh
+
+        geneNameFile=$( get_geneNameFile_given_organism {params.organism}  )
+
+        echo $geneNameFile
+
+        test -s "$geneNameFile" || (  >&2 echo "$0 gene name file not found: $geneNameFile" ; exit 1 )
+
+        for i in {input}
+        do  
+            echo "${{i}}"
+            decoratedFile=`echo "${{i}}" | sed 's/\.undecorated//'`
+            echo "$decoratedFile"
+
+            # pass avail custom memory to JVM for Ammonite REPL
+            export JAVA_OPTS="-Xmx{resources.mem_mb}M"
+            amm -s {workflow.basedir}/bin/decorateFile.sc \
+                --geneNameFile "$geneNameFile" \
+                --source "${{i}}" \
+                | awk 'NR == 1; NR > 1 {{print $0 | "sort -n"}}' \
+                > $decoratedFile.swp
+
+            decoratedFileLength=$(wc -l "$decoratedFile.swp" | cut -f 1 -d ' ' )
+            if [ -s "$decoratedFile.swp" ] && [ "$decoratedFileLength" -gt 1 ]; then
+                mv $decoratedFile.swp $decoratedFile
+            else                                                                                                                                                                                                                    
+                echo "ERROR: decorate_differential_proteomics for {wildcards.accession} and undecorated input ${{i}} "
+                exit 1                                                                                                                                                                                                              
+            fi
+        done
+        touch {output[2]}                                                                                                                                                                                                       
+        """                                                                                                                                                                                                                                   
+
+# rule percentile_ranks (Snakefile use as well for diff proteomics)
+
+
+
+
+ # Perform GSEA against Go/Interpro/Reactome
+
+ # Generate Genome browser tracks (bedGraph) for the experiment
+
+ 

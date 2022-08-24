@@ -264,6 +264,8 @@ def input_percentile_ranks(wildcards):
     if config['goal'] == 'reprocess':
         if experiment_type=='rnaseq_mrna_differential':
             return [ f"logs/{wildcards['accession']}-decorate_differential_rnaseq.done" ]
+        elif experiment_type=='proteomics_differential':
+            return [ f"logs/{wildcards['accession']}-decorate_differential_proteomics.done" ]
         elif experiment_type == 'microarray_1colour_mrna_differential' or experiment_type =='microarray_2colour_mrna_differential' or experiment_type =='microarray_1colour_microrna_differential':
             inputs = []
             arr_designs=get_array_design_from_xml()
@@ -348,6 +350,16 @@ def get_checkpoints_cp_atlas_exps(wildcards):
         return inputs
     else:
         return None
+
+def input_round_log2_fold_changes(wildcards):
+    """
+    Ensure rename files has been run before rounding log2 fold changes, for differential proteomics
+    """
+    inputs_files = [ f"{wildcards['accession']}-analytics.tsv.undecorated" ]
+    if experiment_type =='proteomics_differential':
+        inputs_files.append( f"logs/{wildcards['accession']}-rename_differential_proteomics_files.done" )
+    return input_files
+
 
 
 localrules: check_differential_gsea, link_baseline_coexpression, link_baseline_heatmap, create_tracks_symlinks, check_mvaPlot_rnaseq, check_normalized_expressions_microarray, delete_intermediate_files_microarray, touch_inputs_baseline
@@ -1266,7 +1278,7 @@ rule round_log2_fold_changes_rnaseq:
     log: "logs/{accession}.round_log2_fold_changes_rnaseq.log"
     resources: mem_mb=get_mem_mb
     input:
-        "{accession}-analytics.tsv.undecorated"
+        input_round_log2_fold_changes
     output:
         unrounded="{accession}-analytics.tsv.undecorated.unrounded" 
     params:

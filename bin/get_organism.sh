@@ -21,7 +21,7 @@
 use_perl_code_to_get_organism(){
 	experimentAccession=$1
 	configurationXml=$2
-    scriptdir=$3
+	scriptdir=$3
 	$scriptdir/get_experiment_info.pl --experiment "$experimentAccession" --xmlfile "$configurationXml" --organism  | to_ensembl_species_lowercase
 }
 

@@ -152,7 +152,8 @@ rule get_experiment_metadata:
         atlas_meta_config = config['atlas_meta_config'],
         atlas_prod = config['atlas_prod'],
         atlas_exps = config['atlas_exps'],
-        check_species_file=config['check_sp_file']
+        check_species_file=config['check_sp_file'],
+        prot_magetab_files=config['prot_magetabfiles']
     input:
         config_file = "{accession}/{accession}-configuration.xml",
         gtf_dir = config['gtf_dir']
@@ -171,7 +172,7 @@ rule get_experiment_metadata:
         source {workflow.basedir}/atlas-bash-util/generic_routines.sh
 
 
-        # proteomics experiments do not need to include exptype contrasts assays in the summary yaml
+        # proteomics experiments do not need to include exp type assays/contrasts in the summary yaml
         prot_exp_type='experimentType="proteomics'
         if grep -q "$prot_exp_type" {input.config_file} ; then
             rm -f {output.metadata}
@@ -213,27 +214,26 @@ rule get_experiment_metadata:
 	    echo "GTF file location sourced"
 
         if grep -q "$prot_exp_type" {input.config_file} ; then
-            echo "Experiment type is proteomics. Skipping IDF and SDRF files in the summary yaml"
-            echo "organism: $organism" >> {output.metadata}
-            echo "gff: $gff_file" >> {output.metadata}
+            idf={params.prot_magetab_files}/{wildcards.accession}/{wildcards.accession}.idf.txt
+            sdrf={params.prot_magetab_files}/{wildcards.accession}/{wildcards.accession}.sdrf.txt
         else
             magetabfiles=$( perl {workflow.basedir}/bin/get_experiment_info.pl --experiment {wildcards.accession} --xmlfile {wildcards.accession}/{wildcards.accession}-configuration.xml --magetabfiles --not-strict)
-	    
             echo "MAGETAB location sourced"
             idf=$( echo $magetabfiles | awk -F',' '{{ print $1 }}' )
             sdrf=$( echo $magetabfiles | awk -F',' '{{ print $2 }}' )
-            if [ -z "$gff_file" ] || [ -z "$idf" ] || [ -z "$sdrf" ]; then
-                echo "GFF: $gff_file"
-                echo "IDF: $idf"
-                echo "SDRF: $sdrf"
-                echo "GFF, IDF or SDRF not found. YAML not created...Exiting with error"
-                exit 1
-            else
-                echo "organism: $organism" >> {output.metadata}
-                echo "gff: $gff_file" >> {output.metadata}
-                echo "idf: $idf" >> {output.metadata}
-                echo "sdrf: $sdrf" >> {output.metadata}
-            fi
+        fi
+
+        if [ -z "$gff_file" ] || [ -z "$idf" ] || [ -z "$sdrf" ]; then
+            echo "GFF: $gff_file"
+            echo "IDF: $idf"
+            echo "SDRF: $sdrf"
+            echo "GFF, IDF or SDRF not found. YAML not created...Exiting with error"
+            exit 1
+        else
+            echo "organism: $organism" >> {output.metadata}
+            echo "gff: $gff_file" >> {output.metadata}
+            echo "idf: $idf" >> {output.metadata}
+            echo "sdrf: $sdrf" >> {output.metadata}
         fi
         """
 

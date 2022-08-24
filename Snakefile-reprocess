@@ -145,6 +145,7 @@ def get_outputs():
 
     # collect output for differential proteomics
     #if experiment_type == 'proteomics_differential':
+    #    outputs.extend( )
 
 
     # For all experiment types, move data to atlas_exps and create condensed SDRF
