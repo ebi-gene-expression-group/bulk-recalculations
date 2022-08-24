@@ -128,6 +128,8 @@ rule decorate_baseline_proteomics_experiment:
     input:
         preprocess_done=rules.processing_steps_newer_datasets.output,
         proteinExpressionsFile="{accession}.tsv.undecorated.aggregated"
+    params:
+        organism=get_organism()
     output:
         decoexpression="{accession}.tsv",
         done=temp("logs/{accession}-decorate_baseline_proteomics_experiment")
@@ -142,9 +144,8 @@ rule decorate_baseline_proteomics_experiment:
 
         echo "Decorating .undecorated data files for experiment: {wildcards.accession}"
 
-        organism=$({workflow.basedir}/bin/get_organism.sh {wildcards.accession} {workflow.basedir}/bin  || (  >&2 echo "Error: failed to retrieve organism!" ; exit 1 ) )
-        geneNameFile=$( get_geneNameFile_given_organism $organism  )
-        echo $organism
+        #organism=$({workflow.basedir}/bin/get_organism.sh {wildcards.accession} {workflow.basedir}/bin  || (  >&2 echo "Error: failed to retrieve organism!" ; exit 1 ) )
+        geneNameFile=$( get_geneNameFile_given_organism {params.organism}  )
         echo $geneNameFile
 
         test -s "$geneNameFile" || (  >&2 echo "$0 gene name file not found: $geneNameFile" ; exit 1 )
@@ -204,7 +205,6 @@ rule final_check_tsv_data_file_not_empty_of_data:
 # differential proteomics rules
 
 rule rename_differential_proteomics_files:
-
     conda: "envs/proteomics_processing.yaml"
     log: "logs/{accession}-rename_differential_proteomics_files.log"
     output:
@@ -285,4 +285,3 @@ rule decorate_differential_proteomics:
 
  # Generate Genome browser tracks (bedGraph) for the experiment
 
- 
