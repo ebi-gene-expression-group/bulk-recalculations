@@ -172,8 +172,8 @@ rule get_experiment_metadata:
         source {workflow.basedir}/atlas-bash-util/generic_routines.sh
 
 
-        # proteomics experiments do not need to include exp type assays/contrasts in the summary yaml
-        prot_exp_type='experimentType="proteomics'
+        # proteomics baseline experiments do not need to include exp type assays/contrasts in the summary yaml
+        prot_exp_type='experimentType="proteomics_baseline'
         if grep -q "$prot_exp_type" {input.config_file} ; then
             rm -f {output.metadata}
             echo "---" >> {output.metadata}
@@ -181,7 +181,7 @@ rule get_experiment_metadata:
         else
             perl {workflow.basedir}/bin/get_exptype_contrasts_assays.pl {wildcards.accession} {input.config_file} {output.metadata}
         fi
-
+        # we may avoid this adding proteomics_baseline_dia to AtlasSiteConfig.yml (perl-atlas-modules)
 
         if [ -e "{params.atlas_exps}/{wildcards.accession}/{wildcards.accession}.condensed-sdrf.tsv" ]; then
             echo "Trying with condensed in atlas_exps..."
@@ -213,7 +213,9 @@ rule get_experiment_metadata:
         fi
 	    echo "GTF file location sourced"
 
-        if grep -q "$prot_exp_type" {input.config_file} ; then
+        prot_exp_type_all='experimentType="proteomics_'
+        # this applies to all proteomics experiments
+        if grep -q "$prot_exp_type_all" {input.config_file} ; then
             idf={params.prot_magetab_files}/{wildcards.accession}/{wildcards.accession}.idf.txt
             sdrf={params.prot_magetab_files}/{wildcards.accession}/{wildcards.accession}.sdrf.txt
         else

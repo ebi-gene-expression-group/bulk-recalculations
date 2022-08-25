@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 GOAL='recalculations'
+# recalculations not currently implemented for proteomics experiments
 
 NEXPS=${NEXPS:-30}
 NJOBS=${NJOBS:-10}
@@ -35,6 +36,7 @@ ORACLE_HOME=path/to/oracle_home
 PYTHON_USER=
 PYTHON_CONNECT_STRING=
 PYTHON_PASSWORD=
+PROT_MAGETABFILES=
 # Optionally one, either ACCESSIONS or SPECIES can be defined
 # otherwise ACCESSIONS supersedes SPECIES
 # SPECIES=homo_sapiens:rattus_norvegicus
@@ -117,6 +119,7 @@ snakemake --use-conda --conda-frontend mamba \
         tomcat_host_username=$TOMCAT_HOST_USERNAME \     
         tomcat_host_password=$TOMCAT_HOST_PASSWORD \
         tomcat_host=$TOMCAT_HOST \
+        prot_magetabfiles=$PROT_MAGETABFILES \
         sm_options="--use-conda --conda-frontend mamba --keep-going $PROFILE_LINE -j $NJOBS $CONDA_PREFIX_LINE $FORCE_ALL --restart-times $RESTART_TIMES " \
         bioentities_properties=$BIOENTITIES_PROPERTIES -j $NEXPS -s $SORTING_HAT &> $USUAL_SM_ERR_OUT
 

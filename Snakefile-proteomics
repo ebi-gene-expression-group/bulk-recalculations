@@ -216,7 +216,7 @@ rule rename_differential_proteomics_files:
         exec &> "{log}"
 
         source {workflow.basedir}/bin/proteomics_functions.sh
-        echo "renaming files for {wildcards.accession}"
+        echo "renaming files for differential proteomics {wildcards.accession}"
         rename_files_differential {wildcards.accession}
         touch {output}
         """
@@ -231,12 +231,12 @@ rule decorate_differential_proteomics:
     log: "logs/{accession}-decorate_differential_proteomics.log"
     resources: mem_mb=get_mem_mb   
     input:
-        rules.round_log2_fold_changes_rnaseq.output.unrounded,
-        "{accession}-analytics.tsv.undecorated"
+        rules.round_log2_fold_changes_rnaseq.output.unrounded #,
+        #"{accession}-analytics.tsv.undecorated"
     params:
         organism=get_organism()
     output:
-        "{accession}-analytics.tsv",
+        #"{accession}-analytics.tsv",
         "{accession}-analytics.tsv.unrounded",
         temp("logs/{accession}-decorate_differential_proteomics.done")
     shell:
@@ -274,15 +274,13 @@ rule decorate_differential_proteomics:
                 exit 1                                                                                                                                                                                                              
             fi
         done
-        touch {output[2]}                                                                                                                                                                                                       
+        touch {output[1]}                                                                                                                                                                                                       
         """                                                                                                                                                                                                                                   
 
 # rule percentile_ranks (Snakefile use as well for diff proteomics)
 
-
-
-
  # Perform GSEA against Go/Interpro/Reactome
+ # rule differential_gsea (Snakefile use as well for diff proteomics)
 
  # Generate Genome browser tracks (bedGraph) for the experiment
-
+ # rule differential_tracks (Snakefile use as well for diff proteomics)

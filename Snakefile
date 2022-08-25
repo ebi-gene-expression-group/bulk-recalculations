@@ -286,6 +286,8 @@ def input_differential_tracks_and_gsea(wildcards):
     if config['goal'] == 'reprocess':
         if experiment_type=='rnaseq_mrna_differential':
             return [ f"logs/{wildcards['accession']}-decorate_differential_rnaseq.done" ]
+        elif experiment_type=='proteomics_differential':
+            return [ f"logs/{wildcards['accession']}-decorate_differential_proteomics.done" ]
         elif experiment_type == 'microarray_1colour_mrna_differential' or experiment_type =='microarray_2colour_mrna_differential' or experiment_type =='microarray_1colour_microrna_differential':
             inputs = []
             arr_designs=get_array_design_from_xml()
@@ -355,10 +357,11 @@ def input_round_log2_fold_changes(wildcards):
     """
     Ensure rename files has been run before rounding log2 fold changes, for differential proteomics
     """
-    inputs_files = [ f"{wildcards['accession']}-analytics.tsv.undecorated" ]
     if experiment_type =='proteomics_differential':
-        inputs_files.append( f"logs/{wildcards['accession']}-rename_differential_proteomics_files.done" )
-    return input_files
+        inputs_files = [  f"logs/{wildcards['accession']}-rename_differential_proteomics_files.done" ]
+    else:
+        inputs_files = [ f"{wildcards['accession']}-analytics.tsv.undecorated" ]
+    return inputs_files
 
 
 

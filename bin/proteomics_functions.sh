@@ -63,7 +63,7 @@ rename_files_differential(){
   fi
 
   dos2unix ${expAcc}-analytics.tsv.undecorated
-  ## remove gene name column
+  # remove gene name column
   sed -i -r 's/(\s+)?\S+//2' ${expAcc}-analytics.tsv.undecorated
  }
 
