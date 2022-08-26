@@ -209,7 +209,7 @@ rule rename_differential_proteomics_files:
     conda: "envs/proteomics_processing.yaml"
     log: "logs/{accession}-rename_differential_proteomics_files.log"
     output:
-        temp("{accession}-rename_differential_proteomics_files.done")
+        temp("logs/{accession}-rename_differential_proteomics_files.done")
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
@@ -229,14 +229,15 @@ rule decorate_differential_proteomics:
     """
     container: "docker://quay.io/ebigxa/ensembl-update-env:amm1.1.2"
     log: "logs/{accession}-decorate_differential_proteomics.log"
-    resources: mem_mb=get_mem_mb   
+    resources: mem_mb=get_mem_mb
     input:
-        rules.round_log2_fold_changes_rnaseq.output.unrounded #,
-        #"{accession}-analytics.tsv.undecorated"
+        "{accession}-analytics.tsv.undecorated",
+        "{accession}-analytics.tsv.undecorated.unrounded",
+        rules.round_log2_fold_changes_rnaseq.output.done
     params:
         organism=get_organism()
     output:
-        #"{accession}-analytics.tsv",
+        "{accession}-analytics.tsv",
         "{accession}-analytics.tsv.unrounded",
         temp("logs/{accession}-decorate_differential_proteomics.done")
     shell:
@@ -252,7 +253,7 @@ rule decorate_differential_proteomics:
 
         test -s "$geneNameFile" || (  >&2 echo "$0 gene name file not found: $geneNameFile" ; exit 1 )
 
-        for i in {input}
+        for i in {input[0]} {input[1]}
         do  
             echo "${{i}}"
             decoratedFile=`echo "${{i}}" | sed 's/\.undecorated//'`
@@ -274,7 +275,7 @@ rule decorate_differential_proteomics:
                 exit 1                                                                                                                                                                                                              
             fi
         done
-        touch {output[1]}                                                                                                                                                                                                       
+        touch {output[2]}                                                                                                                                                                                                       
         """                                                                                                                                                                                                                                   
 
 # rule percentile_ranks (Snakefile use as well for diff proteomics)

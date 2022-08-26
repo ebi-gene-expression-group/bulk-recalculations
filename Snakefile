@@ -357,12 +357,10 @@ def input_round_log2_fold_changes(wildcards):
     """
     Ensure rename files has been run before rounding log2 fold changes, for differential proteomics
     """
+    inputs_files = [ f"{wildcards['accession']}-analytics.tsv.undecorated" ]
     if experiment_type =='proteomics_differential':
-        inputs_files = [  f"logs/{wildcards['accession']}-rename_differential_proteomics_files.done" ]
-    else:
-        inputs_files = [ f"{wildcards['accession']}-analytics.tsv.undecorated" ]
+        inputs_files.append( f"logs/{wildcards['accession']}-rename_differential_proteomics_files.done" )
     return inputs_files
-
 
 
 localrules: check_differential_gsea, link_baseline_coexpression, link_baseline_heatmap, create_tracks_symlinks, check_mvaPlot_rnaseq, check_normalized_expressions_microarray, delete_intermediate_files_microarray, touch_inputs_baseline
@@ -448,7 +446,8 @@ rule differential_gsea:
         organism=get_organism(),
         BIOENTITIES_PROPERTIES_PATH=config['bioentities_properties'],
         contrast_label=get_contrast_label,
-        ext_db_label=get_ext_db_label
+        ext_db_label=get_ext_db_label,
+        exp_type=get_from_config_or_metadata_summary('experiment_type')
     output:
         gsea="{accession}.{contrast_id}.{ext_db}.gsea.tsv",
         gsea_list="{accession}.{contrast_id}.{ext_db}.gsea_list.tsv"
@@ -459,10 +458,16 @@ rule differential_gsea:
         export BIOENTITIES_PROPERTIES_PATH={params.BIOENTITIES_PROPERTIES_PATH}
         source {workflow.basedir}/bin/gsea_functions.sh
         set +e
-        analyticsFile=$(grep -l -P "\\t{wildcards.contrast_id}\." {wildcards.accession}_A-*-analytics.tsv)
-        if [ $? -ne 0 ]; then
-            # rnaseq case
+
+        expType={params.exp_type}
+        if [ "$expType" == "proteomics_differential" ]; then
             analyticsFile={wildcards.accession}-analytics.tsv
+        else
+            analyticsFile=$(grep -l -P "\\t{wildcards.contrast_id}\." {wildcards.accession}_A-*-analytics.tsv)
+            if [ $? -ne 0 ]; then
+                # rnaseq case
+                analyticsFile={wildcards.accession}-analytics.tsv
+            fi
         fi
         set -e
         annotationFile=$(find_properties_file_gsea {params.organism} {wildcards.ext_db})
@@ -1224,9 +1229,10 @@ rule differential_statistics_rnaseq:
     resources: mem_mb=get_mem_mb
     input:
         config_xml="{accession}-configuration.xml",
-        raw_counts_undecorated="{accession}-raw-counts.tsv.undecorated"
+        raw_counts_undecorated=lambda wildcards: f"{wildcards.accession}-raw-counts.tsv.undecorated" if experiment_type!='proteomics_differential' else 'none_necessary'
     params:
-        tmp_dir=get_tmp_dir()
+        tmp_dir=get_tmp_dir(),
+        exp_type=get_from_config_or_metadata_summary('experiment_type')
     output:
         differential_expression="{accession}-analytics.tsv.undecorated",
         done=temp("logs/{accession}.differential_statistics_rnaseq.done"),
@@ -1235,18 +1241,27 @@ rule differential_statistics_rnaseq:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
-        PATH=$PATH:{workflow.basedir}/bin
         
-        source {workflow.basedir}/bin/reprocessing_routines.sh
-        mktemp_dir {params.tmp_dir}
-
-        rm -rf *.png {wildcards.accession}-analytics.tsv.undecorated
-
-        perl {workflow.basedir}/bin/diffAtlas_DE.pl --experiment {wildcards.accession} --directory ./
+        expType={params.exp_type}
+        if [ "$expType" == "proteomics_differential" ]; then
+            # change only modification time of -analytics.tsv.undecorated; touch other temp outputs
+            touch -m {output.differential_expression}
+            touch {output.done}
+            touch {output.deseq2version}
+        else
+            PATH=$PATH:{workflow.basedir}/atlas-analysis/differential
         
-        Rscript -e "library('DESeq2'); write.table(packageVersion('DESeq2'), file='{output.deseq2version}', quote=FALSE, col.names=FALSE, row.names = FALSE)" 
+            source {workflow.basedir}/bin/reprocessing_routines.sh
+            mktemp_dir {params.tmp_dir}
 
-        touch {output.done}
+            rm -rf *.png {wildcards.accession}-analytics.tsv.undecorated
+
+            perl {workflow.basedir}/bin/diffAtlas_DE.pl --experiment {wildcards.accession} --directory ./
+        
+            Rscript -e "library('DESeq2'); write.table(packageVersion('DESeq2'), file='{output.deseq2version}', quote=FALSE, col.names=FALSE, row.names = FALSE)" 
+
+            touch {output.done}
+        fi
         """
 
 rule check_mvaPlot_rnaseq:
@@ -1283,7 +1298,8 @@ rule round_log2_fold_changes_rnaseq:
     input:
         input_round_log2_fold_changes
     output:
-        unrounded="{accession}-analytics.tsv.undecorated.unrounded" 
+        unrounded="{accession}-analytics.tsv.undecorated.unrounded",
+        done=temp("logs/{accession}-round_log2_fold_changes_rnaseq.done")
     params:
         exp_type=get_from_config_or_metadata_summary('experiment_type'),
         intermediate_rounded="{accession}-analytics.tsv.undecorated.rounded"
@@ -1296,11 +1312,13 @@ rule round_log2_fold_changes_rnaseq:
 
         {workflow.basedir}/bin/round_log2_fold_changes.R \
             --experiment_type {params.exp_type} \
-            --input_to_round {input} \
+            --input_to_round {input[0]} \
             --intermediate_output {params.intermediate_rounded}  
 
-        mv {input} {output.unrounded}
-        mv {params.intermediate_rounded} {input}
+        mv {input[0]} {output.unrounded}
+        mv {params.intermediate_rounded} {input[0]}
+
+        touch {output.done}
         """
 
 rule generate_methods_differential_rnaseq:

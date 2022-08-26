@@ -49,7 +49,7 @@ rename_files_differential(){
   fi
 
   if [ -s "${expAcc}-analysis.txt" ]; then
-    # this can probably be removed.
+    # this can probably be removed
     echo "WARNING: found ${expAcc}-analysis.txt, please prefer ExpressionAtlas_FoldChange_groupcomparison.txt"
     cp ${expAcc}-analysis.txt ${expAcc}-analytics.tsv.undecorated
   fi

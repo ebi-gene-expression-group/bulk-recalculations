@@ -146,7 +146,8 @@ def get_outputs():
     # collect output for differential proteomics
     if experiment_type == 'proteomics_differential':
         outputs.append(f"{config['accession']}-percentile-ranks.tsv")
-        outputs.extend(expand(config['accession']+".{id}.{type}", id=get_contrast_ids(), type=["genes.pval.bedGraph", "genes.log2foldchange.bedGraph"]))
+        # commenting the tracks as E-PROT-* appear not to be having any
+        # outputs.extend(expand(config['accession']+".{id}.{type}", id=get_contrast_ids(), type=["genes.pval.bedGraph", "genes.log2foldchange.bedGraph"]))
         outputs.extend( expand( config['accession']+".{c_id}.{ext_db}.{type}",
                         c_id=get_contrast_ids(),
                         ext_db=get_ext_db(),
