@@ -68,7 +68,7 @@ get_magetab_for_experiment() {
     # Now generate condensed sdrf containing ontology mappings from Zooma. This
     # will also copy IDF from ArrayExpress load directory (using "-i" option).
     # If this is a baseline experiment, pass the factors XML filename as well to ensure factors match in condensed SDRF.
-    if [[ $expType == *baseline ]]; then
+    if [[ $expType == *baseline ]] || [[ $expType == *baseline_dia ]]; then
 
         $scriptsDir/condense_sdrf.pl -e $expAcc -f $expAcc/$expAcc-factors.xml -z -i -o $expAcc -x $zooma_exclusions_file -fi $idf_file
         if [ $? -ne 0 ]; then
