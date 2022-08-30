@@ -138,7 +138,7 @@ copy_experiment_from_analysis_to_atlas_exps(){
         exit 1
     fi
     mode=$(experiment_directory_permissions_from_peach_api_privacy "$expAcc" )
-    echo "mode $mode"
+
     if [ ! "$mode" ]; then
       echo "copy_experiment_from_analysis_to_atlas_exps ERROR: Failed to retrieve public/private status for $expAcc" >&2
       exit 1
