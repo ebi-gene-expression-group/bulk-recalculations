@@ -123,13 +123,13 @@ def get_outputs():
                 pass_ACC = list(set(ACC) & set(valid_acc_dir))
                 # filter E-PROT-* as no recalculations are needed for these. 
                 # In any case, Snakemake-recalculations will exit with error for proteomics experiments
-                
-                return expand("{accession}/{accession}.recalculations.done", accession=pass_ACC)
+                nonprot_ACC = list(filter(lambda k: not 'E-PROT' in k, pass_ACC))
+                return expand("{accession}/{accession}.recalculations.done", accession=nonprot_ACC)
             else:
                 # filter E-PROT-* as no recalculations are needed for these. 
                 # In any case, Snakemake-recalculations will exit with error for proteomics experiments
-
-                return expand("{accession}/{accession}.recalculations.done", accession=ACC)
+                nonprot_ACC = list(filter(lambda k: not 'E-PROT' in k, ACC))
+                return expand("{accession}/{accession}.recalculations.done", accession=nonprot_ACC)
         elif config['goal'] == 'reprocess':
             return expand("{accession}/{accession}.reprocess.done", accession=ACC)
         else:
