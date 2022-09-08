@@ -364,6 +364,7 @@ def input_round_log2_fold_changes(wildcards):
 
 localrules: check_differential_gsea, link_baseline_coexpression, link_baseline_heatmap, create_tracks_symlinks, check_mvaPlot_rnaseq, check_normalized_expressions_microarray, delete_intermediate_files_microarray, touch_inputs_baseline
 
+ruleorder: decorate_differential_rnaseq > decorate_differential_proteomics
 
 wildcard_constraints:
     accession="E-\D+-\d+",
