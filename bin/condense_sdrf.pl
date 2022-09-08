@@ -310,7 +310,7 @@ sub copy_idf_from_ae {
     my ( $args, $idfFile ) = @_;
     $logger->info( "Copying IDF from $idfFile ..." );
     my $outputDir = $args->{ "output_directory" };
-    `cp $idfFile $outputDir`;
+    `cp -f $idfFile $outputDir`;
     unless( $? ) {
         $logger->info( "Successfully copied IDF." );
     }
