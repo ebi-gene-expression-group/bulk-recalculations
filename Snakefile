@@ -357,7 +357,7 @@ def input_round_log2_fold_changes(wildcards):
     Ensure rename files has been run before rounding log2 fold changes, for differential proteomics
     """
     inputs_files = [ f"{wildcards['accession']}-analytics.tsv.undecorated" ]
-    if experiment_type =='proteomics_differential':
+    if experiment_type == 'proteomics_differential':
         inputs_files.append( f"logs/{wildcards['accession']}-rename_differential_proteomics_files.done" )
     return inputs_files
 
