@@ -1229,7 +1229,7 @@ rule differential_statistics_rnaseq:
     resources: mem_mb=get_mem_mb
     input:
         config_xml="{accession}-configuration.xml",
-        raw_counts_undecorated=lambda wildcards: f"{wildcards.accession}-raw-counts.tsv.undecorated" if experiment_type!='proteomics_differential' else 'none_necessary'
+        raw_counts_undecorated=lambda wildcards: f"{wildcards.accession}-raw-counts.tsv.undecorated" if experiment_type != 'proteomics_differential' else 'none_necessary'
     params:
         tmp_dir=get_tmp_dir(),
         exp_type=get_from_config_or_metadata_summary('experiment_type')
