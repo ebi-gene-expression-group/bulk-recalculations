@@ -261,6 +261,7 @@ rule produce_reprocess_call:
         irap_versions=config['irap_versions'],
         irap_container=config['irap_container'],
         tmp_dir=config['tmp_dir'],
+        atlas_exps = config['atlas_exps'],
         lsf_config = get_lsf_config_file(),
         log_handler_script=get_log_handler_script(),
         goal=config['goal'],
@@ -292,6 +293,7 @@ rule produce_reprocess_call:
                 skip_steps_file={params.skip_steps_file} \
                 methods_base={params.methods_base} \
                 methods_dif={params.methods_dif} \
+                atlas_exps={params.atlas_exps} \
                 zooma_exclusions={params.zooma_exclusions} \
                 isl_dir={params.isl_dir} \
                 isl_genomes={params.isl_genomes} \

@@ -1913,13 +1913,13 @@ rule delete_intermediate_files_microarray:
 rule copy_experiment_from_analysis_to_atlas_exps:
     """
     Copy data to atlas_exps. Its execution timing depends on experiment_type.
-    NOTE: Use target_dir = config[atlas_exps] for production
+    NOTE: Use target_dir = config['atlas_exps'] for production
     """
     conda: "envs/perl-atlas-modules.yaml"
     log: "logs/{accession}-copy_experiment_from_analysis_to_atlas_exps.log"
     input: get_checkpoints_cp_atlas_exps
     params:
-        target_dir=get_tmp_dir()
+        target_dir=config['atlas_exps'] #get_tmp_dir()
     output:
         temp("logs/{accession}-copy_experiment_from_analysis_to_atlas_exps.done")
     shell:
@@ -1944,13 +1944,13 @@ rule copy_experiment_from_analysis_to_atlas_exps:
 rule get_magetab_for_experiment:
     """
     Generate condensed SDRF with Zooma mappings for the experiment - in atlas_exps.
-    NOTE: Use target_dir = config[atlas_exps] for production
+    NOTE: Use target_dir = config['atlas_exps'] for production
     """
     conda: "envs/perl-atlas-modules.yaml"
     log: "logs/{accession}-get_magetab_for_experiment.log"
     input: rules.copy_experiment_from_analysis_to_atlas_exps.output
     params:
-        target_dir=get_tmp_dir(),
+        target_dir=config['atlas_exps'], #get_tmp_dir(),
         exp_type=get_from_config_or_metadata_summary('experiment_type'),
         zooma_exclusions=get_zooma_exclusions()
     output:
