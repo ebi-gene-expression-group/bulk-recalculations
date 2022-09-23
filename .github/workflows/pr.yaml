@@ -36,6 +36,7 @@ jobs:
             irap_versions=irap_versions
             irap_container=irap_container
             tmp_dir=tmpdir
+            prot_magetabfiles=prot_magetab
             check_sp_file=check_species
             oracle_home=oracle_home
             python_user=python_user
