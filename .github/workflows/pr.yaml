@@ -1,0 +1,45 @@
+name: Snakemake linting
+
+on: [pull_request]
+
+jobs:
+  setup:
+    name: ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["ubuntu-latest"]
+    defaults:
+      run:
+        shell: bash -l {0}
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Linting
+        uses: snakemake/snakemake-github-action@v1
+        with:
+          directory: '.test'
+          snakefile: 'Snakefile-sorting-hat'
+          args: |
+            '--lint --config gtf_dir=gtf \
+            atlas_prod=path/to/atlasprod \
+            atlas_exps=path/to/atlasexps \
+            lsf_config=lsf_config \
+            goal='reprocess' \
+            atlas_meta_config=path/to/supporting_files \
+            skip_steps_file=skip_steps \
+            methods_base=template_methods_baseline \
+            methods_dif=template_methods_differential \
+            zooma_exclusions=zooma_exclusions \
+            isl_genomes=isl_genome_references \
+            irap_versions=irap_versions \
+            irap_container=irap_container \
+            tmp_dir=tmpdir \
+            check_sp_file=check_species \
+            oracle_home=oracle_home \                                                                                                                        
+            python_user=python_user \                                                                                                                        
+            python_connect_string=python_connect \                                                                                                    
+            python_password=python_pass \     
+            sm_options=" " \
+            bioentities_properties=bioentities'
