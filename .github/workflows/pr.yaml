@@ -21,7 +21,7 @@ jobs:
         with:
           directory: '.test'
           snakefile: 'Snakefile-sorting-hat'
-          args: |
+          args: >
             --lint --config gtf_dir=gtf \
             atlas_prod=path/to/atlasprod \
             atlas_exps=path/to/atlasexps \
