@@ -20,28 +20,26 @@ jobs:
         uses: snakemake/snakemake-github-action@v1
         with:
           directory: '.test'
-          snakefile: 'Snakefile-sorting-hat'
+          snakefile: 'Snakefile-reprocess'
           args: >
-            '--lint -c1 --config gtf_dir=gtf
-            atlas_prod=path/to/atlasprod
-            atlas_exps=path/to/atlasexps
-            lsf_config=lsf_config
+            '--lint -c1 --config
+            accession=accession
             goal="reprocess"
-            atlas_meta_config=path/to/supporting_files
-            skip_steps_file=skip_steps
-            methods_base=template_methods_baseline
-            methods_dif=template_methods_differential
+            tool=tool
+            metadata_summary=metadata_summary
+            bioentities_properties=bioentities_properties
+            skip_steps_file=skip_steps_file
+            methods_base=methods_base
+            methods_dif=methods_dif
+            atlas_exps=atlas_exps
             zooma_exclusions=zooma_exclusions
-            isl_genomes=isl_genome_references
             isl_dir=isl_dir
+            isl_genomes=isl_genomes
             irap_versions=irap_versions
             irap_container=irap_container
-            tmp_dir=tmpdir
-            prot_magetabfiles=prot_magetab
-            check_sp_file=check_species
+            tmp_dir=tmp_dir
+            atlas_meta_config=atlas_meta_config
             oracle_home=oracle_home
             python_user=python_user
-            python_connect_string=python_connect
-            python_password=python_pass
-            sm_options=sm_options
-            bioentities_properties=bioentities'
+            python_connect_string=python_connect_string
+            python_password=python_password'
