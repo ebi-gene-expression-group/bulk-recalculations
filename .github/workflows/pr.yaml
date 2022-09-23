@@ -33,6 +33,7 @@ jobs:
             methods_dif=template_methods_differential
             zooma_exclusions=zooma_exclusions
             isl_genomes=isl_genome_references
+            isl_dir=isl_dir
             irap_versions=irap_versions
             irap_container=irap_container
             tmp_dir=tmpdir
