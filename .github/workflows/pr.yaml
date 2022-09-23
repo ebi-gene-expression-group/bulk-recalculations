@@ -37,9 +37,9 @@ jobs:
             irap_container=irap_container \
             tmp_dir=tmpdir \
             check_sp_file=check_species \
-            oracle_home=oracle_home \                                                                                                                        
-            python_user=python_user \                                                                                                                        
-            python_connect_string=python_connect \                                                                                                    
-            python_password=python_pass \     
-            sm_options=" " \
+            oracle_home=oracle_home \
+            python_user=python_user \
+            python_connect_string=python_connect \
+            python_password=python_pass \
+            sm_options=sm_options \
             bioentities_properties=bioentities'
