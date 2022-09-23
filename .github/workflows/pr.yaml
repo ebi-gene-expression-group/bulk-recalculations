@@ -22,7 +22,7 @@ jobs:
           directory: '.test'
           snakefile: 'Snakefile-sorting-hat'
           args: >
-            '--lint --config gtf_dir=gtf
+            '--lint -c1 --config gtf_dir=gtf
             atlas_prod=path/to/atlasprod
             atlas_exps=path/to/atlasexps
             lsf_config=lsf_config
