@@ -51,7 +51,8 @@ def get_outputs():
         outputs.extend(expand(config['accession']+"-{metric}.tsv.undecorated", metric=metrics))
         outputs.extend(expand(config['accession']+"-transcripts-{metric}.tsv.undecorated", metric=["tpms"] ))
         outputs.extend(expand("logs/"+f"{config['accession']}-copy_transcript_relative_isoforms.done" ))
-        outputs.extend(expand("qc/"+f"{config['accession']}-irap-single-lib-report.tsv" )) 
+        if skip(config['accession'],'rnaseq_qc'):
+            outputs.extend(expand("qc/"+f"{config['accession']}-irap-single-lib-report.tsv" )) 
         outputs.extend(expand(config['accession']+"-{metric}.tsv.undecorated.quantile_normalized", metric=metrics))
         outputs.extend(expand(config['accession']+"-{metric}.tsv.undecorated.aggregated", metric=metrics))
         outputs.extend(expand("logs/"+f"{config['accession']}"+"-rule-transcripts_na_check_{metric}.done", metric=["tpms"] ))
@@ -80,7 +81,8 @@ def get_outputs():
         outputs.extend(expand("logs/"+f"{config['accession']}"+"-add_runs_to_db.done" ))
         outputs.extend(expand("logs/"+f"{config['accession']}"+"-get_irap_versions_file.done" ))
         outputs.append(f"{config['accession']}-raw-counts.tsv.undecorated")
-        outputs.extend(expand("qc/"+f"{config['accession']}-irap-single-lib-report.tsv" )) 
+        if skip(config['accession'],'rnaseq_qc'):
+            outputs.extend(expand("qc/"+f"{config['accession']}-irap-single-lib-report.tsv" )) 
         outputs.append(f"{config['accession']}-analytics.tsv.undecorated")
         outputs.extend(expand("logs/"+f"{config['accession']}"+"-{c_id}-mvaPlot.png.done", c_id=get_contrast_ids() ))
         outputs.append(f"{config['accession']}-analytics.tsv.undecorated.unrounded")
