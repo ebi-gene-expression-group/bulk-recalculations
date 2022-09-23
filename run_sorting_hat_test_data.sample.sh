@@ -108,6 +108,7 @@ snakemake --use-conda --conda-frontend mamba \
         methods_dif=$TEMPLATE_METHODS_DIFFERENTIAL \
         zooma_exclusions=$ZOOMA_EXCLUSIONS \
         isl_genomes=$ISL_GENOMES_REFERENCES \
+        isl_dir=$ISL_DIR \
         irap_versions=$IRAP_VERSIONS \
         irap_container=$IRAP_CONTAINER \
         tmp_dir=$TMP_DIR \
