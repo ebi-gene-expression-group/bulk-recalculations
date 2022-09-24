@@ -19,14 +19,14 @@ jobs:
       - name: Linting
         uses: snakemake/snakemake-github-action@v1
         with:
-          directory: '.test'
+          directory: 'test_data'
           snakefile: 'Snakefile-reprocess'
           args: >
             '--lint -c1 --config
             accession=accession
             goal="reprocess"
             tool=tool
-            metadata_summary=metadata_summary
+            metadata_summary=metadata_summary.yml
             bioentities_properties=bioentities_properties
             skip_steps_file=skip_steps_file
             methods_base=methods_base
