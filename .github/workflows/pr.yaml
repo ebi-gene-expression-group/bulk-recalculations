@@ -22,25 +22,26 @@ jobs:
           directory: 'test_data'
           snakefile: 'Snakefile-reprocess'
           args: >
-            '--lint -c1 --config
+            '--lint --cores 1 --config
             accession=E-MTAB-5600
             goal="reprocess"
             tool=tool
-            metadata_summary=metadata_summary.yml
+            metadata_summary=../test_data/metadata_summary.yml
             bioentities_properties=bioentities_properties
-            skip_steps_file=skip_steps_file.yml
-            methods_base=baseline_atlas_methods_template.conf
-            methods_dif=differential_atlas_methods_template.conf
+            skip_steps_file=../test_data/skip_steps_file.yml
+            methods_base=../test_data/baseline_atlas_methods_template.conf
+            methods_dif=../test_data/differential_atlas_methods_template.conf
             atlas_exps=atlas_exps
             metric="fpkms"
-            zooma_exclusions=zooma_exclusions.yml
+            zooma_exclusions=../test_data/zooma_exclusions.yml
             isl_dir=../test_data
-            isl_genomes=isl_genomes
-            irap_versions=irap_versions.mk
-            irap_container=irap_container.sif
-            tmp_dir=tmp_dir
+            isl_genomes=../test_data
+            irap_versions=../test_data/irap_versions.mk
+            irap_container=../test_data/irap_container.sif
+            tmp_dir=../test_data
             atlas_meta_config=atlas_meta_config
             oracle_home=oracle_home
             python_user=python_user
             python_connect_string=python_connect_string
             python_password=python_password'
+
