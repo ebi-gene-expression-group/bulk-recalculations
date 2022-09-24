@@ -33,7 +33,7 @@ jobs:
             methods_dif=methods_dif
             atlas_exps=atlas_exps
             zooma_exclusions=zooma_exclusions
-            isl_dir=./test_data
+            isl_dir=../test_data
             isl_genomes=isl_genomes
             irap_versions=irap_versions
             irap_container=irap_container
