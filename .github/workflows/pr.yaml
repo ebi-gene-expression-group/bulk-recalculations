@@ -32,6 +32,7 @@ jobs:
             methods_base=baseline_atlas_methods_template.conf
             methods_dif=differential_atlas_methods_template.conf
             atlas_exps=atlas_exps
+            metric="fpkms"
             zooma_exclusions=zooma_exclusions.yml
             isl_dir=../test_data
             isl_genomes=isl_genomes
