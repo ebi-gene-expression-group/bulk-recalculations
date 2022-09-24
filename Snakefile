@@ -263,6 +263,8 @@ def input_percentile_ranks(wildcards):
     if config['goal'] == 'reprocess':
         if experiment_type=='rnaseq_mrna_differential':
             return [ f"logs/{wildcards['accession']}-decorate_differential_rnaseq.done" ]
+        elif experiment_type=='proteomics_differential':
+            return [ f"logs/{wildcards['accession']}-decorate_differential_proteomics.done" ]
         elif experiment_type == 'microarray_1colour_mrna_differential' or experiment_type =='microarray_2colour_mrna_differential' or experiment_type =='microarray_1colour_microrna_differential':
             inputs = []
             arr_designs=get_array_design_from_xml()
@@ -283,6 +285,8 @@ def input_differential_tracks_and_gsea(wildcards):
     if config['goal'] == 'reprocess':
         if experiment_type=='rnaseq_mrna_differential':
             return [ f"logs/{wildcards['accession']}-decorate_differential_rnaseq.done" ]
+        elif experiment_type=='proteomics_differential':
+            return [ f"logs/{wildcards['accession']}-decorate_differential_proteomics.done" ]
         elif experiment_type == 'microarray_1colour_mrna_differential' or experiment_type =='microarray_2colour_mrna_differential' or experiment_type =='microarray_1colour_microrna_differential':
             inputs = []
             arr_designs=get_array_design_from_xml()
@@ -348,9 +352,19 @@ def get_checkpoints_cp_atlas_exps(wildcards):
     else:
         return None
 
+def input_round_log2_fold_changes(wildcards):
+    """
+    Ensure rename files has been run before rounding log2 fold changes, for differential proteomics
+    """
+    inputs_files = [ f"{wildcards['accession']}-analytics.tsv.undecorated" ]
+    if experiment_type == 'proteomics_differential':
+        inputs_files.append( f"logs/{wildcards['accession']}-rename_differential_proteomics_files.done" )
+    return inputs_files
+
 
 localrules: check_differential_gsea, link_baseline_coexpression, link_baseline_heatmap, create_tracks_symlinks, check_mvaPlot_rnaseq, check_normalized_expressions_microarray, delete_intermediate_files_microarray, touch_inputs_baseline
 
+ruleorder: decorate_differential_rnaseq > decorate_differential_proteomics
 
 wildcard_constraints:
     accession="E-\D+-\d+",
@@ -432,7 +446,8 @@ rule differential_gsea:
         organism=get_organism(),
         BIOENTITIES_PROPERTIES_PATH=config['bioentities_properties'],
         contrast_label=get_contrast_label,
-        ext_db_label=get_ext_db_label
+        ext_db_label=get_ext_db_label,
+        exp_type=get_from_config_or_metadata_summary('experiment_type')
     output:
         gsea="{accession}.{contrast_id}.{ext_db}.gsea.tsv",
         gsea_list="{accession}.{contrast_id}.{ext_db}.gsea_list.tsv"
@@ -443,10 +458,16 @@ rule differential_gsea:
         export BIOENTITIES_PROPERTIES_PATH={params.BIOENTITIES_PROPERTIES_PATH}
         source {workflow.basedir}/bin/gsea_functions.sh
         set +e
-        analyticsFile=$(grep -l -P "\\t{wildcards.contrast_id}\." {wildcards.accession}_A-*-analytics.tsv)
-        if [ $? -ne 0 ]; then
-            # rnaseq case
+
+        expType={params.exp_type}
+        if [ "$expType" == "proteomics_differential" ]; then
             analyticsFile={wildcards.accession}-analytics.tsv
+        else
+            analyticsFile=$(grep -l -P "\\t{wildcards.contrast_id}\." {wildcards.accession}_A-*-analytics.tsv)
+            if [ $? -ne 0 ]; then
+                # rnaseq case
+                analyticsFile={wildcards.accession}-analytics.tsv
+            fi
         fi
         set -e
         annotationFile=$(find_properties_file_gsea {params.organism} {wildcards.ext_db})
@@ -1208,9 +1229,10 @@ rule differential_statistics_rnaseq:
     resources: mem_mb=get_mem_mb
     input:
         config_xml="{accession}-configuration.xml",
-        raw_counts_undecorated="{accession}-raw-counts.tsv.undecorated"
+        raw_counts_undecorated=lambda wildcards: f"{wildcards.accession}-raw-counts.tsv.undecorated" if experiment_type != 'proteomics_differential' else 'none_necessary'
     params:
-        tmp_dir=get_tmp_dir()
+        tmp_dir=get_tmp_dir(),
+        exp_type=get_from_config_or_metadata_summary('experiment_type')
     output:
         differential_expression="{accession}-analytics.tsv.undecorated",
         done=temp("logs/{accession}.differential_statistics_rnaseq.done"),
@@ -1219,18 +1241,29 @@ rule differential_statistics_rnaseq:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
+
         PATH=$PATH:{workflow.basedir}/atlas-analysis/differential
         
-        source {workflow.basedir}/bin/reprocessing_routines.sh
-        mktemp_dir {params.tmp_dir}
-
-        rm -rf *.png {wildcards.accession}-analytics.tsv.undecorated
-
-        perl {workflow.basedir}/atlas-analysis/differential/diffAtlas_DE.pl --experiment {wildcards.accession} --directory ./
+        expType={params.exp_type}
+        if [ "$expType" == "proteomics_differential" ]; then
+            # change only modification time of -analytics.tsv.undecorated; touch other temp outputs
+            touch -m {output.differential_expression}
+            touch {output.done}
+            touch {output.deseq2version}
+        else
+            PATH=$PATH:{workflow.basedir}/atlas-analysis/differential
         
-        Rscript -e "library('DESeq2'); write.table(packageVersion('DESeq2'), file='{output.deseq2version}', quote=FALSE, col.names=FALSE, row.names = FALSE)" 
+            source {workflow.basedir}/bin/reprocessing_routines.sh
+            mktemp_dir {params.tmp_dir}
 
-        touch {output.done}
+            rm -rf *.png {wildcards.accession}-analytics.tsv.undecorated
+
+            perl {workflow.basedir}/atlas-analysis/differential/diffAtlas_DE.pl --experiment {wildcards.accession} --directory ./
+        
+            Rscript -e "library('DESeq2'); write.table(packageVersion('DESeq2'), file='{output.deseq2version}', quote=FALSE, col.names=FALSE, row.names = FALSE)" 
+
+            touch {output.done}
+        fi
         """
 
 rule check_mvaPlot_rnaseq:
@@ -1265,9 +1298,10 @@ rule round_log2_fold_changes_rnaseq:
     log: "logs/{accession}.round_log2_fold_changes_rnaseq.log"
     resources: mem_mb=get_mem_mb
     input:
-        "{accession}-analytics.tsv.undecorated"
+        input_round_log2_fold_changes
     output:
-        unrounded="{accession}-analytics.tsv.undecorated.unrounded" 
+        unrounded="{accession}-analytics.tsv.undecorated.unrounded",
+        done=temp("logs/{accession}-round_log2_fold_changes_rnaseq.done")
     params:
         exp_type=get_from_config_or_metadata_summary('experiment_type'),
         intermediate_rounded="{accession}-analytics.tsv.undecorated.rounded"
@@ -1280,11 +1314,13 @@ rule round_log2_fold_changes_rnaseq:
 
         {workflow.basedir}/atlas-analysis/differential/round_log2_fold_changes.R \
             --experiment_type {params.exp_type} \
-            --input_to_round {input} \
+            --input_to_round {input[0]} \
             --intermediate_output {params.intermediate_rounded}  
 
-        mv {input} {output.unrounded}
-        mv {params.intermediate_rounded} {input}
+        mv {input[0]} {output.unrounded}
+        mv {params.intermediate_rounded} {input[0]}
+
+        touch {output.done}
         """
 
 rule generate_methods_differential_rnaseq:
@@ -1877,20 +1913,20 @@ rule delete_intermediate_files_microarray:
 rule copy_experiment_from_analysis_to_atlas_exps:
     """
     Copy data to atlas_exps. Its execution timing depends on experiment_type.
-    NOTE: Use target_dir = config[atlas_exps] for production
+    NOTE: Use target_dir = config['atlas_exps'] for production
     """
     conda: "envs/perl-atlas-modules.yaml"
     log: "logs/{accession}-copy_experiment_from_analysis_to_atlas_exps.log"
     input: get_checkpoints_cp_atlas_exps
     params:
-        target_dir=get_tmp_dir()
+        target_dir=config['atlas_exps'] #get_tmp_dir()
     output:
         temp("logs/{accession}-copy_experiment_from_analysis_to_atlas_exps.done")
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
-        export ATLAS_EXPS={params.target_dir}"/tmp" # {params.target_dir} for production
+        export ATLAS_EXPS={params.target_dir} #"/tmp" # {params.target_dir} for production
         export PEACH_API_URI='http://peach.ebi.ac.uk:8480/api'
         source {workflow.basedir}/bin/reprocessing_routines.sh
         source {workflow.basedir}/atlas-bash-util/generic_routines.sh
@@ -1908,13 +1944,13 @@ rule copy_experiment_from_analysis_to_atlas_exps:
 rule get_magetab_for_experiment:
     """
     Generate condensed SDRF with Zooma mappings for the experiment - in atlas_exps.
-    NOTE: Use target_dir = config[atlas_exps] for production
+    NOTE: Use target_dir = config['atlas_exps'] for production
     """
     conda: "envs/perl-atlas-modules.yaml"
     log: "logs/{accession}-get_magetab_for_experiment.log"
     input: rules.copy_experiment_from_analysis_to_atlas_exps.output
     params:
-        target_dir=get_tmp_dir(),
+        target_dir=config['atlas_exps'], #get_tmp_dir(),
         exp_type=get_from_config_or_metadata_summary('experiment_type'),
         zooma_exclusions=get_zooma_exclusions()
     output:
@@ -1923,7 +1959,7 @@ rule get_magetab_for_experiment:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
-        export ATLAS_EXPS={params.target_dir}"/tmp"  # edit {params.target_dir} for production
+        export ATLAS_EXPS={params.target_dir} #"/tmp"  # edit {params.target_dir} for production
         source {workflow.basedir}/bin/reprocessing_routines.sh
         source {workflow.basedir}/atlas-bash-util/generic_routines.sh
 

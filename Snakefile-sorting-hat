@@ -2,7 +2,6 @@ import yaml
 import glob
 from snakemake.utils import min_version
 
-# atom: set grammar=python:
 
 # set minimum snakemake version
 min_version("6.6.1")
@@ -122,9 +121,15 @@ def get_outputs():
                 valid_acc_dir = next(os.walk( config['atlas_exps'] ))[1]
                 # intersection of the two lists
                 pass_ACC = list(set(ACC) & set(valid_acc_dir))
-                return expand("{accession}/{accession}.recalculations.done", accession=pass_ACC)
+                # filter E-PROT-* as no recalculations are needed for these. 
+                # In any case, Snakemake-recalculations will exit with error for proteomics experiments
+                nonprot_ACC = list(filter(lambda k: not 'E-PROT' in k, pass_ACC))
+                return expand("{accession}/{accession}.recalculations.done", accession=nonprot_ACC)
             else:
-                return expand("{accession}/{accession}.recalculations.done", accession=ACC)
+                # filter E-PROT-* as no recalculations are needed for these. 
+                # In any case, Snakemake-recalculations will exit with error for proteomics experiments
+                nonprot_ACC = list(filter(lambda k: not 'E-PROT' in k, ACC))
+                return expand("{accession}/{accession}.recalculations.done", accession=nonprot_ACC)
         elif config['goal'] == 'reprocess':
             return expand("{accession}/{accession}.reprocess.done", accession=ACC)
         else:
@@ -153,7 +158,8 @@ rule get_experiment_metadata:
         atlas_meta_config = config['atlas_meta_config'],
         atlas_prod = config['atlas_prod'],
         atlas_exps = config['atlas_exps'],
-        check_species_file=config['check_sp_file']
+        check_species_file=config['check_sp_file'],
+        prot_magetab_files=config['prot_magetabfiles']
     input:
         config_file = "{accession}/{accession}-configuration.xml",
         gtf_dir = config['gtf_dir']
@@ -171,7 +177,18 @@ rule get_experiment_metadata:
         export ATLAS_EXPS={params.atlas_exps}
         source {workflow.basedir}/atlas-bash-util/generic_routines.sh
 
-        perl {workflow.basedir}/bin/get_exptype_contrasts_assays.pl {wildcards.accession} {input.config_file} {output.metadata}
+
+        # proteomics baseline experiments do not need to include exp type assays/contrasts in the summary yaml
+        prot_exp_type='experimentType="proteomics_baseline'
+        if grep -q "$prot_exp_type" {input.config_file} ; then
+            rm -f {output.metadata}
+            echo "---" >> {output.metadata}
+            echo "experiment_type: "$(grep "$prot_exp_type" {input.config_file}  | cut -d'"' -f 2) >> {output.metadata}
+        else
+            perl {workflow.basedir}/bin/get_exptype_contrasts_assays.pl {wildcards.accession} {input.config_file} {output.metadata}
+        fi
+        # we may avoid this adding proteomics_baseline_dia to AtlasSiteConfig.yml (perl-atlas-modules)
+
         if [ -e "{params.atlas_exps}/{wildcards.accession}/{wildcards.accession}.condensed-sdrf.tsv" ]; then
             echo "Trying with condensed in atlas_exps..."
             organism=$(get_organism_from_condensed_sdrf "{params.atlas_exps}/{wildcards.accession}/{wildcards.accession}.condensed-sdrf.tsv")
@@ -191,7 +208,7 @@ rule get_experiment_metadata:
             echo "$line"
             DIR=$line
         done < <(perl {workflow.basedir}/bin/bulk_recalculations_check_species_names.pl $(echo $organism) {params.check_species_file}  )
-	organism_check=$(echo $DIR)
+        organism_check=$(echo $DIR)
 
         ##echo $organism "check-> "$organism_check >> organisms.txt
         organism=$organism_check
@@ -200,11 +217,20 @@ rule get_experiment_metadata:
         if [ -z "$gff_file" ]; then
             gff_file=$( find {input.gtf_dir}/$organism -iname "$organism_*.gff3" | head -n1)
         fi
-	echo "GTF file location sourced"
-        magetabfiles=$( perl {workflow.basedir}/bin/get_experiment_info.pl --experiment {wildcards.accession} --xmlfile {wildcards.accession}/{wildcards.accession}-configuration.xml --magetabfiles --not-strict)
-	echo "MAGETAB location sourced"
-        idf=$( echo $magetabfiles | awk -F',' '{{ print $1 }}' )
-        sdrf=$( echo $magetabfiles | awk -F',' '{{ print $2 }}' )
+	    echo "GTF file location sourced"
+
+        prot_exp_type_all='experimentType="proteomics_'
+        # this applies to all proteomics experiments
+        if grep -q "$prot_exp_type_all" {input.config_file} ; then
+            idf={params.prot_magetab_files}/{wildcards.accession}/{wildcards.accession}.idf.txt
+            sdrf={params.prot_magetab_files}/{wildcards.accession}/{wildcards.accession}.sdrf.txt
+        else
+            magetabfiles=$( perl {workflow.basedir}/bin/get_experiment_info.pl --experiment {wildcards.accession} --xmlfile {wildcards.accession}/{wildcards.accession}-configuration.xml --magetabfiles --not-strict)
+            echo "MAGETAB location sourced"
+            idf=$( echo $magetabfiles | awk -F',' '{{ print $1 }}' )
+            sdrf=$( echo $magetabfiles | awk -F',' '{{ print $2 }}' )
+        fi
+
         if [ -z "$gff_file" ] || [ -z "$idf" ] || [ -z "$sdrf" ]; then
             echo "GFF: $gff_file"
             echo "IDF: $idf"
@@ -235,6 +261,7 @@ rule produce_reprocess_call:
         irap_versions=config['irap_versions'],
         irap_container=config['irap_container'],
         tmp_dir=config['tmp_dir'],
+        atlas_exps = config['atlas_exps'],
         lsf_config = get_lsf_config_file(),
         log_handler_script=get_log_handler_script(),
         goal=config['goal'],
@@ -266,6 +293,7 @@ rule produce_reprocess_call:
                 skip_steps_file={params.skip_steps_file} \
                 methods_base={params.methods_base} \
                 methods_dif={params.methods_dif} \
+                atlas_exps={params.atlas_exps} \
                 zooma_exclusions={params.zooma_exclusions} \
                 isl_dir={params.isl_dir} \
                 isl_genomes={params.isl_genomes} \

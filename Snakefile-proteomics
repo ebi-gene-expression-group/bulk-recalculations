@@ -1,5 +1,288 @@
+import os.path
 
 # set of rules for baseline proteomics and differential proteomics
 
-# atom: set grammar=python:
+## This workflow looks for curated config files and protein expression matrices
+## provided by PRIDE and performs intermediate steps of renaming files, aggregation of
+## technical replicates, estimate median values, decoration, generation of condensed sdrf,
+## deploying to staging and loading on wwwdev using webAPI. 
 
+# baseline proteomics rules
+
+#wildcard_constraints:
+#    accession="E-\D+-\d+"
+#
+#is_old_proteomics_dataset = os.path.exists( f"{wildcards['accession']}.old_proteomics_dataset" )
+is_old_proteomics_dataset = os.path.exists( f"{config['accession']}.old_proteomics_dataset" )
+
+localrules: check_pride_tsv_files, final_check_tsv_data_file_not_empty_of_data
+
+rule check_pride_tsv_files:
+    """
+    First lets check if the .tsv.undecorated and .tsv.undecorated.aggregated are not empty of data
+    These tsv files will normally contain a first column with the gene identifier
+    and then the data either in the 2nd (undecorated flavours) or 3rd column
+    (for the decorated flavours, where the 2nd column here is for the gene symbol)
+    """
+    log: "logs/{accession}-check_pride_tsv_files.log"
+    input:
+        "{accession}.tsv.undecorated",
+        "{accession}.tsv.undecorated.aggregated",
+        "{accession}.tsv"
+    output:
+        temp("logs/{accession}-check_pride_tsv_files.done")
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+
+        source {workflow.basedir}/bin/proteomics_functions.sh
+
+        # currently this does not exit if the files do not exist
+        check_tsv_data_file_not_empty_of_data {wildcards.accession}.tsv.undecorated 2
+        check_tsv_data_file_not_empty_of_data {wildcards.accession}.tsv.undecorated.aggregated 2
+        check_tsv_data_file_not_empty_of_data {wildcards.accession}.tsv 3
+
+        touch {output}
+        """
+
+rule processing_steps_newer_datasets:
+    """
+    Rename analysis methods, format matrix in tsv format, 
+    aggregate technical replicates, append columns with .WithInSampleAbundance
+    and pick median value of quartiles - for newer datasets
+    """
+    conda: "envs/proteomics_processing.yaml"
+    log: "logs/{accession}-processing_steps_newer_datasets.log"
+    input:
+        rules.check_pride_tsv_files.output
+    params:
+        is_old=is_old_proteomics_dataset
+    output:
+        temp("logs/{accession}-processing_steps_newer_datasets")
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+
+        echo "Is old dataset: {params.is_old}"  
+
+        # skip some steps for older proteomics datasets that break otherwise
+
+        if [ {params.is_old} == "False" ]; then
+            echo "Skipping: "
+            echo "- rename_files"
+            echo "- removeGeneNamesInDataMatrix.R"
+            echo "- gxa_summarize_expression.pl"
+            echo "- appendColnamesInDataMatrix.R"
+            echo "...as the study is an old proteomics dataset and this sets would break that."
+
+        else
+            source {workflow.basedir}/bin/proteomics_functions.sh
+            # rename analysis methods
+            echo "renaming {wildcards.accession}"
+            rename_files_baseline {wildcards.accession}
+
+            # remove quotes and gename and make matrix in tsv format.
+            # remove genename column as we will decorate using recent Ensembl annotations.
+
+            if [ -f "{wildcards.accession}.tsv.undecorated.backup" ]; then
+                echo "Remove genes names and make the matrix to tsv for {wildcards.accession}"
+                {workflow.basedir}/proteomics-import/bin/removeGeneNamesInDataMatrix.R {wildcards.accession}.tsv.undecorated.backup
+                # writes or rewrites {wildcards.accession}.tsv.undecorated
+            fi
+
+            if [ ! -s {wildcards.accession}.tsv.undecorated ] ; then
+                echo "Missing file {wildcards.accession}.tsv.undecorated "
+                exit 1
+            fi
+
+            if [ ! -s {wildcards.accession}-configuration.xml ] ; then
+                echo "Missing file {wildcards.accession}-configuration.xml "
+                exit 1
+            fi
+
+            # aggregate technical replicates
+            echo "summarise expression for {wildcards.accession}"
+            perl {workflow.basedir}/bin \
+                --aggregate-quartiles \
+                --configuration {wildcards.accession}-configuration.xml \
+                < {wildcards.accession}.tsv.undecorated \
+                > {wildcards.accession}.tsv.undecorated.aggregated
+
+            # append columns with .WithInSampleAbundance and pick median value of quartiles
+            echo "median values pick up and appending columns with sample abundance.."
+            {workflow.basedir}/proteomics-import/bin/appendColnamesInDataMatrix.R {wildcards.accession}.tsv.undecorated.aggregated
+
+        fi
+
+        touch {output}
+        """
+
+rule decorate_baseline_proteomics_experiment:
+    """
+    This step performs decoration by mapping Ensembl ids with gene names with latest
+    annotations from Ensembl
+    """
+    container: "docker://quay.io/ebigxa/ensembl-update-env:amm1.1.2"
+    log: "logs/{accession}-decorate_baseline_proteomics_experiment.log"
+    resources: mem_mb=get_mem_mb   
+    input:
+        preprocess_done=rules.processing_steps_newer_datasets.output,
+        proteinExpressionsFile="{accession}.tsv.undecorated.aggregated"
+    params:
+        organism=get_organism()
+    output:
+        decoexpression="{accession}.tsv",
+        done=temp("logs/{accession}-decorate_baseline_proteomics_experiment")
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+        source {workflow.basedir}/bin/reprocessing_routines.sh
+        source {workflow.basedir}/atlas-bash-util/generic_routines.sh
+
+        # This script decorates a baseline proteomics experiment with gene name from the latest Ensembl release
+
+        echo "Decorating .undecorated data files for experiment: {wildcards.accession}"
+
+        #organism=$({workflow.basedir}/bin/get_organism.sh {wildcards.accession} {workflow.basedir}/bin  || (  >&2 echo "Error: failed to retrieve organism!" ; exit 1 ) )
+        geneNameFile=$( get_geneNameFile_given_organism {params.organism}  )
+        echo $geneNameFile
+
+        test -s "$geneNameFile" || (  >&2 echo "$0 gene name file not found: $geneNameFile" ; exit 1 )
+
+        decoratedFile={output.decoexpression} 
+
+        # pass avail custom memory to JVM for Ammonite REPL
+        export JAVA_OPTS="-Xmx{resources.mem_mb}M"
+        amm -s {workflow.basedir}/bin/decorateFile.sc \
+            --geneNameFile "$geneNameFile" \
+            --source {input.proteinExpressionsFile} \
+            | awk 'NR == 1; NR > 1 {{print $0 | "sort -n"}}' \
+            > $decoratedFile.swp
+
+        decoratedFileLength=$(wc -l "$decoratedFile.swp" | cut -f 1 -d ' ' )
+        if [ -s "$decoratedFile.swp" ] && [ "$decoratedFileLength" -gt 1 ]; then
+            mv $decoratedFile.swp $decoratedFile
+        else
+            echo "ERROR: decorate baseline proteomics for accession {wildcards.accession}"
+            exit 1
+        fi
+        touch {output.done}
+        """
+
+rule final_check_tsv_data_file_not_empty_of_data:
+    """
+    Check that the dataset was not harmed in the process
+    """
+    log: "logs/{accession}-final_check_tsv_data_file_not_empty_of_data.log" 
+    input:
+        rules.decorate_baseline_proteomics_experiment.output.done,
+        "{accession}.tsv.undecorated",
+        "{accession}.tsv.undecorated.aggregated",
+        "{accession}.tsv"
+    output:
+        temp("logs/{accession}-final_check_tsv_data_file_not_empty_of_data")
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+
+        source {workflow.basedir}/bin/proteomics_functions.sh
+
+        check_tsv_data_file_not_empty_of_data {wildcards.accession}.tsv.undecorated 2
+        check_tsv_data_file_not_empty_of_data {wildcards.accession}.tsv.undecorated.aggregated 2
+        check_tsv_data_file_not_empty_of_data {wildcards.accession}.tsv 3
+
+        touch {output}
+        """
+
+# rules copy_experiment_from_analysis_to_atlas_exps and get_magetab_for_experiment
+# are common for all experiments types and
+# will run after the final_check_tsv_data_file_not_empty_of_data rule
+# See Snakefile for details
+
+
+# differential proteomics rules
+
+rule rename_differential_proteomics_files:
+    conda: "envs/proteomics_processing.yaml"
+    log: "logs/{accession}-rename_differential_proteomics_files.log"
+    output:
+        temp("logs/{accession}-rename_differential_proteomics_files.done")
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+
+        source {workflow.basedir}/bin/proteomics_functions.sh
+        echo "renaming files for differential proteomics {wildcards.accession}"
+        rename_files_differential {wildcards.accession}
+        touch {output}
+        """
+
+# rule round_log2_fold_changes_rnaseq (Snakefile use as well for diff proteomics)
+
+rule decorate_differential_proteomics:
+    """
+    Decorate differential proteomics experiment with gene name from the latest Ensembl release
+    """
+    container: "docker://quay.io/ebigxa/ensembl-update-env:amm1.1.2"
+    log: "logs/{accession}-decorate_differential_proteomics.log"
+    resources: mem_mb=get_mem_mb
+    input:
+        "{accession}-analytics.tsv.undecorated",
+        "{accession}-analytics.tsv.undecorated.unrounded",
+        rules.round_log2_fold_changes_rnaseq.output.done
+    params:
+        organism=get_organism()
+    output:
+        "{accession}-analytics.tsv",
+        "{accession}-analytics.tsv.unrounded",
+        temp("logs/{accession}-decorate_differential_proteomics.done")
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+        source {workflow.basedir}/bin/reprocessing_routines.sh
+        source {workflow.basedir}/atlas-bash-util/generic_routines.sh
+
+        geneNameFile=$( get_geneNameFile_given_organism {params.organism}  )
+
+        echo $geneNameFile
+
+        test -s "$geneNameFile" || (  >&2 echo "$0 gene name file not found: $geneNameFile" ; exit 1 )
+
+        for i in {input[0]} {input[1]}
+        do  
+            echo "${{i}}"
+            decoratedFile=`echo "${{i}}" | sed 's/\.undecorated//'`
+            echo "$decoratedFile"
+
+            # pass avail custom memory to JVM for Ammonite REPL
+            export JAVA_OPTS="-Xmx{resources.mem_mb}M"
+            amm -s {workflow.basedir}/bin/decorateFile.sc \
+                --geneNameFile "$geneNameFile" \
+                --source "${{i}}" \
+                | awk 'NR == 1; NR > 1 {{print $0 | "sort -n"}}' \
+                > $decoratedFile.swp
+
+            decoratedFileLength=$(wc -l "$decoratedFile.swp" | cut -f 1 -d ' ' )
+            if [ -s "$decoratedFile.swp" ] && [ "$decoratedFileLength" -gt 1 ]; then
+                mv $decoratedFile.swp $decoratedFile
+            else                                                                                                                                                                                                                    
+                echo "ERROR: decorate_differential_proteomics for {wildcards.accession} and undecorated input ${{i}} "
+                exit 1                                                                                                                                                                                                              
+            fi
+        done
+        touch {output[2]}                                                                                                                                                                                                       
+        """                                                                                                                                                                                                                                   
+
+# rule percentile_ranks (Snakefile use as well for diff proteomics)
+
+ # Perform GSEA against Go/Interpro/Reactome
+ # rule differential_gsea (Snakefile use as well for diff proteomics)
+
+ # Generate Genome browser tracks (bedGraph) for the experiment
+ # rule differential_tracks (Snakefile use as well for diff proteomics)
