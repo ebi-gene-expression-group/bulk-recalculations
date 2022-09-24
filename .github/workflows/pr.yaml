@@ -28,7 +28,7 @@ jobs:
             tool=tool
             metadata_summary=metadata_summary.yml
             bioentities_properties=bioentities_properties
-            skip_steps_file=skip_steps_file
+            skip_steps_file=skip_steps_file.yml
             methods_base=methods_base
             methods_dif=methods_dif
             atlas_exps=atlas_exps
