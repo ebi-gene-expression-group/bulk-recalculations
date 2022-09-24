@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Linting
+      - name: Linting Snakefile-reprocess
         uses: snakemake/snakemake-github-action@v1
         with:
           directory: 'test_data'
@@ -29,14 +29,14 @@ jobs:
             metadata_summary=metadata_summary.yml
             bioentities_properties=bioentities_properties
             skip_steps_file=skip_steps_file.yml
-            methods_base=methods_base
-            methods_dif=methods_dif
+            methods_base=baseline_atlas_methods_template.conf
+            methods_dif=differential_atlas_methods_template.conf
             atlas_exps=atlas_exps
-            zooma_exclusions=zooma_exclusions
+            zooma_exclusions=zooma_exclusions.yml
             isl_dir=../test_data
             isl_genomes=isl_genomes
-            irap_versions=irap_versions
-            irap_container=irap_container
+            irap_versions=irap_versions.mk
+            irap_container=irap_container.sif
             tmp_dir=tmp_dir
             atlas_meta_config=atlas_meta_config
             oracle_home=oracle_home
