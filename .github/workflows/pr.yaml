@@ -35,3 +35,4 @@ jobs:
             atlas_meta_config=atlas_meta_config oracle_home=oracle_home
             python_user=python_user python_connect_string=python_connect_string
             python_password=python_password
+
