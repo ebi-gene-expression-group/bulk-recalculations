@@ -1,6 +1,12 @@
-organism: homo_sapiens
-gff: gff_file
-sdrf: sdrf_file
-experiment_type: rnaseq_mrna_baseline
-contrasts: contrasts
-assays: assays
+---
+assays:
+  g1: expression
+  g2: wildtype
+contrasts:
+  g2_g1: "'expression' vs 'wildtype'"
+experiment_type: rnaseq_mrna_differential
+organism: mus_musculus
+idf: path_idf_file
+sdrf: path_sdrf_file
+gff: path_gff_file
+

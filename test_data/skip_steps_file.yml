@@ -1,1 +1,18 @@
+skips:
+  percentile_ranks:
+    - NA
+  differential-tracks:
+    - NA
+  baseline-tracks:
+    - NA
+  differential-gsea:
+    - NA
+  atlas_experiment_summary:
+    - NA
+  baseline-heatmap:
+    - NA
+  baseline-coexpression:
+    - NA
+  rnaseq_qc:
+    - NA
 

@@ -23,7 +23,7 @@ jobs:
           snakefile: 'Snakefile-reprocess'
           args: >
             '--lint -c1 --config
-            accession=E-MTAB-1234
+            accession=E-MTAB-5600
             goal="reprocess"
             tool=tool
             metadata_summary=metadata_summary.yml
