@@ -2,3 +2,5 @@ organism: homo_sapiens
 gff: gff_file
 sdrf: sdrf_file
 experiment_type: rnaseq_mrna_baseline
+contrasts: contrasts
+assays: assays
