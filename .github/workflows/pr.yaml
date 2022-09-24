@@ -23,7 +23,7 @@ jobs:
           snakefile: 'Snakefile-reprocess'
           args: >
             '--lint -c1 --config
-            accession=accession
+            accession=E-MTAB-1234
             goal="reprocess"
             tool=tool
             metadata_summary=metadata_summary.yml
@@ -33,7 +33,7 @@ jobs:
             methods_dif=methods_dif
             atlas_exps=atlas_exps
             zooma_exclusions=zooma_exclusions
-            isl_dir=isl_dir
+            isl_dir=./test_data
             isl_genomes=isl_genomes
             irap_versions=irap_versions
             irap_container=irap_container
