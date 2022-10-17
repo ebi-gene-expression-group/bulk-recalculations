@@ -36,3 +36,17 @@ jobs:
             python_user=python_user python_connect_string=python_connect_string
             python_password=python_password
 
+      - uses: actions/checkout@v2
+      - name: Linting Snakefile-recalculations
+        uses: snakemake/snakemake-github-action@v1
+        with:
+          directory: test_data
+          snakefile: Snakefile-recalculations
+          args: >-
+            --lint --cores 1 --config accession=E-MTAB-5600 goal="recalculations"
+            tool=tool metadata_summary=../test_data/metadata_summary.yml
+            bioentities_properties=bioentities_properties
+            skip_steps_file=../test_data/skip_steps_file.yml
+            oracle_home=oracle_home
+            python_user=python_user python_connect_string=python_connect_string
+            python_password=python_password
