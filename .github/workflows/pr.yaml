@@ -1,6 +1,7 @@
 name: Snakemake linting
-'on':
-  - pull_request
+on: workflow_dispatch # manual triggers only
+#'on':
+#  - pull_request
 jobs:
   setup:
     name: '${{ matrix.os }})'
