@@ -253,7 +253,13 @@ def get_mem_mb(wildcards, attempt):
     Max number attemps = 8
     """
     mem_avail = [ 2, 2, 4, 8, 16, 64, 128, 256 ]  
-    return mem_avail[attempt-1] * 1000
+    if attempt > len(mem_avail):
+        print(f"Attemps {attempt} exceeds the maximum number of attemps: {len(mem_avail)}")
+        print(f"modify value of --restart-times or adjust mem_avail resources accordingly")
+        sys.exit(1)
+    else:
+        return mem_avail[attempt-1] * 1000
+
 
 def input_percentile_ranks(wildcards):
     """

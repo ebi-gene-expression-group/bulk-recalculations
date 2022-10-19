@@ -59,21 +59,25 @@ def get_outputs():
         outputs.extend(expand("logs/"+f"{config['accession']}"+"-quantile_normalise_transcripts_{metric}.done", metric=["tpms"] )) 
         outputs.extend(expand("logs/"+f"{config['accession']}"+"-summarize_transcripts_{metric}.done", metric=["tpms"] ))
         outputs.append(f"{config['accession']}-analysis-methods.tsv_baseline_rnaseq")
-        outputs.append(f"{config['accession']}-atlasExperimentSummary.Rdata")
+        if skip(config['accession'],'atlas_experiment_summary'):
+            outputs.append(f"{config['accession']}-atlasExperimentSummary.Rdata")
         outputs.extend(expand(config['accession']+"-{metric}.tsv", metric=metrics))
         outputs.extend(expand("logs/"+f"{config['accession']}"+"-transcripts-{metric}.tsv.done", metric=["tpms"] ))
-        outputs.extend(expand(f"{config['accession']}"+"-heatmap-{metric}.pdf", metric=metrics ))
-        outputs.append(f"{config['accession']}-heatmap.pdf")
+        if skip(config['accession'],'baseline-heatmap'):
+            outputs.extend(expand(f"{config['accession']}"+"-heatmap-{metric}.pdf", metric=metrics ))
+            outputs.append(f"{config['accession']}-heatmap.pdf")
         # baseline tracks
-        check_config_required(fields=['metadata_summary'], method='baseline-tracks')
-        outputs.extend(expand(config['accession']+".{a_id}.genes.expressions_{metric}.bedGraph",
+        if skip(config['accession'],'baseline-tracks'):
+            check_config_required(fields=['metadata_summary'], method='baseline-tracks')
+            outputs.extend(expand(config['accession']+".{a_id}.genes.expressions_{metric}.bedGraph",
                             a_id=get_assay_ids(),
                             metric=metrics))
-        outputs.extend(expand(  f"{config['accession']}"+".{a_id}.genes.expressions.bedGraph", a_id=get_assay_ids() ) ) #symlink only for tpms
+            outputs.extend(expand(  f"{config['accession']}"+".{a_id}.genes.expressions.bedGraph", a_id=get_assay_ids() ) ) #symlink only for tpms
 
         # generating coexpressions matrix for baseline experiment
-        outputs.extend(expand(f"{config['accession']}"+"-{metric}-coexpressions.tsv.gz", metric=metrics ))
-        outputs.append(f"{config['accession']}-coexpressions.tsv.gz")
+        if skip(config['accession'],'baseline-coexpression'):
+            outputs.extend(expand(f"{config['accession']}"+"-{metric}-coexpressions.tsv.gz", metric=metrics ))
+            outputs.append(f"{config['accession']}-coexpressions.tsv.gz")
 
 
     # collect output for differential rna-seq
@@ -87,24 +91,28 @@ def get_outputs():
         outputs.extend(expand("logs/"+f"{config['accession']}"+"-{c_id}-mvaPlot.png.done", c_id=get_contrast_ids() ))
         outputs.append(f"{config['accession']}-analytics.tsv.undecorated.unrounded")
         outputs.append(f"{config['accession']}-analysis-methods.tsv_differential_rnaseq")
-        outputs.append(f"{config['accession']}-atlasExperimentSummary.Rdata")
+        if skip(config['accession'],'atlas_experiment_summary'):
+            outputs.append(f"{config['accession']}-atlasExperimentSummary.Rdata")
         outputs.append(f"{config['accession']}-analytics.tsv")
         outputs.append(f"{config['accession']}-analytics.tsv.unrounded")
         outputs.extend(expand("logs/"+f"{config['accession']}"+".differential_statistics_rnaseq.done" ))
         outputs.append(f"{config['accession']}-raw-counts.tsv")
-        outputs.append(f"{config['accession']}-percentile-ranks.tsv")
+        if skip(config['accession'],'percentile_ranks'):
+            outputs.append(f"{config['accession']}-percentile-ranks.tsv")
         # differential gsea
-        check_config_required(fields=['bioentities_properties'], method='differential-gsea')
-        outputs.extend( expand( config['accession']+".{c_id}.{ext_db}.{type}",
+        if skip(config['accession'],'differential-gsea'):
+            check_config_required(fields=['bioentities_properties'], method='differential-gsea')
+            outputs.extend( expand( config['accession']+".{c_id}.{ext_db}.{type}",
                         c_id=get_contrast_ids(),
                         ext_db=get_ext_db(),
                         type=["gsea.tsv", "gsea_list.tsv"]))
-        outputs.extend( expand("logs/"+config['accession']+".{c_id}.{ext_db}.{type}",
+            outputs.extend( expand("logs/"+config['accession']+".{c_id}.{ext_db}.{type}",
                         c_id=get_contrast_ids(),
                         ext_db=get_ext_db(),
                         type=["check_differential_gsea.done", "check_differential_gsea_list.done"]))
         # generate Genome browser tracks (bedGraph) for the experiment
-        outputs.extend(expand(config['accession']+".{id}.{type}", id=get_contrast_ids(), type=["genes.pval.bedGraph", "genes.log2foldchange.bedGraph"]))
+        if skip(config['accession'],'differential-tracks'):
+            outputs.extend(expand(config['accession']+".{id}.{type}", id=get_contrast_ids(), type=["genes.pval.bedGraph", "genes.log2foldchange.bedGraph"]))
         outputs.extend(expand("logs/"+f"{config['accession']}"+"-decorate_differential_rnaseq.done" ))
 
     # collect output for differential microarrays
@@ -120,23 +128,27 @@ def get_outputs():
         outputs.extend(expand("logs/"+f"{config['accession']}"+"-check_nas_microarray.done" ))
         outputs.extend(expand(config['accession']+"_{ad}-analytics.tsv.undecorated.unrounded", ad=get_array_design_from_xml()  ))
         outputs.extend(expand("logs/"+f"{config['accession']}"+"_{ad}-round_log2_fold_changes_microarray.done" ,ad=get_array_design_from_xml()    ))
-        outputs.append(f"{config['accession']}-atlasExperimentSummary.Rdata")
+        if skip(config['accession'],'atlas_experiment_summary'):
+            outputs.append(f"{config['accession']}-atlasExperimentSummary.Rdata")
         # decorate
         outputs.extend(expand(config['accession']+"_{ad}-analytics.tsv", ad=get_array_design_from_xml()  ))
         outputs.extend(expand("logs/"+f"{config['accession']}"+"_{ad}-decorate_differential_microarray.done" ,ad=get_array_design_from_xml()   ))
-        outputs.append(f"{config['accession']}-percentile-ranks.tsv")
+        if skip(config['accession'],'percentile_ranks'):
+            outputs.append(f"{config['accession']}-percentile-ranks.tsv")
         # differential gsea
-        check_config_required(fields=['bioentities_properties'], method='differential-gsea')
-        outputs.extend( expand( config['accession']+".{c_id}.{ext_db}.{type}",
+        if skip(config['accession'],'differential-gsea'):
+            check_config_required(fields=['bioentities_properties'], method='differential-gsea')
+            outputs.extend( expand( config['accession']+".{c_id}.{ext_db}.{type}",
                         c_id=get_contrast_ids(),
                         ext_db=get_ext_db(),
                         type=["gsea.tsv", "gsea_list.tsv"]))
-        outputs.extend( expand("logs/"+config['accession']+".{c_id}.{ext_db}.{type}",
+            outputs.extend( expand("logs/"+config['accession']+".{c_id}.{ext_db}.{type}",
                         c_id=get_contrast_ids(),
                         ext_db=get_ext_db(),
                         type=["check_differential_gsea.done", "check_differential_gsea_list.done"]))
         # generate Genome browser tracks (bedGraph) for the experiment
-        outputs.extend(expand(config['accession']+".{id}.{type}", id=get_contrast_ids(), type=["genes.pval.bedGraph", "genes.log2foldchange.bedGraph"]))
+        if skip(config['accession'],'differential-tracks'):
+            outputs.extend(expand(config['accession']+".{id}.{type}", id=get_contrast_ids(), type=["genes.pval.bedGraph", "genes.log2foldchange.bedGraph"]))
         # delete intermediate files
         outputs.extend(expand("logs/"+f"{config['accession']}"+"-delete_intermediate_files_microarray.done" ))
 
@@ -147,14 +159,16 @@ def get_outputs():
 
     # collect output for differential proteomics
     if experiment_type == 'proteomics_differential':
-        outputs.append(f"{config['accession']}-percentile-ranks.tsv")
+        if skip(config['accession'],'percentile_ranks'):
+            outputs.append(f"{config['accession']}-percentile-ranks.tsv")
         # commenting the tracks as E-PROT-* appear not to be having any
         # outputs.extend(expand(config['accession']+".{id}.{type}", id=get_contrast_ids(), type=["genes.pval.bedGraph", "genes.log2foldchange.bedGraph"]))
-        outputs.extend( expand( config['accession']+".{c_id}.{ext_db}.{type}",
+        if skip(config['accession'],'differential-gsea'):
+            outputs.extend( expand( config['accession']+".{c_id}.{ext_db}.{type}",
                         c_id=get_contrast_ids(),
                         ext_db=get_ext_db(),
                         type=["gsea.tsv", "gsea_list.tsv"]))
-        outputs.extend( expand("logs/"+config['accession']+".{c_id}.{ext_db}.{type}",
+            outputs.extend( expand("logs/"+config['accession']+".{c_id}.{ext_db}.{type}",
                         c_id=get_contrast_ids(),
                         ext_db=get_ext_db(),
                         type=["check_differential_gsea.done", "check_differential_gsea_list.done"]))
