@@ -282,7 +282,7 @@ rule produce_reprocess_call:
         pushd {input.working_directory}
         if ! [ -z {params.lsf_config} ]; then
             if [ ! -f "lsf.yaml" ]; then
-                ln -s {params.lsf_config} lsf.yaml
+                ln -sf {params.lsf_config} lsf.yaml
             fi
         fi
 
