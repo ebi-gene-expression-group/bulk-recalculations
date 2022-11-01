@@ -280,7 +280,11 @@ rule produce_reprocess_call:
         mkdir -p {wildcards.accession}/logs
         exec &> {log}
         pushd {input.working_directory}
-        cp {params.lsf_config} lsf.yaml
+        if ! [ -z {params.lsf_config} ]; then
+            if [ ! -f "lsf.yaml" ]; then
+                ln -s {params.lsf_config} lsf.yaml
+            fi
+        fi
 
         if [[ "{params.allowed_organism}" == "True" ]]; then
 
