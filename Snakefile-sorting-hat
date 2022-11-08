@@ -129,6 +129,8 @@ def get_outputs():
                 # filter E-PROT-* as no recalculations are needed for these. 
                 # In any case, Snakemake-recalculations will exit with error for proteomics experiments
                 nonprot_ACC = list(filter(lambda k: not 'E-PROT' in k, ACC))
+		# filter accessions that should not be reprocessed
+		
                 return expand("{accession}/{accession}.recalculations.done", accession=nonprot_ACC)
         elif config['goal'] == 'reprocess':
             return expand("{accession}/{accession}.reprocess.done", accession=ACC)
