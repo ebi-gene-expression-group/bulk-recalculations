@@ -104,6 +104,28 @@ def get_db_params(param):
     else:
         sys.exit(1)
 
+def read_skip_accessions_file(analysis_goal):
+    """
+    List of accessions that should not skipped from reprocessing
+    or recalculations
+    """
+    if analysis_goal == 'reprocess':
+        if 'skip_accessions_reproc_file' in config:
+            with open(config['skip_accessions_reproc_file'], 'r') as stream:
+                try:
+                    skip_accessions_reprocessing=yaml.safe_load(stream)
+                except yaml.YAMLError as exc:
+                    print(exc)
+            return skip_accessions_reprocessing['skips']['accession']
+        else:
+            return None
+    elif analysis_goal == 'recalculations':
+        # not implemented, not necessary so far
+        return None
+    else:
+        return None
+
+
 
 def get_outputs():
     import os
@@ -129,11 +151,17 @@ def get_outputs():
                 # filter E-PROT-* as no recalculations are needed for these. 
                 # In any case, Snakemake-recalculations will exit with error for proteomics experiments
                 nonprot_ACC = list(filter(lambda k: not 'E-PROT' in k, ACC))
-		# filter accessions that should not be reprocessed
-		
                 return expand("{accession}/{accession}.recalculations.done", accession=nonprot_ACC)
         elif config['goal'] == 'reprocess':
-            return expand("{accession}/{accession}.reprocess.done", accession=ACC)
+            # filter accessions that should not be reprocessed
+            skip_accessions_reprocessing = read_skip_accessions_file('reprocess')
+            if skip_accessions_reprocessing != None:
+                print(f"Skipping reprocessing for the following accessions: {skip_accessions_reprocessing}")
+                pass_ACC = [x for x in ACC if x not in skip_accessions_reprocessing ]
+            if pass_ACC:
+                return expand("{accession}/{accession}.reprocess.done", accession=pass_ACC )
+            else:
+                sys.exit("No accessions to reprocess. Exiting...")
         else:
             return None
     else:
