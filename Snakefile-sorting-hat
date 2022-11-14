@@ -106,7 +106,7 @@ def get_db_params(param):
 
 def read_skip_accessions_file(analysis_goal):
     """
-    List of accessions that should not skipped from reprocessing
+    List of accessions that should be skipped from reprocessing
     or recalculations
     """
     if analysis_goal == 'reprocess':
@@ -120,9 +120,10 @@ def read_skip_accessions_file(analysis_goal):
         else:
             return None
     elif analysis_goal == 'recalculations':
-        # not implemented, not necessary so far
+        print(f"NOTE - skip accessions not implemented for recalculations")
         return None
     else:
+        print(f"WARNING - analysis_goal {analysis_goal} is not reprocess nor recalculations")
         return None
 
 
