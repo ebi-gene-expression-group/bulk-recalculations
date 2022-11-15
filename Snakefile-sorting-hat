@@ -322,7 +322,7 @@ rule produce_reprocess_call:
 
         if [[ "{params.allowed_organism}" == "True" ]]; then
 
-            snakemake --use-singularity --allowed-rules atlas_experiment_summary --restart-times 4 --latency-wait 100 {config['sm_options']} --config \
+            snakemake --use-singularity --restart-times 1 --latency-wait 100 {config['sm_options']} --config \
                 accession={wildcards.accession} \
                 goal={params.goal} \
                 tool={get_tool(wildcards.accession)} \
