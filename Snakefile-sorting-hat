@@ -365,6 +365,9 @@ rule produce_recalculations_call:
         lsf_config = get_lsf_config_file(),
         log_handler_script=get_log_handler_script(),
         goal=config['goal'],
+	atlas_exps = config['atlas_exps'],
+	atlasmeta_config=get_meta_config(),
+	tmp_dir=config['tmp_dir'],
         allowed_organism=get_user_species,
         oracle_home=get_db_params('oracle_home'),
         python_user=get_db_params('python_user'),
@@ -396,6 +399,9 @@ rule produce_recalculations_call:
                 metadata_summary=../{input.metadata} \
                 bioentities_properties={params.bioentities_properties} \
                 skip_steps_file={params.skip_steps_file} \
+		atlas_exps={params.atlas_exps} \
+	       	tmp_dir={params.tmp_dir} \
+	      	atlas_meta_config={params.atlasmeta_config} \
                 oracle_home={params.oracle_home} \
                 python_user={params.python_user} \
                 python_connect_string={params.python_connect_string} \
@@ -409,3 +415,4 @@ rule produce_recalculations_call:
         """
         #print(command_line)
         shell(command_line)
+		
