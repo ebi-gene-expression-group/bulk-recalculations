@@ -1600,7 +1600,13 @@ rule generate_methods_differential_microarray:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
-        export ATLAS_META_CONFIG={params.atlas_meta_config}
+	
+        if [ -d "{params.atlas_meta_config}" ]; then
+            export ATLAS_META_CONFIG={params.atlas_meta_config}
+        else
+            echo "ERROR: dir {params.atlas_meta_config} does not exist" >&2
+            exit 1
+        fi
 
         # Populate analysis methods
         target=""
