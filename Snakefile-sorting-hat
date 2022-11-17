@@ -380,7 +380,7 @@ rule produce_recalculations_call:
         pushd {input.working_directory}
         if [ -f {params.lsf_config} ]; then
             if [ ! -f "lsf.yaml" ]; then
-                ln -s {params.lsf_config} lsf.yaml
+                ln -sf {params.lsf_config} lsf.yaml
             fi
         else
             echo "lsf resource settings file does not exist"
