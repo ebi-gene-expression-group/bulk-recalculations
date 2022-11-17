@@ -169,6 +169,7 @@ def get_meta_config():
     if 'atlas_meta_config' in config:
         return config['atlas_meta_config']
     else:
+	print(f" WARNING - atlas_meta_config not provided in config")
         return None
 
 def get_db_params():
