@@ -2,4 +2,4 @@ channels:
  - conda-forge
  - bioconda
 dependencies:
- - cx_oracle
+ - cx_oracle=8.3.0

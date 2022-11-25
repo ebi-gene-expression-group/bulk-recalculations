@@ -3,12 +3,12 @@ channels:
  - bioconda
  - ebi-gene-expression-group
 dependencies:
- - perl-atlas-modules >=0.3.1
- - r-atlas-internal>=1.8
- - r-ggplot2
- - r-reshape2
- - bioconductor-limma
- - bioconductor-genefilter
- - bioconductor-biobase
- - bioconductor-deseq2
+ - perl-atlas-modules=0.3.1
+ - r-atlas-internal=1.8
+ - r-ggplot2=3.3.0
+ - r-reshape2=1.4.4
+ - bioconductor-limma=3.40.0
+ - bioconductor-genefilter=1.64.0
+ - bioconductor-biobase=2.42.0
+ - bioconductor-deseq2=1.22.1
  
