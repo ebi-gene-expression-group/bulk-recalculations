@@ -937,6 +937,7 @@ rule quantile_normalise_transcripts:
     Quantile normalize transcripts in tpms, if the file exists.
     """
     conda: "envs/quantile.yaml"
+    resources: mem_mb=get_mem_mb
     log: "logs/{accession}-quantile_normalise_transcripts_{metric}.log"
     input:
         xml="{accession}-configuration.xml",
