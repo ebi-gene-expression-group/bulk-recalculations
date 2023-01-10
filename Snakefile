@@ -1933,7 +1933,8 @@ rule copy_experiment_from_analysis_to_atlas_exps:
     log: "logs/{accession}-copy_experiment_from_analysis_to_atlas_exps.log"
     input: get_checkpoints_cp_atlas_exps
     params:
-        target_dir=config['atlas_exps'] #get_tmp_dir()
+        target_dir=config['atlas_exps'], #get_tmp_dir()
+        privacy_status_file=config['priv_stat_file']
     output:
         temp("logs/{accession}-copy_experiment_from_analysis_to_atlas_exps.done")
     shell:
@@ -1941,13 +1942,12 @@ rule copy_experiment_from_analysis_to_atlas_exps:
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
         export ATLAS_EXPS={params.target_dir} #"/tmp" # {params.target_dir} for production
-        #export PEACH_API_URI='http://peach.ebi.ac.uk:8480/api'
         source {workflow.basedir}/bin/reprocessing_routines.sh
         source {workflow.basedir}/atlas-bash-util/generic_routines.sh
 
         echo "Copying data to stage for: {wildcards.accession} to $ATLAS_EXPS"
 
-        copy_experiment_from_analysis_to_atlas_exps {wildcards.accession}
+        copy_experiment_from_analysis_to_atlas_exps {wildcards.accession} {params.privacy_status_file}
 
         echo "Copied data to stage"
 
