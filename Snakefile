@@ -860,6 +860,7 @@ rule quantile_normalise_expression:
     """
     conda: "envs/quantile.yaml"
     log: "logs/{accession}-quantile_normalise_expression_{metric}.log"
+    resources: mem_mb=get_mem_mb
     input:
         config_xml="{accession}-configuration.xml",
         expression="{accession}-{metric}.tsv.undecorated"
@@ -882,6 +883,7 @@ rule summarize_expression:
     """
     conda: "envs/perl-atlas-modules.yaml"
     log: "logs/{accession}-summarize_expression_{metric}.log"
+    resources: mem_mb=get_mem_mb
     input:
         config_xml="{accession}-configuration.xml",
         qn_expression="{accession}-{metric}.tsv.undecorated.quantile_normalized"
@@ -906,6 +908,7 @@ rule transcripts_na_check:
     """
     conda: "envs/atlas-internal.yaml"
     log: "logs/{accession}-rule-transcripts_na_check_{metric}.log"
+    resources: mem_mb=get_mem_mb
     params:
         organism=get_organism(),
         isl_dir=get_isl_dir()  
@@ -970,6 +973,7 @@ rule summarize_transcripts:
     """
     conda: "envs/perl-atlas-modules.yaml"
     log: "logs/{accession}-summarize_transcripts_{metric}.log"
+    resources: mem_mb=get_mem_mb
     input:
         xml="{accession}-configuration.xml",
         getqn=rules.quantile_normalise_transcripts.output
