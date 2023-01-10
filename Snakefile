@@ -1941,7 +1941,7 @@ rule copy_experiment_from_analysis_to_atlas_exps:
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
         export ATLAS_EXPS={params.target_dir} #"/tmp" # {params.target_dir} for production
-        export PEACH_API_URI='http://peach.ebi.ac.uk:8480/api'
+        #export PEACH_API_URI='http://peach.ebi.ac.uk:8480/api'
         source {workflow.basedir}/bin/reprocessing_routines.sh
         source {workflow.basedir}/atlas-bash-util/generic_routines.sh
 
@@ -1953,7 +1953,6 @@ rule copy_experiment_from_analysis_to_atlas_exps:
 
         touch {output} 
         """
-
 
 rule get_magetab_for_experiment:
     """
