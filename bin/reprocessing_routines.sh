@@ -112,9 +112,39 @@ get_magetab_for_experiment() {
 
 # 7: see directory, see its contents, can write (fg_atlas only)
 # 5: see directory, see its contents: public read-only directory
-experiment_directory_permissions_from_peach_api_privacy() {
+
+## get privacy status for any experiments
+## -MTAB- experiments loaded by biostudies-AE/Annotare uis checked internal file
+## -GEOD-/-ERAD-/-ENAD- are loaded as public from now on
+get_biostudies_privacy_status() {
     expAcc=$1
-    response=`peach_api_privacy_status $expAcc`
+    privStatusFile=$2
+    exp_import=$(echo $expAcc | awk -F"-" '{print $2}')
+
+    if [ $exp_import == "MTAB" ]; then
+
+        statusStudy=$(awk -v p="$expAcc" '$1 == p {print $2}' $privStatusFile)
+
+        if [ "$statusStudy" == "true" ]; then
+            privacyStatus="public"
+        elif [ "$statusStudy" == "false" ]; then
+            privacyStatus="private"
+        else 
+            >&2 echo "get_biostudies_privacy_status could not determine privacy status for $1, received: $statusStudy"
+            exit 1
+        fi
+    else
+        # if not MTAB, ie. GEOD or ENAD or ERAD are all loaded as public
+        privacyStatus="public"
+    fi
+
+    echo $privacyStatus
+}
+
+experiment_directory_permissions_from_biostudies_file() {
+    expAcc=$1
+    privStatusFile=$2
+    response=`get_biostudies_privacy_status $expAcc $privStatusFile`
 
     case $response in
         *public*)
@@ -124,20 +154,23 @@ experiment_directory_permissions_from_peach_api_privacy() {
             echo 750
             ;;
         ?)
-            >&2 echo "experiment_directory_permissions_from_peach_api_privacy could not determine privacy status for $1, received: $response"
+            >&2 echo "experiment_directory_permissions_from_biostudies_file could not determine privacy status for $1, received: $response"
             return 1
             ;;
     esac
 }
 
+
+
 copy_experiment_from_analysis_to_atlas_exps(){
     expAcc=$1
+    privStatusFile=$2
     sourceDir=$(get_analysis_path_for_experiment_accession "$expAcc" )
     if [ ! -d "$sourceDir" ] ; then
         echo "copy_experiment_from_analysis_to_atlas_exps ERROR: Could not find in analysis directory: $expAcc" >&2
         exit 1
     fi
-    mode=$(experiment_directory_permissions_from_peach_api_privacy "$expAcc" )
+    mode=$(experiment_directory_permissions_from_biostudies_file "$expAcc" "$privStatusFile" )
 
     if [ ! "$mode" ]; then
       echo "copy_experiment_from_analysis_to_atlas_exps ERROR: Failed to retrieve public/private status for $expAcc" >&2
