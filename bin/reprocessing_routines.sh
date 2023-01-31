@@ -123,19 +123,7 @@ get_biostudies_privacy_status() {
 
     if [ $exp_import == "MTAB" ]; then
 
-        statusStudy=""
-
-        # Use file provided by Biostudies to get privacy status, if it exists.
-        if [[ -f "$privStatusFile" ]]; then
-            statusStudy=$(awk -v p="$expAcc" '$1 == p {print $2}' $privStatusFile)
-        fi
-
-        # If the file doesn't exist, or exists but the above conditional
-        # returns an empty string, try the Biostudies api
-        if [[ -z "$statusStudy" ]]; then
-            statusStudy=$( get_biostudies_api_info $expAcc "isPublic" )
-            if [[ -z "$statusStudy" ]]; then statusStudy="false"; fi
-        fi
+        statusStudy=$(awk -v p="$expAcc" '$1 == p {print $2}' $privStatusFile)
 
         if [ "$statusStudy" == "true" ]; then
             privacyStatus="public"
@@ -153,7 +141,7 @@ get_biostudies_privacy_status() {
     echo $privacyStatus
 }
 
-experiment_directory_permissions_from_biostudies_api_privacy() {
+experiment_directory_permissions_from_biostudies_file() {
     expAcc=$1
     privStatusFile=$2
     response=`get_biostudies_privacy_status $expAcc $privStatusFile`
@@ -166,40 +154,13 @@ experiment_directory_permissions_from_biostudies_api_privacy() {
             echo 750
             ;;
         ?)
-            >&2 echo "experiment_directory_permissions_from_biostudies_api_privacy could not determine privacy status for $1, received: $response"
+            >&2 echo "experiment_directory_permissions_from_biostudies_file could not determine privacy status for $1, received: $response"
             return 1
             ;;
     esac
 }
 
-# This function returns the value of a key from a Biostudies API accession search 
-# If the accession is not found via the API, an empty string is returned, and the function does not exit with error.
-# If the accession is found, but the search key used is not present in the returned json text, "null" is returned.
-get_biostudies_api_info() {
-    expAcc=$1
-    apiKey=$2
 
-    apiSearch="https://www.ebi.ac.uk/biostudies/api/v1/search?type=study&accession=$expAcc"
-
-    response=$(curl $apiSearch)
-    if [ -z "${response}" ]; then
-        echo "WARNING: Got empty response from ${apiSearch}" >&2
-        exit 0 
-    else
-        responseHit=$(echo ${response} | jq .hits[0])
-        if [[ "${responseHit}" == "null" ]]; then
-            echo "WARNING: This search returned no hit: ${apiSearch}" >&2
-            expInfo=""
-        else
-            expInfo=$(echo $responseHit | jq ."${apiKey}")
-            if [[ "${expInfo}" == "null" ]]; then
-                echo "WARNING: This key does not exist: ${apiKey}" >&2
-            fi
-        fi
-    fi
-
-    echo $expInfo
-}
 
 copy_experiment_from_analysis_to_atlas_exps(){
     expAcc=$1
@@ -209,7 +170,7 @@ copy_experiment_from_analysis_to_atlas_exps(){
         echo "copy_experiment_from_analysis_to_atlas_exps ERROR: Could not find in analysis directory: $expAcc" >&2
         exit 1
     fi
-    mode=$(experiment_directory_permissions_from_biostudies_api_privacy "$expAcc" "$privStatusFile" )
+    mode=$(experiment_directory_permissions_from_biostudies_file "$expAcc" "$privStatusFile" )
 
     if [ ! "$mode" ]; then
       echo "copy_experiment_from_analysis_to_atlas_exps ERROR: Failed to retrieve public/private status for $expAcc" >&2
