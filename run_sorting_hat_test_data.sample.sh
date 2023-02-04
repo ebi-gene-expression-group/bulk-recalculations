@@ -9,13 +9,14 @@ GTF=$( pwd )/test-data/gff
 FORCEALL=${FORCEALL:-true}
 RESTART_TIMES=3
 SKIP_STEPS=$( pwd )/step_skip.yaml
+SKIP_ACC_REPROC=$( pwd )/accession_skip_reprocess.yaml
 TEMPLATE_METHODS_BASELINE=$( pwd )/baseline_atlas_methods_template.conf
 TEMPLATE_METHODS_DIFFERENTIAL=$( pwd )/differential_atlas_methods_template.conf
 ZOOMA_EXCLUSIONS=$( pwd )/zooma_exclusions.yml
 ISL_DIR=path/to/isl_dir
 ISL_GENOMES_REFERENCES=$ISL_GENOMES
 IRAP_VERSIONS=path/to/atlasprod/irap_versions.mk
-IRAP_CONTAINER=path/to/singularity/*.sif
+IRAP_CONTAINER=path/to/singularity/irap_container:vx.y.z.sif
 TMP_DEFINED=path/to/tmp_dir
 TMP_DIR=${TMP_DEFINED:-$(mktemp -d)}
 # CHECK_SPECIES file should come from a clone of the atlas-config repo in Jenkins:
@@ -26,6 +27,14 @@ LOG_HANDLER=${LOG_HANDLER:-$( pwd )/log_handler.py}
 SN_CONDA_PREFIX=${SN_CONDA_PREFIX:-$( pwd )/conda_installs}
 PROFILE_LINE="--profile profilename"
 LSF_CONFIG=${LSF_CONFIG:-$( pwd )/lsf.yaml}
+
+[ ! -z ${BIOSTUDIES_AE_PRIVACY_STATUS_FILE+x} ] || (echo "Env var BIOSTUDIES_AE_PRIVACY_STATUS_FILE not defined." && exit 1)
+
+if [ ! -f "$BIOSTUDIES_AE_PRIVACY_STATUS_FILE" ]; then
+        echo "$BIOSTUDIES_AE_PRIVACY_STATUS_FILE does not exist"
+        exit 1
+fi
+
 
 CONDA_PREFIX_LINE="--conda-prefix $SN_CONDA_PREFIX"
 export LOG_PATH=${LOG_PATH:-$( pwd )/sorting.log}
@@ -94,6 +103,7 @@ echo 'starting bulk '$GOAL'...'
 snakemake --use-conda --conda-frontend mamba \
         --log-handler-script $LOG_HANDLER \
         $PROFILE_LINE \
+        $FORCE_ALL \
         $CONDA_PREFIX_LINE \
         --latency-wait 10 \
         --keep-going \
@@ -104,6 +114,7 @@ snakemake --use-conda --conda-frontend mamba \
         goal=$GOAL \
         atlas_meta_config=path/to/supporting_files \
         skip_steps_file=$SKIP_STEPS \
+        skip_accessions_reproc_file=$SKIP_ACC_REPROC \
         methods_base=$TEMPLATE_METHODS_BASELINE \
         methods_dif=$TEMPLATE_METHODS_DIFFERENTIAL \
         zooma_exclusions=$ZOOMA_EXCLUSIONS \
@@ -112,6 +123,7 @@ snakemake --use-conda --conda-frontend mamba \
         irap_versions=$IRAP_VERSIONS \
         irap_container=$IRAP_CONTAINER \
         tmp_dir=$TMP_DIR \
+        priv_stat_file=$BIOSTUDIES_AE_PRIVACY_STATUS_FILE \
         check_sp_file=$CHECK_SPECIES \
         oracle_home=$ORACLE_HOME \                                                                                                                        
         python_user=$PYTHON_USER \                                                                                                                        
