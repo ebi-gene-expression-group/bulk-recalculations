@@ -3,17 +3,18 @@ channels:
  - bioconda
  - ebi-gene-expression-group
 dependencies:
+ - perl-atlas-modules >=0.3.1
  - perl-atlas-modules=0.3.1
  - libopenblas=0.3.3
  - r-ff=2.2-14
  - r-bit=1.1-15.2
  - r-bit64=0.9-7.1
- - bioconductor-limma=3.42.0 
- - bioconductor-lumi=2.38.0
- - bioconductor-oligo=1.50.0
- - bioconductor-oligoclasses=1.48.0
- - bioconductor-biobase=2.46.0
- - bioconductor-arrayqualitymetrics=3.42.0
+ - bioconductor-limma
+ - bioconductor-lumi
+ - bioconductor-oligo
+ - bioconductor-oligoclasses
+ - bioconductor-biobase
+ - bioconductor-arrayqualitymetrics >3.32.0
 
 # see conflict between ff and oligoClasses
 # because ff no longer exports S3 methods
