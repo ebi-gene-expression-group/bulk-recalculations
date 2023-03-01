@@ -313,13 +313,16 @@ def input_atlas_experiment_summary(wildcards):
     for rule atlas_experiment_summary
     """
     if config['goal'] == 'reprocess':
-        if experiment_type =='rnaseq_mrna_baseline' or experiment_type=='rnaseq_mrna_differential': 
-            return [ wildcards['accession']+'-raw-counts.tsv.undecorated' ]
+        if experiment_type =='rnaseq_mrna_baseline': 
+            return [ wildcards['accession']+'-raw-counts.tsv.undecorated', wildcards['accession']+'-analysis-methods.tsv_baseline_rnaseq' ]
+        elif experiment_type=='rnaseq_mrna_differential': 
+            return [ wildcards['accession']+'-raw-counts.tsv.undecorated', wildcards['accession']+'-analysis-methods.tsv_differential_rnaseq'  ]
         elif experiment_type == 'microarray_1colour_mrna_differential' or experiment_type =='microarray_1colour_microrna_differential':
             inputs = []
             arr_designs=get_array_design_from_xml()
             for s in arr_designs:
                 inputs.append( f"logs/{wildcards['accession']}_{s}-decorate_differential_microarray.done" )
+            inputs.append( f"{wildcards['accession']}-analysis-methods.tsv" )
             return inputs
         elif experiment_type =='microarray_2colour_mrna_differential':
             inputs = []
@@ -327,6 +330,7 @@ def input_atlas_experiment_summary(wildcards):
             for s in arr_designs:
                 inputs.append( f"{wildcards['accession']}_{s}-log-fold-changes.tsv.undecorated" )
                 inputs.append( f"{wildcards['accession']}_{s}-average-intensities.tsv.undecorated" )
+            inputs.append( f"{wildcards['accession']}-analysis-methods.tsv" )
             return inputs
         else:
             return None
