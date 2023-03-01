@@ -130,8 +130,15 @@ get_biostudies_privacy_status() {
         elif [ "$statusStudy" == "false" ]; then
             privacyStatus="private"
         else 
-            >&2 echo "get_biostudies_privacy_status could not determine privacy status for $1, received: $statusStudy"
-            exit 1
+            >&2 echo "get_biostudies_privacy_status could not determine privacy status from file for $1, received: $statusStudy - will try the API now"
+	    
+	    if curl -sS https://wwwdev.ebi.ac.uk/gxa/json/experiments/$expAcc | grep -q "could not be found"; then
+    		 >&2 echo "Accession for $1 not found in Public API, assuming it is private "
+    		 privacyStatus="private"
+	    else
+    		 privacyStatus="public"
+	    fi
+
         fi
     else
         # if not MTAB, ie. GEOD or ENAD or ERAD are all loaded as public
