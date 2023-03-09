@@ -837,12 +837,14 @@ rule rnaseq_qc:
     should be added to 'skip_steps_file' to skip this rule.
     """
     conda: "envs/perl-atlas-modules.yaml"
+    input: "{accession}-raw-counts.tsv.undecorated"
     log: "logs/{accession}-rnaseq_qc.log"
     output: "qc/{accession}-irap-single-lib-report.tsv"
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
+        echo "Running QC, raw counts file found {input}"
 
         {workflow.basedir}/atlas-analysis/qc/rnaseqQC.sh {wildcards.accession}
         qcExitCode=$?
