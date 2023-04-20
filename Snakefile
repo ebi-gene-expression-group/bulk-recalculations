@@ -1412,6 +1412,84 @@ rule generate_methods_differential_rnaseq:
         cp {output.methods} {wildcards.accession}-analysis-methods.tsv
         """
 
+rule deconvolution:
+    """
+    Runs three deconvolution tools (DWLS, FARDEEP, EpiDIS) for experiments selected in deconvolution.yaml.
+    """
+    conda: "envs/deconvolution.yaml"
+    log: "logs/{accession}.deconvolution.log"
+    #resources: mem_mb=get_mem_mb
+    resources: mem_mb=64000
+    threads: 16
+    input: 
+        fpkms=config["atlas_prod"] + "/{accession}/{accession}-fpkms.tsv.undecorated"
+        methods=config["atlas_prod"] + "/{accession}/{accession}-analysis-methods.tsv"
+        sdrf=get_sdrf()
+        #methods="{accession}-analysis-methods.tsv"
+    params:
+        organism=get_organism(),
+        #exp_type=get_from_config_or_metadata_summary('experiment_type'),
+        exp_type="rnaseq_mrna_differential",
+        signature_dir=config["deconv_ref"]
+    output:
+        proportions="Consensus/{accession}/summarized_proportions.tsv", 
+        methods="methods/{accession}-analysis-methods.updated.tsv",
+        results=temp(directory('Output/{accession}')),
+        splits=temp(directory('Tissue_splits/{accession}')),
+        scratch=temp(directory('scratch/{accession}'))
+    shell:
+        """
+        exec &> "logs/{wildcards.accession}.deconvolution.log"
+        set -e # exit when any command fails
+        echo "starting..."
+        if [ ! -d "Tissue_splits/{wildcards.accession}" ]; then
+            mkdir -p Tissue_splits/{wildcards.accession}
+            Rscript {workflow.basedir}/atlas-analysis/deconvolution/splitandScale.R {input.fpkms} {input.sdrf} {wildcards.accession}
+        fi
+        # list all files that FPKMs were split into
+        files=$(ls Tissue_splits/{wildcards.accession}/{wildcards.accession}*-fpkms_scaled.rds)
+        # iterate through tissues 
+        for file in ${{files[@]}}; do
+            # get tissue name from filename
+            file=$(basename "$file")
+            tissue="${{file#{wildcards.accession}-}}"
+            tissue="${{tissue%-fpkms_scaled.rds}}"
+            echo $tissue
+            # search for suitable reference in deconvolution library
+            REFERENCE_FOUND=$(Rscript {workflow.basedir}/atlas-analysis/deconvolution/findReference.R $tissue {params.signature_dir})
+            # check if deconvolution for tissue was already completed
+            if [ "$REFERENCE_FOUND" == "noref" ]; then
+                echo "no reference for $tissue found"
+                sc_reference_C1="noref"
+            else
+                # check if reference library is correct for this tissue
+                number=$(ls {params.signature_dir}/${{REFERENCE_FOUND}}* | wc -l)
+                if [ "$number" != 4 ]; then
+                    echo "Error in reference library, check that there are no duplicated or missing references for $REFERENCE_FOUND!" 
+                    exit 125
+                fi 
+                # find the different reference files
+                sc_reference_C1=$(ls {params.signature_dir}/${{REFERENCE_FOUND}}_*_C1.rds | head -1)
+                sc_reference_C0=$(ls {params.signature_dir}/${{REFERENCE_FOUND}}_*_C0_scaled.rds | head -1)
+                sc_reference_phen=$(ls {params.signature_dir}/${{REFERENCE_FOUND}}_*_phenData.rds | head -1)
+                # check if DWLS output already exists and results are more recent than the reference
+                if [ ! -f "Output/{wildcards.accession}/{wildcards.accession}-${{tissue}}_res_DWLS.rds" ] || [ "Output/{wildcards.accession}/{wildcards.accession}-${{tissue}}_res_DWLS.rds" -ot "$sc_reference_C1" ]; then
+                    echo "$REFERENCE_FOUND for $tissue found, running deconvolution"
+                    # run deconvlution for this tisssue with FARDEEP, DWLS and EpiDISH
+                    mkdir -p Output/{wildcards.accession}
+                    {workflow.basedir}/scripts/run_deconvolution.sh $tissue {wildcards.accession} $sc_reference_C1 $sc_reference_C0 $sc_reference_phen {workflow.basedir}
+                else
+                    echo "$REFERENCE_FOUND for $tissue found, Skipping deconolution as for $tissue results already exist"
+                fi
+                mkdir -p ConsensusPlot/{wildcards.accession}
+                Rscript {workflow.basedir}/scripts/getConsensus.R {wildcards.accession} $tissue
+            fi
+            # produce output files
+            Rscript {workflow.basedir}/scripts/summarizeDeconvolutionResults.R {input.sdrf} {wildcards.accession} $tissue $sc_reference_C1 {output.proportions}
+            Rscript {workflow.basedir}/scripts/getDeconvolutionInfo.R $tissue {wildcards.accession} $sc_reference_C1
+        done
+        Rscript {workflow.basedir}/scripts/appendAnalysisMethods.R {input.methods} {wildcards.accession}
+        """
 
 rule decorate_differential_rnaseq:
     """
