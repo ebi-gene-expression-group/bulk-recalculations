@@ -1412,8 +1412,8 @@ rule deconvolution:
     resources: mem_mb=64000
     threads: 16
     input: 
-        fpkms=config["atlas_prod"] + "/{accession}/{accession}-fpkms.tsv.undecorated"
-        methods=config["atlas_prod"] + "/{accession}/{accession}-analysis-methods.tsv"
+        fpkms=config["atlas_prod"] + "/{accession}/{accession}-fpkms.tsv.undecorated",
+        methods=config["atlas_prod"] + "/{accession}/{accession}-analysis-methods.tsv",
         sdrf=get_sdrf()
         #methods="{accession}-analysis-methods.tsv"
     params:
