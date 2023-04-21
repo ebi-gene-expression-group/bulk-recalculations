@@ -1412,8 +1412,8 @@ rule deconvolution:
     resources: mem_mb=64000
     threads: 16
     input: 
-        fpkms=config["atlas_prod"] + "/{accession}/{accession}-fpkms.tsv.undecorated",
-        methods=config["atlas_prod"] + "/{accession}/{accession}-analysis-methods.tsv",
+        fpkms="{accession}-fpkms.tsv.undecorated",
+        methods="{accession}-analysis-methods.tsv",
         sdrf=get_sdrf()
         #methods="{accession}-analysis-methods.tsv"
     params:
@@ -1422,8 +1422,8 @@ rule deconvolution:
         exp_type="rnaseq_mrna_differential",
         signature_dir=config["deconv_ref"]
     output:
-        proportions="Consensus/{accession}/summarized_proportions.tsv", 
-        methods="methods/{accession}-analysis-methods.updated.tsv",
+        proportions="accession}-summarized_proportions.tsv", 
+        methods="{accession}-analysis-methods.updated.tsv",
         results=temp(directory('Output/{accession}')),
         splits=temp(directory('Tissue_splits/{accession}')),
         scratch=temp(directory('scratch/{accession}'))
