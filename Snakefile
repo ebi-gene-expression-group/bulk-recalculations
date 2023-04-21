@@ -2015,7 +2015,7 @@ rule copy_experiment_from_analysis_to_atlas_exps:
     log: "logs/{accession}-copy_experiment_from_analysis_to_atlas_exps.log"
     input: get_checkpoints_cp_atlas_exps
     params:
-        target_dir=get_tmp_dir()
+        target_dir=get_tmp_dir(),
         privacy_status_file=config['priv_stat_file']
     output:
         temp("logs/{accession}-copy_experiment_from_analysis_to_atlas_exps.done")
