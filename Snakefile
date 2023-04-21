@@ -1432,7 +1432,7 @@ rule deconvolution:
         exp_type="rnaseq_mrna_differential",
         signature_dir=config["deconv_ref"]
     output:
-        proportions="accession}-summarized_proportions.tsv", 
+        proportions="{accession}-summarized_proportions.tsv", 
         methods="{accession}-analysis-methods.updated.tsv",
         #results=temp(directory('Output/{accession}')),
         #splits=temp(directory('Tissue_splits/{accession}')),
