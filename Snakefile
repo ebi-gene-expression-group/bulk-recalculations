@@ -1444,7 +1444,7 @@ rule deconvolution:
         echo "starting..."
         if [ ! -d "Tissue_splits/{wildcards.accession}" ]; then
             mkdir -p Tissue_splits/{wildcards.accession}
-            Rscript {workflow.basedir}/atlas-analysis/deconvolution/splitandScale.R {input.fpkms} {input.sdrf} {wildcards.accession}
+            Rscript {workflow.basedir}/atlas-analysis/deconvolution/splitAndScale.R {input.fpkms} {input.sdrf} {wildcards.accession}
         fi
         # list all files that FPKMs were split into
         files=$(ls Tissue_splits/{wildcards.accession}/{wildcards.accession}*-fpkms_scaled.rds)
