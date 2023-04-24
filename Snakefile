@@ -74,7 +74,7 @@ def read_skip_steps_file():
                 print(exc)
         return skip_steps
 
-def read_run_deconv():
+def read_run_deconv_file():
     if 'run_deconv_file' in config:
         global run_deconv
         with open(config['run_deconv_file'], 'r') as stream:
