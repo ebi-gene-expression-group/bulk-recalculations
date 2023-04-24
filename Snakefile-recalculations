@@ -32,6 +32,8 @@ def get_outputs():
     read_metadata_summary()
     global skip_accession
     skip_accession = read_skip_steps_file()
+    global run_deconv_accession
+    run_deconv_accession = read_run_deconv_file()
     required_config=['tool']
     check_config_required(fields=required_config)
     if 'percentile-ranks' in config['tool'] or config['tool']=="all-diff" and skip(config['accession'],'percentile_ranks'):
@@ -64,6 +66,8 @@ def get_outputs():
     if 'baseline-heatmap' in config['tool'] or 'all-baseline' in config['tool'] and skip(config['accession'],'baseline-heatmap'):
         outputs.extend(expand(f"{config['accession']}"+"-heatmap-{metric}.pdf", metric=metrics ))
         outputs.append(f"{config['accession']}-heatmap.pdf")
+    if run_deconvolution(config['accession']):
+        outputs.append(f"{config['accession']}-summarized_proportions.tsv")
     if 'baseline-coexpression' in config['tool'] or 'all-baseline' in config['tool'] and skip(config['accession'],'baseline-coexpression'):   
         metric_link_coexp=False
         for m in metrics:
