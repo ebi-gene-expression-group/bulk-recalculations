@@ -1463,7 +1463,7 @@ rule deconvolution:
             tissue="${{tissue%-fpkms_scaled.rds}}"
             echo $tissue
             # search for suitable reference in deconvolution library
-            REFERENCE_FOUND=$(Rscript {workflow.basedir}/atlas-analysis/deconvolution/findReference.R $tissue {params.signature_dir})
+            REFERENCE_FOUND=$(Rscript {workflow.basedir}/atlas-analysis/deconvolution/findReference.R $tissue {params.signature_dir} {workflow.basedir})
             # check if deconvolution for tissue was already completed
             if [ "$REFERENCE_FOUND" == "noref" ]; then
                 echo "no reference for $tissue found"
