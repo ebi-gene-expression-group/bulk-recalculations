@@ -290,6 +290,7 @@ rule produce_reprocess_call:
     params:
         bioentities_properties=config['bioentities_properties'],
         skip_steps_file=get_skip_steps_file(),
+	run_deconv_file=get_run_deconv_file(),
         methods_base=config['methods_base'],
         methods_dif=config['methods_dif'],
         zooma_exclusions=config['zooma_exclusions'],
@@ -337,6 +338,7 @@ rule produce_reprocess_call:
                 metadata_summary=../{input.metadata} \
                 bioentities_properties={params.bioentities_properties} \
                 skip_steps_file={params.skip_steps_file} \
+		run_deconv_file={params.run_deconv_file} \
                 methods_base={params.methods_base} \
                 methods_dif={params.methods_dif} \
                 atlas_exps={params.atlas_exps} \
