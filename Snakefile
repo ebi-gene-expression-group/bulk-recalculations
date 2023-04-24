@@ -1492,18 +1492,18 @@ rule deconvolution:
                     echo "$REFERENCE_FOUND for $tissue found, running deconvolution"
                     # run deconvlution for this tisssue with FARDEEP, DWLS and EpiDISH
                     mkdir -p Output/{wildcards.accession}
-                    {workflow.basedir}/scripts/run_deconvolution.sh $tissue {wildcards.accession} $sc_reference_C1 $sc_reference_C0 $sc_reference_phen {workflow.basedir}
+                    {workflow.basedir}/atlas-analysis/deconvolution/run_deconvolution.sh $tissue {wildcards.accession} $sc_reference_C1 $sc_reference_C0 $sc_reference_phen {workflow.basedir}
                 else
                     echo "$REFERENCE_FOUND for $tissue found, Skipping deconolution as for $tissue results already exist"
                 fi
                 mkdir -p ConsensusPlot/{wildcards.accession}
-                Rscript {workflow.basedir}/scripts/getConsensus.R {wildcards.accession} $tissue
+                Rscript {workflow.basedir}/atlas-analysis/deconvolution/getConsensus.R {wildcards.accession} $tissue
             fi
             # produce output files
-            Rscript {workflow.basedir}/scripts/summarizeDeconvolutionResults.R {input.sdrf} {wildcards.accession} $tissue $sc_reference_C1 {output.proportions}
-            Rscript {workflow.basedir}/scripts/getDeconvolutionInfo.R $tissue {wildcards.accession} $sc_reference_C1
+            Rscript {workflow.basedir}/atlas-analysis/deconvolution/summarizeDeconvolutionResults.R {input.sdrf} {wildcards.accession} $tissue $sc_reference_C1 {output.proportions}
+            Rscript {workflow.basedir}/atlas-analysis/deconvolution/getDeconvolutionInfo.R $tissue {wildcards.accession} $sc_reference_C1
         done
-        Rscript {workflow.basedir}/scripts/appendAnalysisMethods.R {input.methods} {wildcards.accession}
+        Rscript {workflow.basedir}/atlas-analysis/deconvolution/appendAnalysisMethods.R {input.methods} {wildcards.accession}
         """
 
 rule decorate_differential_rnaseq:
