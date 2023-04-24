@@ -74,6 +74,15 @@ def read_skip_steps_file():
                 print(exc)
         return skip_steps
 
+def read_run_deconv():
+    if 'run_deconv_file' in config:
+        global run_deconv
+        with open(config['run_deconv_file'], 'r') as stream:
+            try:
+                run_deconv=yaml.safe_load(stream)
+            except yaml.YAMLError as exc:
+                print(exc)
+        return run_deconv
 
 def get_from_config_or_metadata_summary(label):
     if label in config:
@@ -212,6 +221,12 @@ def skip(acc, tool):
         return False
     else:
         return True
+
+def run_deconvolution(acc):
+    if acc in run_deconv['deconv']['accession']:
+        return True
+    else:
+        return False
 
 def get_number_columns(tsvfile):
     import csv
