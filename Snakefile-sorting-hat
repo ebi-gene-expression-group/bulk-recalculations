@@ -82,6 +82,12 @@ def get_skip_steps_file():
     else:
         return None
 
+def get_deconv_run_file():
+    if 'run_deconv_file' in config:
+        return config['run_deconv_file']
+    else:
+        return None
+
 def get_meta_config():
     if 'atlas_meta_config' in config:
         return config['atlas_meta_config']
