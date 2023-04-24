@@ -223,7 +223,7 @@ def skip(acc, tool):
         return True
 
 def run_deconvolution(acc):
-    if acc in run_deconv['deconv']['accession']:
+    if acc in run_deconv_accession['deconv']['accession']:
         return True
     else:
         return False
