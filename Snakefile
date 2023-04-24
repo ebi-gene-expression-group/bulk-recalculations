@@ -391,8 +391,6 @@ def input_round_log2_fold_changes(wildcards):
         inputs_files.append( f"logs/{wildcards['accession']}-rename_differential_proteomics_files.done" )
     return inputs_files
 
-#test, remove later
-print(run_deconvolution('E-MTAB-9372'))
 
 localrules: check_differential_gsea, link_baseline_coexpression, link_baseline_heatmap, create_tracks_symlinks, check_mvaPlot_rnaseq, check_normalized_expressions_microarray, delete_intermediate_files_microarray, touch_inputs_baseline
 
