@@ -82,7 +82,7 @@ def get_skip_steps_file():
     else:
         return None
 
-def get_deconv_run_file():
+def get_run_deconv_file():
     if 'run_deconv_file' in config:
         return config['run_deconv_file']
     else:
