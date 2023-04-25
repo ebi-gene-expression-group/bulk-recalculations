@@ -1488,10 +1488,10 @@ rule deconvolution:
                 sc_reference_C0=$(ls {params.signature_dir}/${{REFERENCE_FOUND}}_*_C0_scaled.rds | head -1)
                 sc_reference_phen=$(ls {params.signature_dir}/${{REFERENCE_FOUND}}_*_phenData.rds | head -1)
                 # check if DWLS output already exists and results are more recent than the reference
-                if [ ! -f "Output/{wildcards.accession}/{wildcards.accession}-${{tissue}}_res_DWLS.rds" ] || [ "Output/{wildcards.accession}/{wildcards.accession}-${{tissue}}_res_DWLS.rds" -ot "$sc_reference_C1" ]; then
+                if [ ! -f "Output/{wildcards.accession}-${{tissue}}_res_DWLS.rds" ] || [ "Output/{wildcards.accession}-${{tissue}}_res_DWLS.rds" -ot "$sc_reference_C1" ]; then
                     echo "$REFERENCE_FOUND for $tissue found, running deconvolution"
                     # run deconvlution for this tisssue with FARDEEP, DWLS and EpiDISH
-                    mkdir -p Output/{wildcards.accession}
+                    mkdir -p Output
                     {workflow.basedir}/atlas-analysis/deconvolution/run_deconvolution.sh $tissue {wildcards.accession} $sc_reference_C1 $sc_reference_C0 $sc_reference_phen {workflow.basedir}
                 else
                     echo "$REFERENCE_FOUND for $tissue found, Skipping deconolution as for $tissue results already exist"
