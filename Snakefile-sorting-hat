@@ -375,6 +375,7 @@ rule produce_recalculations_call:
         bioentities_properties=config['bioentities_properties'],
         skip_steps_file=get_skip_steps_file(),
         lsf_config = get_lsf_config_file(),
+	run_deconv_file=get_run_deconv_file(),
         log_handler_script=get_log_handler_script(),
         goal=config['goal'],
 	atlas_exps = config['atlas_exps'],
@@ -410,6 +411,7 @@ rule produce_recalculations_call:
                 metadata_summary=../{input.metadata} \
                 bioentities_properties={params.bioentities_properties} \
                 skip_steps_file={params.skip_steps_file} \
+		run_deconv_file={params.run_deconv_file} \
 		atlas_exps={params.atlas_exps} \
 	       	tmp_dir={params.tmp_dir} \
                 oracle_home={params.oracle_home} \
