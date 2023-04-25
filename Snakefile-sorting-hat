@@ -379,6 +379,7 @@ rule produce_recalculations_call:
         log_handler_script=get_log_handler_script(),
         goal=config['goal'],
 	atlas_exps = config['atlas_exps'],
+	priv_stat_file = config['priv_stat_file'],
 	tmp_dir=config['tmp_dir'],
         allowed_organism=get_user_species,
         oracle_home=get_db_params('oracle_home'),
@@ -414,6 +415,7 @@ rule produce_recalculations_call:
                 skip_steps_file={params.skip_steps_file} \
 		run_deconv_file={params.run_deconv_file} \
 		atlas_exps={params.atlas_exps} \
+		priv_stat_file={params.priv_stat_file} \
 	       	tmp_dir={params.tmp_dir} \
                 oracle_home={params.oracle_home} \
                 python_user={params.python_user} \
