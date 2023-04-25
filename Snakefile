@@ -1486,8 +1486,8 @@ rule deconvolution:
                 else
                     echo "$REFERENCE_FOUND for $tissue found, Skipping deconolution as for $tissue results already exist"
                 fi
-                mkdir -p ConsensusPlot/{wildcards.accession}
-                Rscript {workflow.basedir}/atlas-analysis/deconvolution/getConsensus.R {wildcards.accession} $tissue
+                #mkdir -p ConsensusPlot/{wildcards.accession}
+                #Rscript {workflow.basedir}/atlas-analysis/deconvolution/getConsensus.R {wildcards.accession} $tissue
             fi
             # produce output files
             Rscript {workflow.basedir}/atlas-analysis/deconvolution/summarizeDeconvolutionResults.R {input.sdrf} {wildcards.accession} $tissue $sc_reference_C1 {output.proportions}
