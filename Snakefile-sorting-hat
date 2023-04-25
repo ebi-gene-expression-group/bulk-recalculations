@@ -384,7 +384,8 @@ rule produce_recalculations_call:
         oracle_home=get_db_params('oracle_home'),
         python_user=get_db_params('python_user'),
         python_connect_string=get_db_params('python_connect_string'),
-        python_password=get_db_params('python_password')
+        python_password=get_db_params('python_password'),
+	deconv_ref=config['deconv_ref']
     output:
         touch("{accession}/{accession}.recalculations.done")
     run:
@@ -418,6 +419,7 @@ rule produce_recalculations_call:
                 python_user={params.python_user} \
                 python_connect_string={params.python_connect_string} \
                 python_password={params.python_password} \
+		deconv_ref={params.deconv_ref} \
                 -s {workflow.basedir}/Snakefile-recalculations {params.log_handler_script}
                 
         else
