@@ -1451,7 +1451,7 @@ rule deconvolution:
         methods="{accession}-analysis-methods.updated.tsv",
         #results=temp(directory('Output/{accession}')),
         #splits=temp(directory('Tissue_splits/{accession}')),
-        scratch=temp(directory('scratch/{accession}'))
+        #scratch=temp(directory('scratch/{accession}'))
     shell:
         """
         exec &> "logs/{wildcards.accession}.deconvolution.log"
