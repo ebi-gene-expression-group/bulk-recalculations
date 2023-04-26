@@ -1459,15 +1459,15 @@ rule deconvolution:
             file=$(basename "$file")
             tissue="${{file#{wildcards.accession}-}}"
             tissue="${{tissue%-fpkms_scaled.rds}}"
-            echo $tissue
+            echo "trying to deconvolve $tissue from {wildcards.accession}"
             # search for suitable reference in deconvolution library
             REFERENCE_FOUND=$(Rscript {workflow.basedir}/atlas-analysis/deconvolution/findReference.R $tissue {params.signature_dir} {workflow.basedir})
-            # check if deconvolution for tissue was already completed
+            # check if a refererence for this organism part was found
             if [ "$REFERENCE_FOUND" == "noref" ]; then
                 echo "no reference for $tissue found"
                 sc_reference_C1="noref"
             else
-                # check if reference library is correct for this tissue
+                # check if reference library files are okay for this tissue
                 number=$(ls {params.signature_dir}/${{REFERENCE_FOUND}}* | wc -l)
                 if [ "$number" != 4 ]; then
                     echo "Error in reference library, check that there are no duplicated or missing references for $REFERENCE_FOUND!" 
@@ -1484,7 +1484,7 @@ rule deconvolution:
                     mkdir -p Output
                     {workflow.basedir}/atlas-analysis/deconvolution/run_deconvolution.sh $tissue {wildcards.accession} $sc_reference_C1 $sc_reference_C0 $sc_reference_phen {workflow.basedir}
                 else
-                    echo "$REFERENCE_FOUND for $tissue found, Skipping deconolution as for $tissue results already exist"
+                    echo "$REFERENCE_FOUND for $tissue found, Skipping deconvolution as for $tissue results already exist"
                 fi
                 #mkdir -p ConsensusPlot/{wildcards.accession}
                 #Rscript {workflow.basedir}/atlas-analysis/deconvolution/getConsensus.R {wildcards.accession} $tissue
@@ -1493,6 +1493,7 @@ rule deconvolution:
             Rscript {workflow.basedir}/atlas-analysis/deconvolution/summarizeDeconvolutionResults.R {input.sdrf} {wildcards.accession} $tissue $sc_reference_C1 {output.proportions}
             Rscript {workflow.basedir}/atlas-analysis/deconvolution/getDeconvolutionInfo.R $tissue {wildcards.accession} $sc_reference_C1
         done
+	# append the analysis-methods file with info about devonvolution
         Rscript {workflow.basedir}/atlas-analysis/deconvolution/appendAnalysisMethods.R {input.methods} {wildcards.accession}
         """
 
