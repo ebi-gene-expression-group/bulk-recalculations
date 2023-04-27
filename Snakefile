@@ -1463,6 +1463,7 @@ rule deconvolution:
         files=$(ls Tissue_splits/{wildcards.accession}/{wildcards.accession}*-fpkms_scaled.rds)
         # iterate through tissues 
         for file in ${{files[@]}}; do
+	    printf "\n__________________ $tissue ____________________"	
             # get tissue name from filename
             file=$(basename "$file")
             tissue="${{file#{wildcards.accession}-}}"
