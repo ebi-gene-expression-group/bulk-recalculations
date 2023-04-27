@@ -1489,7 +1489,7 @@ rule deconvolution:
                 if [ ! -f "Output/{wildcards.accession}/{wildcards.accession}-${{tissue}}_res_DWLS.rds" ] || [ "Output/{wildcards.accession}/{wildcards.accession}-${{tissue}}_res_DWLS.rds" -ot "$sc_reference_C1" ]; then
                     echo "$REFERENCE_FOUND for $tissue found, running deconvolution"
                     # run deconvlution for this tisssue with FARDEEP, DWLS and EpiDISH
-                    mkdir -p Output
+                    mkdir -p Output/{wildcards.accession}
                     {workflow.basedir}/atlas-analysis/deconvolution/run_deconvolution.sh $tissue {wildcards.accession} $sc_reference_C1 $sc_reference_C0 $sc_reference_phen {workflow.basedir}
                 else
                     echo "$REFERENCE_FOUND for $tissue found, Skipping deconvolution as for $tissue results already exist"
