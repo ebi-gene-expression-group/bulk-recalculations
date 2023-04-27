@@ -1422,7 +1422,7 @@ rule deconvolution:
     Runs three deconvolution tools (DWLS, FARDEEP, EpiDIS) for experiments selected in deconvolution.yaml.
     """
     conda: "envs/deconvolution.yaml"
-    log: "logs/{accession}.deconvolution.log"
+    log: "logs/{accession}-deconvolution.log"
     #resources: mem_mb=get_mem_mb
     resources: mem_mb=64000
     threads: 16
@@ -1430,27 +1430,24 @@ rule deconvolution:
         fpkms="{accession}-fpkms.tsv.undecorated",
         methods="{accession}-analysis-methods.tsv",
         sdrf=get_sdrf()
-        #methods="{accession}-analysis-methods.tsv"
     params:
         organism=get_organism(),
-        #exp_type=get_from_config_or_metadata_summary('experiment_type'),
-        exp_type="rnaseq_mrna_differential",
         signature_dir=config["deconv_ref"]
     output:
         proportions="{accession}-summarized_proportions.tsv", 
-        methods="{accession}-analysis-methods.updated.tsv",
-        #results=temp(directory('Output/{accession}')),
-        #splits=temp(directory('Tissue_splits/{accession}')),
-        #scratch=temp(directory('scratch/{accession}'))
+        methods="{accession}-analysis-methods.tsv",
+	info="{accession}-analysis-methods.tsv",
+        results=temp(directory('Output)),
+        splits=temp(directory('Tissue_splits/{accession}')),
+        scratch=temp(directory('scratch/{accession}'))
     shell:
         """
-        exec &> "logs/{wildcards.accession}.deconvolution.log"
+        exec &> "logs/{wildcards.accession}-deconvolution.log"
         set -e # exit when any command fails
         echo "starting..."
-        if [ ! -d "Tissue_splits/{wildcards.accession}" ]; then
-            mkdir -p Tissue_splits/{wildcards.accession}
-            Rscript {workflow.basedir}/atlas-analysis/deconvolution/splitAndScale.R {input.fpkms} {input.sdrf} {wildcards.accession}
-        fi
+	# Split fpkms into organism parts
+        mkdir -p Tissue_splits/{wildcards.accession}
+        Rscript {workflow.basedir}/atlas-analysis/deconvolution/splitAndScale.R {input.fpkms} {input.sdrf} {wildcards.accession}
         # list all files that FPKMs were split into
         files=$(ls Tissue_splits/{wildcards.accession}/{wildcards.accession}*-fpkms_scaled.rds)
         # iterate through tissues 
@@ -1486,8 +1483,6 @@ rule deconvolution:
                 else
                     echo "$REFERENCE_FOUND for $tissue found, Skipping deconvolution as for $tissue results already exist"
                 fi
-                #mkdir -p ConsensusPlot/{wildcards.accession}
-                #Rscript {workflow.basedir}/atlas-analysis/deconvolution/getConsensus.R {wildcards.accession} $tissue
             fi
             # produce output files
             Rscript {workflow.basedir}/atlas-analysis/deconvolution/summarizeDeconvolutionResults.R {input.sdrf} {wildcards.accession} $tissue $sc_reference_C1 {output.proportions}
