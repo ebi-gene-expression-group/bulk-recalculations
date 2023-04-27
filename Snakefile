@@ -1452,12 +1452,12 @@ rule deconvolution:
         # list all files that FPKMs were split into
         files=$(ls Tissue_splits/{wildcards.accession}/{wildcards.accession}*-fpkms_scaled.rds)
         # iterate through tissues 
-        for file in ${{files[@]}}; do
-	    printf "\n__________________ $tissue ____________________"	
+        for file in ${{files[@]}}; do	
             # get tissue name from filename
             file=$(basename "$file")
             tissue="${{file#{wildcards.accession}-}}"
             tissue="${{tissue%-fpkms_scaled.rds}}"
+	    printf "\n__________________ $tissue ____________________ \n"
             echo "trying to deconvolve $tissue from {wildcards.accession}"
             # search for suitable reference in deconvolution library
             REFERENCE_FOUND=$(Rscript {workflow.basedir}/atlas-analysis/deconvolution/findReference.R $tissue {params.signature_dir} {workflow.basedir})
