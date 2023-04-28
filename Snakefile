@@ -1268,7 +1268,7 @@ rule differential_statistics_rnaseq:
         config_xml="{accession}-configuration.xml",
         raw_counts_undecorated=lambda wildcards: f"{wildcards.accession}-raw-counts.tsv.undecorated" if experiment_type != 'proteomics_differential' else 'none_necessary'
     params:
-        tmp_dir=get_tmp_dir(),
+        tmp_dir=get_tmp_dir(), # target_dir=config['atlas_exps'] for testing change back later
         exp_type=get_from_config_or_metadata_summary('experiment_type')
     output:
         differential_expression="{accession}-analytics.tsv.undecorated",
@@ -1571,7 +1571,7 @@ rule get_normalized_expressions_microarray:
     log: "logs/{accession}-get_normalized_expressions_microarray.log"
     resources: mem_mb=get_mem_mb
     params:
-        tmp_dir=get_tmp_dir()
+        tmp_dir=get_tmp_dir() # target_dir=config['atlas_exps'], for testing, change back later
     output:
         temp("logs/{accession}-get_normalized_expressions_microarray.done")
     shell:
