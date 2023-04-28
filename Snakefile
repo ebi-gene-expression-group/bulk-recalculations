@@ -1432,7 +1432,7 @@ rule deconvolution:
 	methods=rules.generate_methods_baseline_rnaseq.output,
         sdrf=get_sdrf()
     params:
-	exp_type=get_from_config_or_metadata_summary('experiment_type'),
+	#exp_type=get_from_config_or_metadata_summary('experiment_type'),
         organism=get_organism(),
         signature_dir=config["deconv_ref"]
     output:
@@ -1446,7 +1446,7 @@ rule deconvolution:
         """
         exec &> "logs/{wildcards.accession}-deconvolution.log"
         set -e # exit when any command fails
-	expType={params.exp_type}
+	expType="rnaseq_mrna_baseline"
 	organism={params.organism}
         if [ "$expType" == "proteomics_differential" ] && [ "$organism" == "rnaseq_mrna_baseline" ] ; then
 		echo "starting..."
