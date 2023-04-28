@@ -1258,7 +1258,7 @@ rule differential_statistics_rnaseq:
         config_xml="{accession}-configuration.xml",
         raw_counts_undecorated=lambda wildcards: f"{wildcards.accession}-raw-counts.tsv.undecorated" if experiment_type != 'proteomics_differential' else 'none_necessary'
     params:
-        tmp_dir=get_tmp_dir(), # target_dir=config['atlas_exps'] for testing change back later
+        tmp_dir=get_tmp_dir(),
         exp_type=get_from_config_or_metadata_summary('experiment_type')
     output:
         differential_expression="{accession}-analytics.tsv.undecorated",
@@ -1569,7 +1569,7 @@ rule get_normalized_expressions_microarray:
     log: "logs/{accession}-get_normalized_expressions_microarray.log"
     resources: mem_mb=get_mem_mb
     params:
-        tmp_dir=get_tmp_dir() # target_dir=config['atlas_exps'], for testing, change back later
+        tmp_dir=get_tmp_dir()
     output:
         temp("logs/{accession}-get_normalized_expressions_microarray.done")
     shell:
@@ -2036,7 +2036,7 @@ rule copy_experiment_from_analysis_to_atlas_exps:
     log: "logs/{accession}-copy_experiment_from_analysis_to_atlas_exps.log"
     input: get_checkpoints_cp_atlas_exps
     params:
-        target_dir=get_tmp_dir(),
+        target_dir=get_tmp_dir(), # target_dir=config['atlas_exps'], for testing, change back later
         privacy_status_file=config['priv_stat_file']
     output:
         temp("logs/{accession}-copy_experiment_from_analysis_to_atlas_exps.done")
@@ -2066,7 +2066,7 @@ rule get_magetab_for_experiment:
     log: "logs/{accession}-get_magetab_for_experiment.log"
     input: rules.copy_experiment_from_analysis_to_atlas_exps.output
     params:
-        target_dir=get_tmp_dir(),
+        target_dir=get_tmp_dir(), # target_dir=config['atlas_exps'], for testing, change back later
         exp_type=get_from_config_or_metadata_summary('experiment_type'),
         zooma_exclusions=get_zooma_exclusions()
     output:
