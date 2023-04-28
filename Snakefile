@@ -1456,9 +1456,8 @@ rule deconvolution:
         """
         exec &> "logs/{wildcards.accession}-deconvolution.log"
         set -e # exit when any command fails
-	expType="rnaseq_mrna_baseline"
 	organism={params.organism}
-        if [ "$expType" == "proteomics_differential" ] && [ "$organism" == "rnaseq_mrna_baseline" ] ; then
+        if [ "$organism" == "homo_sapiens" ] ; then
 		echo "starting..."
 		# Split fpkms into organism parts
 		mkdir -p Tissue_splits/{wildcards.accession}
