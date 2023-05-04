@@ -1437,7 +1437,7 @@ rule deconvolution:
     threads: 16
     input: 
         fpkms="{accession}-fpkms.tsv.undecorated",
-        methods="{accession}-analysis-methods.tsv",
+	methods=get_methods_file,
 	#methods=rules.generate_methods_baseline_rnaseq.output,
         sdrf=get_sdrf()
     params:
@@ -1446,7 +1446,7 @@ rule deconvolution:
         signature_dir=config["deconv_ref"]
     output:
         proportions="{accession}-summarized_proportions.tsv", 
-        methods=get_methods_file,
+         methods="{accession}-analysis-methods.tsv",
 	info="{accession}-deconvolution_info.tsv",
         results=temp(directory('Output/{accession}')),
         splits=temp(directory('Tissue_splits/{accession}')),
