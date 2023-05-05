@@ -395,14 +395,18 @@ def get_methods_file(wildcards):
     differential_methods = f"{wildcards['accession']}-analysis-methods.tsv_differential_rnaseq"
     baseline_methods = f"{wildcards['accession']}-analysis-methods.tsv_baseline_rnaseq"
     methods = f"{wildcards['accession']}-analysis-methods.tsv"
-    if os.path.isfile(differential_methods):
-        return differential_methods
-    elif os.path.isfile(baseline_methods):
-        return baseline_methods
-    elif os.path.isfile(methods):
-        return methods
-    else:
-        return None
+    if config['goal'] == 'reprocess':
+    	if os.path.isfile(differential_methods):
+        	return differential_methods
+    	elif os.path.isfile(baseline_methods):
+        	return baseline_methods
+	else:
+        	return None
+    if config['goal'] == 'recalculations':
+    	if os.path.isfile(methods):
+        	return methods
+    	else:
+        	return None
 
 localrules: check_differential_gsea, link_baseline_coexpression, link_baseline_heatmap, create_tracks_symlinks, check_mvaPlot_rnaseq, check_normalized_expressions_microarray, delete_intermediate_files_microarray, touch_inputs_baseline
 
@@ -1458,8 +1462,7 @@ rule deconvolution:
         organism=get_organism(),
         signature_dir=config["deconv_ref"]
     output:
-        proportions="{accession}-deconvolution.proportions.tsv", 
-        methods="{accession}-analysis-methods.tsv",
+        proportions="{accession}-deconvolution.proportions.tsv",
 	info="{accession}-deconvolution.info.tsv",
         results=temp(directory('Output/{accession}')),
         splits=temp(directory('Tissue_splits/{accession}')),
@@ -1514,7 +1517,7 @@ rule deconvolution:
 		# append the analysis-methods file with info about devonvolution
 		Rscript {workflow.basedir}/atlas-analysis/deconvolution/appendAnalysisMethods.R {input.methods} {wildcards.accession}
 	else
-		echo "Error: {wildcards.accession} can not be deconvolved as it is not a homo sapiens rnaseq_mrna_baseline experiment, remove from accession_deconvolution.yaml file!"
+		echo "Error: {wildcards.accession} can not be deconvolved as it is not a homo sapiens experiment, remove from accession_deconvolution.yaml file!"
 		exit 1
 	fi
 	"""
