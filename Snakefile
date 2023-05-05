@@ -386,10 +386,13 @@ def input_round_log2_fold_changes(wildcards):
 def get_methods_file(wildcards):
     differential_methods = f"{wildcards['accession']}-analysis-methods.tsv_differential_rnaseq"
     baseline_methods = f"{wildcards['accession']}-analysis-methods.tsv_baseline_rnaseq"
+    methods = f"{wildcards['accession']}-analysis-methods.tsv"
     if os.path.isfile(differential_methods):
         return differential_methods
     elif os.path.isfile(baseline_methods):
         return baseline_methods
+    elif os.path.isfile(methods):
+	return methods
     else:
         return None
 
