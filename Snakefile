@@ -1455,9 +1455,9 @@ rule deconvolution:
         organism=get_organism(),
         signature_dir=config["deconv_ref"]
     output:
-        proportions="{accession}-summarized_proportions.tsv", 
+        proportions="{accession}-deconvolution.proportions.tsv", 
         methods="{accession}-analysis-methods.tsv",
-	info="{accession}-deconvolution_info.tsv",
+	info="{accession}-deconvolution.info.tsv",
         results=temp(directory('Output/{accession}')),
         splits=temp(directory('Tissue_splits/{accession}')),
         scratch=temp(directory('scratch/{accession}'))
@@ -1498,15 +1498,11 @@ rule deconvolution:
 			sc_reference_C1=$(ls {params.signature_dir}/${{REFERENCE_FOUND}}_*_C1.rds | head -1)
 			sc_reference_C0=$(ls {params.signature_dir}/${{REFERENCE_FOUND}}_*_C0_scaled.rds | head -1)
 			sc_reference_phen=$(ls {params.signature_dir}/${{REFERENCE_FOUND}}_*_phenData.rds | head -1)
-			# check if DWLS output already exists and results are more recent than the reference
-			if [ ! -f "Output/{wildcards.accession}/{wildcards.accession}-${{tissue}}_res_DWLS.rds" ] || [ "Output/{wildcards.accession}/{wildcards.accession}-${{tissue}}_res_DWLS.rds" -ot "$sc_reference_C1" ]; then
-			    echo "$REFERENCE_FOUND for $tissue found, running deconvolution"
-			    # run deconvlution for this tisssue with FARDEEP, DWLS and EpiDISH
-			    mkdir -p Output/{wildcards.accession}
-			    {workflow.basedir}/atlas-analysis/deconvolution/run_deconvolution.sh $tissue {wildcards.accession} $sc_reference_C1 $sc_reference_C0 $sc_reference_phen {workflow.basedir}
-			else
-			    echo "$REFERENCE_FOUND for $tissue found, Skipping deconvolution as for $tissue results already exist"
-			fi
+		
+			echo "$REFERENCE_FOUND for $tissue found, running deconvolution"
+			# run deconvlution for this tisssue with FARDEEP, DWLS and EpiDISH
+			mkdir -p Output/{wildcards.accession}
+			{workflow.basedir}/atlas-analysis/deconvolution/run_deconvolution.sh $tissue {wildcards.accession} $sc_reference_C1 $sc_reference_C0 $sc_reference_phen {workflow.basedir}
 		    fi
 		    # produce output files
 		    Rscript {workflow.basedir}/atlas-analysis/deconvolution/summarizeDeconvolutionResults.R {input.sdrf} {wildcards.accession} $tissue $sc_reference_C1 {output.proportions}
