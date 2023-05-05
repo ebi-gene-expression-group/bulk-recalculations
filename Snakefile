@@ -392,7 +392,7 @@ def get_methods_file(wildcards):
     elif os.path.isfile(baseline_methods):
         return baseline_methods
     elif os.path.isfile(methods):
-	return methods
+        return methods
     else:
         return None
 
