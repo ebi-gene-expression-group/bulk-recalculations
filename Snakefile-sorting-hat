@@ -310,9 +310,7 @@ rule produce_reprocess_call:
         python_user=get_db_params('python_user'),
         python_connect_string=get_db_params('python_connect_string'),
         python_password=get_db_params('python_password'),
-	deconv_ref=config['deconv_ref'],
-	irap_versions=config['irap_versions'],
-        irap_container=config['irap_container']
+	deconv_ref=config['deconv_ref']
 
     output:
         touch("{accession}/{accession}.reprocess.done")
@@ -388,7 +386,9 @@ rule produce_recalculations_call:
         python_user=get_db_params('python_user'),
         python_connect_string=get_db_params('python_connect_string'),
         python_password=get_db_params('python_password'),
-	deconv_ref=config['deconv_ref']
+	deconv_ref=config['deconv_ref'],
+	irap_versions=config['irap_versions'],
+        irap_container=config['irap_container']
     output:
         touch("{accession}/{accession}.recalculations.done")
     run:
