@@ -396,17 +396,17 @@ def get_methods_file(wildcards):
     baseline_methods = f"{wildcards['accession']}-analysis-methods.tsv_baseline_rnaseq"
     methods = f"{wildcards['accession']}-analysis-methods.tsv"
     if config['goal'] == 'reprocess':
-    	if os.path.isfile(differential_methods):
-        	return differential_methods
-    	elif os.path.isfile(baseline_methods):
-        	return baseline_methods
-	else:
-        	return None
-    if config['goal'] == 'recalculations':
-    	if os.path.isfile(methods):
-        	return methods
-    	else:
-        	return None
+        if os.path.isfile(differential_methods):
+            return differential_methods
+        elif os.path.isfile(baseline_methods):
+            return baseline_methods
+        else:
+            return None
+    elif config['goal'] == 'recalculations':
+        if os.path.isfile(methods):
+            return methods
+        else:
+            return None
 
 localrules: check_differential_gsea, link_baseline_coexpression, link_baseline_heatmap, create_tracks_symlinks, check_mvaPlot_rnaseq, check_normalized_expressions_microarray, delete_intermediate_files_microarray, touch_inputs_baseline
 
