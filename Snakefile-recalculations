@@ -68,7 +68,7 @@ def get_outputs():
         outputs.append(f"{config['accession']}-heatmap.pdf")
     # add deconvolution results for some accessions
     if run_deconvolution(config['accession']):
-        outputs.append(f"{config['accession']}-summarized_proportions.tsv")    
+        outputs.append(f"{config['accession']}-deconvolution.proportions.tsv")    
     if 'baseline-coexpression' in config['tool'] or 'all-baseline' in config['tool'] and skip(config['accession'],'baseline-coexpression'):   
         metric_link_coexp=False
         for m in metrics:
