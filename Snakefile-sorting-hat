@@ -390,7 +390,9 @@ rule produce_recalculations_call:
 	irap_versions=config['irap_versions'],
         irap_container=config['irap_container'],
 	methods_base=config['methods_base'],
-        methods_dif=config['methods_dif']
+        methods_dif=config['methods_dif'],
+	isl_dir=config['isl_dir'],
+        isl_genomes=config['isl_genomes']
 	
     output:
         touch("{accession}/{accession}.recalculations.done")
@@ -431,6 +433,8 @@ rule produce_recalculations_call:
                 irap_container={params.irap_container} \
 		methods_base={params.methods_base} \
                 methods_dif={params.methods_dif} \
+		isl_dir={params.isl_dir} \
+                isl_genomes={params.isl_genomes} \
                 -s {workflow.basedir}/Snakefile-recalculations {params.log_handler_script}
                 
         else
