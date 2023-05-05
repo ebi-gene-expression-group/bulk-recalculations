@@ -70,9 +70,9 @@ def get_outputs():
     # add deconvolution results for some accessions
     if run_deconvolution(config['accession']):
         outputs.append(f"{config['accession']}-deconvolution.proportions.tsv")
-        if experiment_type == 'rnaseq_mrna_baseline'
+        if experiment_type == 'rnaseq_mrna_baseline':
             outputs.append(f"{config['accession']}-analysis-methods.tsv_baseline_rnaseq")
-        if experiment_type == 'rnaseq_mrna_differential'
+        if experiment_type == 'rnaseq_mrna_differential':
             outputs.append(f"{config['accession']}-analysis-methods.tsv_differential_rnaseq")
     if 'baseline-coexpression' in config['tool'] or 'all-baseline' in config['tool'] and skip(config['accession'],'baseline-coexpression'):   
         metric_link_coexp=False
