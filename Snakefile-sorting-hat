@@ -388,7 +388,10 @@ rule produce_recalculations_call:
         python_password=get_db_params('python_password'),
 	deconv_ref=config['deconv_ref'],
 	irap_versions=config['irap_versions'],
-        irap_container=config['irap_container']
+        irap_container=config['irap_container'],
+	methods_base=config['methods_base'],
+        methods_dif=config['methods_dif']
+	
     output:
         touch("{accession}/{accession}.recalculations.done")
     run:
@@ -426,6 +429,8 @@ rule produce_recalculations_call:
 		deconv_ref={params.deconv_ref} \
 		irap_versions={params.irap_versions} \
                 irap_container={params.irap_container} \
+		methods_base={params.methods_base} \
+                methods_dif={params.methods_dif} \
                 -s {workflow.basedir}/Snakefile-recalculations {params.log_handler_script}
                 
         else
