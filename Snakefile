@@ -1451,7 +1451,7 @@ rule deconvolution:
 	#methods=rules.generate_methods_baseline_rnaseq.output,
         sdrf=get_sdrf()
     params:
-        signature_dir=config["deconv_ref"] + "/" + get_organism()
+        signature_dir=config["deconv_ref"] + get_organism()
     output:
         proportions="{accession}-deconvolution.proportions.tsv",
 	info="{accession}-deconvolution.info.tsv",
