@@ -1454,7 +1454,7 @@ rule deconvolution:
         signature_dir=config["deconv_ref"] + get_organism()
     output:
         proportions="{accession}-deconvolution.proportions.tsv",
-	info="{accession}-deconvolution.info.tsv",
+	#info="{accession}-deconvolution.info.tsv",
         results=temp(directory('Output/{accession}')),
         splits=temp(directory('Tissue_splits/{accession}')),
         scratch=temp(directory('scratch/{accession}'))
