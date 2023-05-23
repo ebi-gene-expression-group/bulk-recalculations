@@ -1500,14 +1500,14 @@ rule deconvolution:
 	    fi
 	    # produce output files
 	    Rscript {workflow.basedir}/atlas-analysis/deconvolution/summarizeDeconvolutionResults.R {input.sdrf} {wildcards.accession} $tissue $sc_reference_C1 {output.proportions}
-	    Rscript {workflow.basedir}/atlas-analysis/deconvolution/getDeconvolutionInfo.R $tissue {wildcards.accession} $sc_reference_C1
+	    # Rscript {workflow.basedir}/atlas-analysis/deconvolution/getDeconvolutionInfo.R $tissue {wildcards.accession} $sc_reference_C1
+	    # append the analysis-methods file with info about devonvolution
+	    Rscript {workflow.basedir}/atlas-analysis/deconvolution/appendAnalysisMethods.R {input.methods} {wildcards.accession} $tissue $sc_reference_C1 {workflow.basedir}
 	done
 	if [ ! -d "Output/{wildcards.accession}" ]; then
 	    echo "Error: For none of the organism parts a reference was found. Remove accession from accessions_deconvolution.yaml or check references!"
     	    exit 1
 	fi
-	# append the analysis-methods file with info about devonvolution
-	Rscript {workflow.basedir}/atlas-analysis/deconvolution/appendAnalysisMethods.R {input.methods} {wildcards.accession}
 	"""
 
 rule decorate_differential_rnaseq:
