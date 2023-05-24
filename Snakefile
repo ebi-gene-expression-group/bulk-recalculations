@@ -1497,6 +1497,7 @@ rule deconvolution:
 		mkdir -p Output/{wildcards.accession}
 		mkdir -p scratch/{wildcards.accession}
 		{workflow.basedir}/atlas-analysis/deconvolution/run_deconvolution.sh $tissue {wildcards.accession} $sc_reference_C1 $sc_reference_C0 $sc_reference_phen {workflow.basedir}
+		echo $DECONV_STATUS
 	    fi
 	    # produce output files
 	    Rscript {workflow.basedir}/atlas-analysis/deconvolution/summarizeDeconvolutionResults.R {input.sdrf} {wildcards.accession} $tissue $sc_reference_C1 {output.proportions}
