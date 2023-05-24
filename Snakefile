@@ -1496,7 +1496,7 @@ rule deconvolution:
 		# run deconvlution for this tisssue with FARDEEP, DWLS and EpiDISH
 		mkdir -p Output/{wildcards.accession}
 		mkdir -p scratch/{wildcards.accession}
-		{workflow.basedir}/atlas-analysis/deconvolution/run_deconvolution.sh $tissue {wildcards.accession} $sc_reference_C1 $sc_reference_C0 $sc_reference_phen {workflow.basedir}
+		source {workflow.basedir}/atlas-analysis/deconvolution/run_deconvolution.sh $tissue {wildcards.accession} $sc_reference_C1 $sc_reference_C0 $sc_reference_phen {workflow.basedir}
 		echo $DECONV_STATUS
 	    fi
 	    # produce output files
