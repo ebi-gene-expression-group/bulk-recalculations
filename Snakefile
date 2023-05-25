@@ -1487,6 +1487,7 @@ rule deconvolution:
 	    if [ "$REFERENCE_FOUND" == "noref" ]; then
 	        echo "no reference for $tissue found"
 		sc_reference_C1="noref"
+		DECONV_STATUS="noref"
 	    else
 		# check if reference library files are okay for this tissue
 		number=$(ls {params.signature_dir}/${{REFERENCE_FOUND}}* | wc -l)
@@ -1507,13 +1508,10 @@ rule deconvolution:
 		mkdir -p Output/{wildcards.accession}
 		mkdir -p scratch/{wildcards.accession}
 		source {workflow.basedir}/atlas-analysis/deconvolution/run_deconvolution.sh $tissue {wildcards.accession} $sc_reference_C1 $sc_reference_C0 $sc_reference_phen {workflow.basedir}
-		echo $DECONV_STATUS
 	    fi
 	    # produce output files
 	    Rscript {workflow.basedir}/atlas-analysis/deconvolution/summarizeDeconvolutionResults.R {input.sdrf} {wildcards.accession} $tissue $sc_reference_C1 {output.proportions}
-	    # Rscript {workflow.basedir}/atlas-analysis/deconvolution/getDeconvolutionInfo.R $tissue {wildcards.accession} $sc_reference_C1
 	    # append the analysis-methods file with info about devonvolution
-	    echo $DECONV_STATUS
 	    Rscript {workflow.basedir}/atlas-analysis/deconvolution/appendAnalysisMethods.R {input.methods} {wildcards.accession} $tissue $sc_reference_C1 {workflow.basedir} $DECONV_STATUS
 	done
 	if [ ! -d "Output/{wildcards.accession}" ]; then
