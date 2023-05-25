@@ -1,7 +1,7 @@
 [submodule "isl"]
 	path = isl
 	url = https://github.com/ebi-gene-expression-group/isl.git
-	branch = feature/fix_postprocessing
+	branch = develop_codon
 
 [submodule "atlas-analysis"]
 	path = atlas-analysis
