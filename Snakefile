@@ -1451,7 +1451,7 @@ rule deconvolution:
     shell:
         """
         exec &> "logs/{wildcards.accession}-deconvolution.log"
-	set -e # exit when any command fails
+	set -b  #Notify of job termination immediatel
 
 	echo "starting..."
 	# Split fpkms into organism parts
@@ -1497,7 +1497,7 @@ rule deconvolution:
 		# run deconvlution for this tisssue with FARDEEP, DWLS and EpiDISH
 		mkdir -p Output/{wildcards.accession}
 		mkdir -p scratch/{wildcards.accession}
-		{workflow.basedir}/atlas-analysis/deconvolution/run_deconvolution.sh $tissue {wildcards.accession} $sc_reference_C1 $sc_reference_C0 $sc_reference_phen {workflow.basedir}
+		source {workflow.basedir}/atlas-analysis/deconvolution/run_deconvolution.sh $tissue {wildcards.accession} $sc_reference_C1 $sc_reference_C0 $sc_reference_phen {workflow.basedir}
 	    fi
 	    echo $DECONV_STATUS
 	    # produce output files
