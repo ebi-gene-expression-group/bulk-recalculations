@@ -1474,7 +1474,7 @@ rule deconvolution:
 	    REFERENCE_FOUND=$(Rscript {workflow.basedir}/atlas-analysis/deconvolution/findReference.R $tissue {params.signature_dir} {workflow.basedir})
 
 	    # check if a refererence for this organism part was found
-	    if [ "$REFERENCE_FOUND" == "noref" ]; then
+	    if [[ "$REFERENCE_FOUND" == "noref"* ]]; then
 	        echo "no reference for $tissue found"
 		sc_reference_C1="noref"
 		DECONV_STATUS="noref"
