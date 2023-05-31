@@ -1451,7 +1451,7 @@ rule deconvolution:
     shell:
         """
         exec &> "logs/{wildcards.accession}-deconvolution.log"
-	set -b  #Notify of job termination immediatel
+	set -e  #Notify of job termination immediatel
 
 	echo "starting..."
 	# Split fpkms into organism parts
