@@ -1445,7 +1445,7 @@ rule deconvolution:
     output:
         proportions="{accession}-deconvolution.proportions.tsv",
 	methods="{accession}-analysis-methods.tsv",
-        results=temp(directory('Output/{accession}')),
+        results=(directory('Output/{accession}')),
         splits=temp(directory('Tissue_splits/{accession}')),
         scratch=temp(directory('scratch/{accession}'))
     shell:
