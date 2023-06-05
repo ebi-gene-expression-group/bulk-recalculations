@@ -1477,7 +1477,7 @@ rule deconvolution:
 	    if [[ "$REFERENCE_FOUND" == "noref"* ]]; then
 	        echo "no reference for $tissue found"
 		sc_reference_C1="noref"
-		DECONV_STATUS="noref"
+		DECONV_STATUS="no_reference_for_deconvolution_found"
 	    else
 		# check if reference library files are okay for this tissue
 		number=$(ls {params.signature_dir}/${{REFERENCE_FOUND}}* | wc -l)
