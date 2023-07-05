@@ -383,7 +383,7 @@ def input_round_log2_fold_changes(wildcards):
         inputs_files.append( f"logs/{wildcards['accession']}-rename_differential_proteomics_files.done" )
     return inputs_files
 
-def get_methods_file(wildcards):
+def get_methods_file_for_deconv_rule(wildcards):
     differential_methods = f"{wildcards['accession']}-analysis-methods.tsv_differential_rnaseq"
     baseline_methods = f"{wildcards['accession']}-analysis-methods.tsv_baseline_rnaseq"
     if experiment_type == 'rnaseq_mrna_baseline':
@@ -1437,7 +1437,7 @@ rule deconvolution:
     threads: 16
     input: 
         fpkms="{accession}-fpkms.tsv.undecorated",
-	methods=get_methods_file,
+	methods=get_methods_file_for_deconv_rule,
 	#methods=rules.generate_methods_baseline_rnaseq.output,
         sdrf=get_sdrf()
     params:
@@ -1479,12 +1479,13 @@ rule deconvolution:
 		sc_reference_C1="noref"
 		DECONV_STATUS="no_reference_for_deconvolution_found"
 	    else
-		# check if reference library files are okay for this tissue
-		number=$(ls {params.signature_dir}/${{REFERENCE_FOUND}}* | wc -l)
+		# check whether one reference (consisting of four different files UBERON_*_C1.rds, UBERON_*_C0_scaled.rds, UBERON_*_phenData.rds and UBERON_*_seurat.rds)
+		# exists for organism part
+		number_of_files=$(ls {params.signature_dir}/${{REFERENCE_FOUND}}* | wc -l)
 
-		if [ "$number" != 4 ]; then
+		if [ "$number_of_files" != 4 ]; then
 		    echo "Error in reference library, check that there are no duplicated or missing references for $REFERENCE_FOUND!" 
-		    exit 125
+		    exit 1
 		fi 
 
 		# find the different reference files
