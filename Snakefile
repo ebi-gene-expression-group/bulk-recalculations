@@ -1428,7 +1428,7 @@ rule generate_methods_differential_rnaseq:
 
 rule deconvolution:
     """
-    Runs three deconvolution tools (DWLS, FARDEEP, EpiDIS) for experiments selected in deconvolution.yaml.
+    Runs three deconvolution tools (DWLS, FARDEEP, EpiDIS) for experiments selected in accession_deconvolution.yaml.
     """
     conda: "envs/deconvolution.yaml"
     log: "logs/{accession}-deconvolution.log"
