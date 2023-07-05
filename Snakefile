@@ -1454,12 +1454,18 @@ rule deconvolution:
 	set -b  # Notify of job termination immediately
 
 	echo "starting..."
-	# Split fpkms into organism parts
+	# Split fpkms into organism parts and scale counts
 	mkdir -p Tissue_splits/{wildcards.accession}
 	Rscript {workflow.basedir}/atlas-analysis/deconvolution/splitAndScale.R {input.fpkms} {input.sdrf} {wildcards.accession}
 
 	# list all files that FPKMs were split into
 	files=$(ls Tissue_splits/{wildcards.accession}/{wildcards.accession}*-fpkms_scaled.rds)
+
+	# Check if at least one file was genereated
+	if [[ -z $files ]]; then
+  		echo "Error: something went wrong while spliting FPKMS into organism parts."
+  		exit 1
+	fi
 
 	# iterate through tissues 
 	for file in ${{files[@]}}; do
