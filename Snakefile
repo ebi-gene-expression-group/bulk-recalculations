@@ -1437,7 +1437,7 @@ rule deconvolution:
     threads: 16
     input: 
         fpkms="{accession}-fpkms.tsv.undecorated",
-	methods=get_methods_file_for_deconv_rule,
+	#methods=get_methods_file_for_deconv_rule,
 	#methods=rules.generate_methods_baseline_rnaseq.output,
         sdrf=get_sdrf()
     params:
