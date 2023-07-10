@@ -386,11 +386,12 @@ def input_round_log2_fold_changes(wildcards):
 def get_methods_file_for_deconv_rule(wildcards):
     differential_methods = f"{wildcards['accession']}-analysis-methods.tsv_differential_rnaseq"
     baseline_methods = f"{wildcards['accession']}-analysis-methods.tsv_baseline_rnaseq"
-    if experiment_type == 'rnaseq_mrna_baseline':
-        return baseline_methods
-    elif experiment_type == 'rnaseq_mrna_differential':
-        return differential_methods
-    else:
+    if config['goal'] == 'reprocess':
+    	if experiment_type == 'rnaseq_mrna_baseline':
+        	return baseline_methods
+        elif experiment_type == 'rnaseq_mrna_differential':
+        	return differential_methods
+    if config['goal'] == 'recalculations':
         return None
       
 localrules: check_differential_gsea, link_baseline_coexpression, link_baseline_heatmap, create_tracks_symlinks, check_mvaPlot_rnaseq, check_normalized_expressions_microarray, delete_intermediate_files_microarray, touch_inputs_baseline
@@ -1437,9 +1438,7 @@ rule deconvolution:
     threads: 16
     input: 
         fpkms="{accession}-fpkms.tsv.undecorated",
-	#methods=get_methods_file_for_deconv_rule,
-	#methods=rules.generate_methods_baseline_rnaseq.output,
-	methods=lambda wildcards: get_methods_file_for_deconv_rule if 'reprocess' in config['goal'] else [],
+	methods=get_methods_file_for_deconv_rule,
         sdrf=get_sdrf()
     params:
         signature_dir=config["deconv_ref"] + get_organism()
