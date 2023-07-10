@@ -1457,11 +1457,10 @@ rule deconvolution:
 	set -b  # Notify of job termination immediately
 
 	INPUT_METHODS={input.methods}
-	echo $INPUT_METHODS
-        # If mode is recalculations don't create new methods file and use existing one
+
+        # If mode is recalculations don't force recreation of new methods file and append existing one
 	if [ -z "$INPUT_METHODS" ]; then
     	    INPUT_METHODS="{wildcards.accession}-analysis-methods.tsv"
-	    echo $INPUT_METHODS
 	fi
 
 	echo "starting..."
