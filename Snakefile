@@ -394,7 +394,7 @@ def get_methods_file_for_deconv_rule(wildcards):
             return differential_methods
     
     if config['goal'] == 'recalculations':
-        return None
+        return []
 
       
 localrules: check_differential_gsea, link_baseline_coexpression, link_baseline_heatmap, create_tracks_symlinks, check_mvaPlot_rnaseq, check_normalized_expressions_microarray, delete_intermediate_files_microarray, touch_inputs_baseline
