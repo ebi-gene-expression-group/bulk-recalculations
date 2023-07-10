@@ -1531,8 +1531,15 @@ rule deconvolution:
 	    # append the analysis-methods file with info about devonvolution
 	    Rscript {workflow.basedir}/atlas-analysis/deconvolution/appendAnalysisMethods.R {input.methods} {wildcards.accession} $tissue $sc_reference_C1 {workflow.basedir} $DECONV_STATUS {output.methods}
 	done
-	if [ ! -d "Output/{wildcards.accession}" ]; then
-	    echo "Error: For none of the organism parts a reference was found. Remove accession from accessions_deconvolution.yaml or check references!"
+	# Define the path to the file
+	file_path="/path/to/file.txt"
+
+	# Count the number of lines in the final output file
+	results_count=$(wc -l < "{output.proportions}")
+
+	# Check if there are any results in the file
+	if [ "$results_count" -lt 2 ]; then
+	    echo "Error: Deconvoluiton was unsuccesful for all organims parts. Check log file and remove {wildcards.accession} from acession_deconvolution.yaml!"
     	    exit 1
 	fi
 	cp {output.methods} {wildcards.accession}-analysis-methods.tsv
