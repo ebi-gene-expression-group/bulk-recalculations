@@ -1466,9 +1466,12 @@ rule deconvolution:
         exec &> "logs/{wildcards.accession}-deconvolution.log"
 	set -b  # Notify of job termination immediately
 
+	INPUT_METHODS={input.methods}
+	echo $INPUT_METHODS
         # If mode is recalculations don't create new methods file and use existing one
-	if [ -z "{input.methods}" ]; then
-    	    {input.methods}="{wildcards.accession}-analysis-methods.tsv"
+	if [ -z "$INPUT_METHODS" ]; then
+    	    INPUT_METHODS="{wildcards.accession}-analysis-methods.tsv"
+	    echo $INPUT_METHODS
 	fi
 
 	echo "starting..."
@@ -1529,7 +1532,7 @@ rule deconvolution:
 	    # produce output files
 	    Rscript {workflow.basedir}/atlas-analysis/deconvolution/summarizeDeconvolutionResults.R {input.sdrf} {wildcards.accession} $tissue $sc_reference_C1 {output.proportions} $DECONV_STATUS
 	    # append the analysis-methods file with info about devonvolution
-	    Rscript {workflow.basedir}/atlas-analysis/deconvolution/appendAnalysisMethods.R {input.methods} {wildcards.accession} $tissue $sc_reference_C1 {workflow.basedir} $DECONV_STATUS {output.methods}
+	    Rscript {workflow.basedir}/atlas-analysis/deconvolution/appendAnalysisMethods.R $INPUT_METHODS {wildcards.accession} $tissue $sc_reference_C1 {workflow.basedir} $DECONV_STATUS {output.methods}
 	done
 	# Define the path to the file
 	file_path="/path/to/file.txt"
