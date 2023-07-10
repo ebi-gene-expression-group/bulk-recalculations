@@ -395,12 +395,12 @@ def get_methods_file_for_deconv_rule(wildcards):
     differential_methods = f"{wildcards['accession']}-analysis-methods.tsv_differential_rnaseq"
     baseline_methods = f"{wildcards['accession']}-analysis-methods.tsv_baseline_rnaseq"
     if config['goal'] == 'reprocess':
-    	if experiment_type == 'rnaseq_mrna_baseline':
-        	return baseline_methods
-        elif experiment_type == 'rnaseq_mrna_differential':
-        	return differential_methods
+	if experiment_type == 'rnaseq_mrna_baseline':
+		return baseline_methods
+	elif experiment_type == 'rnaseq_mrna_differential':
+		return differential_methods
     if config['goal'] == 'recalculations':
-        return None
+	return None
       
 localrules: check_differential_gsea, link_baseline_coexpression, link_baseline_heatmap, create_tracks_symlinks, check_mvaPlot_rnaseq, check_normalized_expressions_microarray, delete_intermediate_files_microarray, touch_inputs_baseline
 
