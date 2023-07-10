@@ -1447,7 +1447,7 @@ rule deconvolution:
         signature_dir=config["deconv_ref"] + get_organism()
     output:
         proportions="{accession}-deconvolution.proportions.tsv",
-	methods="{accession}-analysis-methods.tsv",
+	methods=temp("{accession}-deconvolution-analysis-methods.tsv"),
         results=(directory('Output/{accession}')),
         splits=temp(directory('Tissue_splits/{accession}')),
         scratch=temp(directory('scratch/{accession}'))
@@ -1520,7 +1520,7 @@ rule deconvolution:
 	    Rscript {workflow.basedir}/atlas-analysis/deconvolution/summarizeDeconvolutionResults.R {input.sdrf} {wildcards.accession} $tissue $sc_reference_C1 {output.proportions} $DECONV_STATUS
 	    # append the analysis-methods file with info about devonvolution
 	    Rscript {workflow.basedir}/atlas-analysis/deconvolution/appendAnalysisMethods.R {wildcards.accession}-analysis-methods.tsv {wildcards.accession} $tissue $sc_reference_C1 {workflow.basedir} $DECONV_STATUS {output.methods}
-	    cp {output.methods} {input.methods}
+	    cp {output.methods} {wildcards.accession}-analysis-methods.tsv
 	done
 	if [ ! -d "Output/{wildcards.accession}" ]; then
 	    echo "Error: For none of the organism parts a reference was found. Remove accession from accessions_deconvolution.yaml or check references!"
