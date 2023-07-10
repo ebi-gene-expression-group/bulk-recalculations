@@ -1456,6 +1456,11 @@ rule deconvolution:
         exec &> "logs/{wildcards.accession}-deconvolution.log"
 	set -b  # Notify of job termination immediately
 
+        # Check if the variable is empty (None)
+	if [ -z "{input.methods}" ]; then
+    	    {input.methods}="{wildcards.accession}-analysis-methods.tsv"
+	fi
+
 	echo "starting..."
 	# Split fpkms into organism parts and scale counts
 	mkdir -p Tissue_splits/{wildcards.accession}
@@ -1515,7 +1520,7 @@ rule deconvolution:
 	    Rscript {workflow.basedir}/atlas-analysis/deconvolution/summarizeDeconvolutionResults.R {input.sdrf} {wildcards.accession} $tissue $sc_reference_C1 {output.proportions} $DECONV_STATUS
 	    # append the analysis-methods file with info about devonvolution
 	    Rscript {workflow.basedir}/atlas-analysis/deconvolution/appendAnalysisMethods.R {wildcards.accession}-analysis-methods.tsv {wildcards.accession} $tissue $sc_reference_C1 {workflow.basedir} $DECONV_STATUS {output.methods}
-	    cp {output.methods} {wildcards.accession}-analysis-methods.tsv
+	    cp {output.methods} {input.methods}
 	done
 	if [ ! -d "Output/{wildcards.accession}" ]; then
 	    echo "Error: For none of the organism parts a reference was found. Remove accession from accessions_deconvolution.yaml or check references!"
