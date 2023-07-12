@@ -1533,8 +1533,6 @@ rule deconvolution:
 	    # append the analysis-methods file with info about devonvolution
 	    Rscript {workflow.basedir}/atlas-analysis/deconvolution/appendAnalysisMethods.R $INPUT_METHODS {wildcards.accession} $tissue $sc_reference_C1 {workflow.basedir} $DECONV_STATUS {output.methods}
 	done
-	# Define the path to the file
-	file_path="/path/to/file.txt"
 
 	# Count the number of lines in the final output file
 	results_count=$(wc -l < "{output.proportions}")
