@@ -1529,7 +1529,7 @@ rule deconvolution:
 	    fi
 	    echo $DECONV_STATUS
 	    # produce output files
-	    Rscript {workflow.basedir}/atlas-analysis/deconvolution/summarizeDeconvolutionResults.R {input.sdrf} {wildcards.accession} $tissue $sc_reference_C1 {output.proportions} $DECONV_STATUS
+	    Rscript {workflow.basedir}/atlas-analysis/deconvolution/summarizeDeconvolutionResults.R {wildcards.accession} $tissue $sc_reference_C1 {output.proportions} $DECONV_STATUS
 	    # append the analysis-methods file with info about devonvolution
 	    Rscript {workflow.basedir}/atlas-analysis/deconvolution/appendAnalysisMethods.R $INPUT_METHODS {wildcards.accession} $tissue $sc_reference_C1 {workflow.basedir} $DECONV_STATUS {output.methods}
 	    cp {output.methods} {wildcards.accession}-analysis-methods.tsv
