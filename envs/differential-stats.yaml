@@ -10,5 +10,5 @@ dependencies:
  - bioconductor-limma=3.40.0
  - bioconductor-genefilter=1.64.0
  - bioconductor-biobase=2.42.0
- - bioconductor-deseq2 #=1.22.1
+ - bioconductor-deseq2=1.22.1
  
