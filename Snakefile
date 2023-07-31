@@ -360,7 +360,7 @@ def get_checkpoints_cp_atlas_exps(wildcards):
         inputs.remove( f"logs/{wildcards['accession']}-copy_experiment_from_analysis_to_atlas_exps.done" )
         inputs.remove( f"logs/{wildcards['accession']}-get_magetab_for_experiment.done" )
         # remove constraint on gsea.tsv and gsea_list.tsv,  as they could be removed by rule check_differential_gsea
-        if experiment_type=='rnaseq_mrna_differential' or experiment_type=='proteomics_differential' or experiment_type == 'microarray_1colour_mrna_differential' or experiment_type =='microarray_2colour_mrna_differential' or experiment_type =='microarray_1colour_microrna_differential':
+        if experiment_type in ['rnaseq_mrna_differential', 'proteomics_differential', 'microarray_1colour_mrna_differential' , 'microarray_2colour_mrna_differential', 'microarray_1colour_microrna_differential']:
             inputs = [item for item in inputs if 'gsea.tsv' not in item]
             inputs = [item for item in inputs if 'gsea_list.tsv' not in item]
         return inputs
