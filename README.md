@@ -8,7 +8,6 @@ It contains data analysis rules for:
 - RNA-Seq differential analysis
 - Proteomics baseline analysis
 - Proteomics differential analysis
-- Cell type proportion predictions for RNA-Seq baseline and differential analysis
 
 A recalculations run requires that reprocess has been performed a priori, and it is currently not available for proteomics experiments. Recalculations are the operations that need to happen on load or after an E! Update, and generate a subset of the outputs produced during (re)processing.
 
