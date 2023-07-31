@@ -23,6 +23,6 @@ A recalculations run requires that reprocess has been performed a priori, and it
 ./run_sorting_hat_test_data.sh EXPS_DIR
 ```
 
-The experiments path contains one or more directories with Atlas accession names E-* (e.g. E-MTAB-5577), having at least configuration files in xml format after curation process.
+The experiments path contains one or more directories with Atlas accession names E-* (e.g. E-MTAB-5577), having at least configuration files in xml format after curation process. Completed processing by iRAP Single Lib (ISL) is necessary before new experiment processing.
 
-Optionally, worflow execution can be tailored to specifc accessions or species by defining these variables in the sorting hat script.
+Optionally, worflow execution can be tailored to specific accessions or species by defining these variables in the sorting-hat script.

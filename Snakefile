@@ -313,13 +313,16 @@ def input_atlas_experiment_summary(wildcards):
     for rule atlas_experiment_summary
     """
     if config['goal'] == 'reprocess':
-        if experiment_type =='rnaseq_mrna_baseline' or experiment_type=='rnaseq_mrna_differential': 
-            return [ wildcards['accession']+'-raw-counts.tsv.undecorated' ]
+        if experiment_type =='rnaseq_mrna_baseline': 
+            return [ wildcards['accession']+'-raw-counts.tsv.undecorated', wildcards['accession']+'-analysis-methods.tsv_baseline_rnaseq' ]
+        elif experiment_type=='rnaseq_mrna_differential': 
+            return [ wildcards['accession']+'-raw-counts.tsv.undecorated', wildcards['accession']+'-analysis-methods.tsv_differential_rnaseq'  ]
         elif experiment_type == 'microarray_1colour_mrna_differential' or experiment_type =='microarray_1colour_microrna_differential':
             inputs = []
             arr_designs=get_array_design_from_xml()
             for s in arr_designs:
                 inputs.append( f"logs/{wildcards['accession']}_{s}-decorate_differential_microarray.done" )
+            inputs.append( f"{wildcards['accession']}-analysis-methods.tsv" )
             return inputs
         elif experiment_type =='microarray_2colour_mrna_differential':
             inputs = []
@@ -327,6 +330,7 @@ def input_atlas_experiment_summary(wildcards):
             for s in arr_designs:
                 inputs.append( f"{wildcards['accession']}_{s}-log-fold-changes.tsv.undecorated" )
                 inputs.append( f"{wildcards['accession']}_{s}-average-intensities.tsv.undecorated" )
+            inputs.append( f"{wildcards['accession']}-analysis-methods.tsv" )
             return inputs
         else:
             return None
@@ -355,6 +359,10 @@ def get_checkpoints_cp_atlas_exps(wildcards):
         inputs = get_outputs()
         inputs.remove( f"logs/{wildcards['accession']}-copy_experiment_from_analysis_to_atlas_exps.done" )
         inputs.remove( f"logs/{wildcards['accession']}-get_magetab_for_experiment.done" )
+        # remove constraint on gsea.tsv and gsea_list.tsv,  as they could be removed by rule check_differential_gsea
+        if experiment_type in ['rnaseq_mrna_differential', 'proteomics_differential', 'microarray_1colour_mrna_differential' , 'microarray_2colour_mrna_differential', 'microarray_1colour_microrna_differential']:
+            inputs = [item for item in inputs if 'gsea.tsv' not in item]
+            inputs = [item for item in inputs if 'gsea_list.tsv' not in item]
         return inputs
     else:
         return None
@@ -829,12 +837,14 @@ rule rnaseq_qc:
     should be added to 'skip_steps_file' to skip this rule.
     """
     conda: "envs/perl-atlas-modules.yaml"
+    input: "{accession}-raw-counts.tsv.undecorated"
     log: "logs/{accession}-rnaseq_qc.log"
     output: "qc/{accession}-irap-single-lib-report.tsv"
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
+        echo "Running QC, raw counts file found {input}"
 
         {workflow.basedir}/atlas-analysis/qc/rnaseqQC.sh {wildcards.accession}
         qcExitCode=$?

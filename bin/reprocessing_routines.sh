@@ -130,8 +130,30 @@ get_biostudies_privacy_status() {
         elif [ "$statusStudy" == "false" ]; then
             privacyStatus="private"
         else 
-            >&2 echo "get_biostudies_privacy_status could not determine privacy status for $1, received: $statusStudy"
-            exit 1
+            >&2 echo "get_biostudies_privacy_status could not determine privacy status from file for $1, received: $statusStudy - will try the API now"
+	  
+            apiSearch="https://www.ebi.ac.uk/biostudies/api/v1/search?type=study&accession=$expAcc"
+
+            response=$(curl $apiSearch)
+            if [ -z "${response}" ]; then
+                echo "ERROR: Got empty response from ${apiSearch}" >&2
+                exit 1 
+            else
+                responseHit=$(echo ${response} | jq .hits[0])
+                if [[ "${responseHit}" == "null" ]]; then
+                    echo "WARNING: This search returned no hit: ${apiSearch} Assuming private" >&2
+                    privacyStatus="private"
+            	else
+                    expInfo=$(echo $responseHit | jq ."isPublic")
+            	    if [[ "${expInfo}" == "null" ]]; then
+                	echo "WARNING: This key does not exist: isPublic . Assuming private" >&2
+			privacyStatus="private"
+		    else
+			privacyStatus="public"
+            	    fi
+		fi
+            fi	
+   
         fi
     else
         # if not MTAB, ie. GEOD or ENAD or ERAD are all loaded as public
