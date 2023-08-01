@@ -1448,7 +1448,7 @@ rule deconvolution:
     log: "logs/{accession}-deconvolution.log"
     #resources: mem_mb=get_mem_mb
     resources: mem_mb=64000
-    threads: 16
+    threads: 8
     input: 
         fpkms="{accession}-fpkms.tsv.undecorated",
 	methods=get_methods_file_for_deconv_rule,
