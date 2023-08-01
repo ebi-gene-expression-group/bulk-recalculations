@@ -1510,8 +1510,8 @@ rule deconvolution:
                 number_of_files=$(ls {params.signature_dir}/${{REFERENCE_FOUND}}* | wc -l)
 
                 if [ "$number_of_files" != 4 ]; then
-		            echo "Error in reference library, check that there are no duplicated or missing references for $REFERENCE_FOUND!" 
-		            exit 1
+                    echo "Error in reference library, check that there are no duplicated or missing references for $REFERENCE_FOUND!" 
+                    exit 1
                 fi 
 
                 # find the different reference files
