@@ -1446,7 +1446,7 @@ rule deconvolution:
     """
     conda: "envs/deconvolution.yaml"
     log: "logs/{accession}-deconvolution.log"
-    resources: mem_mb=max(64000, get_mem_mb)
+    resources: mem_mb=64000
     threads: 8
     input: 
         fpkms="{accession}-fpkms.tsv.undecorated",
@@ -1501,31 +1501,31 @@ rule deconvolution:
 
     	    # check if a refererence for this organism part was found
     	    if [[ "$REFERENCE_FOUND" == "noref"* ]]; then
-	            echo "no reference for $tissue found"
-		        sc_reference_C1="noref"
-		        DECONV_STATUS="no_reference_for_deconvolution_found"
+                echo "no reference for $tissue found"
+                sc_reference_C1="noref"
+                DECONV_STATUS="no_reference_for_deconvolution_found"
     	    else
-		        # check whether one reference (consisting of four different files UBERON_*_C1.rds, UBERON_*_C0_scaled.rds, UBERON_*_phenData.rds and UBERON_*_seurat.rds)
-		        # exists for organism part
-		        number_of_files=$(ls {params.signature_dir}/${{REFERENCE_FOUND}}* | wc -l)
+                # check whether one reference (consisting of four different files UBERON_*_C1.rds, UBERON_*_C0_scaled.rds, UBERON_*_phenData.rds and UBERON_*_seurat.rds)
+                # exists for organism part
+                number_of_files=$(ls {params.signature_dir}/${{REFERENCE_FOUND}}* | wc -l)
 
-		        if [ "$number_of_files" != 4 ]; then
+                if [ "$number_of_files" != 4 ]; then
 		            echo "Error in reference library, check that there are no duplicated or missing references for $REFERENCE_FOUND!" 
 		            exit 1
-		        fi 
+                fi 
 
-		        # find the different reference files
-		        sc_reference_C1=$(ls {params.signature_dir}/${{REFERENCE_FOUND}}_*_C1.rds | head -1)
-		        sc_reference_C0=$(ls {params.signature_dir}/${{REFERENCE_FOUND}}_*_C0_scaled.rds | head -1)
-		        sc_reference_phen=$(ls {params.signature_dir}/${{REFERENCE_FOUND}}_*_phenData.rds | head -1)
+                # find the different reference files
+                sc_reference_C1=$(ls {params.signature_dir}/${{REFERENCE_FOUND}}_*_C1.rds | head -1)
+                sc_reference_C0=$(ls {params.signature_dir}/${{REFERENCE_FOUND}}_*_C0_scaled.rds | head -1)
+                sc_reference_phen=$(ls {params.signature_dir}/${{REFERENCE_FOUND}}_*_phenData.rds | head -1)
 
-		        echo "$REFERENCE_FOUND for $tissue found, running deconvolution"
+                echo "$REFERENCE_FOUND for $tissue found, running deconvolution"
 
-		        # run deconvlution for this tisssue with FARDEEP, DWLS and EpiDISH
-		        mkdir -p Output/{wildcards.accession}
-		        mkdir -p scratch/{wildcards.accession}
-		        bash {workflow.basedir}/atlas-analysis/deconvolution/run_deconvolution.sh $tissue {wildcards.accession} $sc_reference_C1 $sc_reference_C0 $sc_reference_phen {workflow.basedir}
-		        DECONV_STATUS=$(Rscript {workflow.basedir}/atlas-analysis/deconvolution/checkDeconvolutionCorr.R {wildcards.accession} $tissue)
+                # run deconvlution for this tisssue with FARDEEP, DWLS and EpiDISH
+                mkdir -p Output/{wildcards.accession}
+                mkdir -p scratch/{wildcards.accession}
+                bash {workflow.basedir}/atlas-analysis/deconvolution/run_deconvolution.sh $tissue {wildcards.accession} $sc_reference_C1 $sc_reference_C0 $sc_reference_phen {workflow.basedir}
+                DECONV_STATUS=$(Rscript {workflow.basedir}/atlas-analysis/deconvolution/checkDeconvolutionCorr.R {wildcards.accession} $tissue)
     	    fi
     	    echo $DECONV_STATUS
     	    # produce output files
@@ -1543,7 +1543,7 @@ rule deconvolution:
     	    echo "Error: Deconvolution was unsuccesful for all organims parts. Check log file and remove {wildcards.accession} from acession_deconvolution.yaml!"
     	    exit 1
         fi
-	    """
+        """
 
 rule decorate_differential_rnaseq:
     """
