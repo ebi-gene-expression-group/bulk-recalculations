@@ -1451,7 +1451,7 @@ rule deconvolution:
     input: 
         fpkms="{accession}-fpkms.tsv.undecorated",
 	    methods=get_methods_file_for_deconv_rule,
-        final_methods="{accession}-analysis-methods.tsv"
+        final_methods="{accession}-analysis-methods.tsv",
         sdrf=get_sdrf()
     params:
         signature_dir=config["deconv_ref"] + get_organism()
