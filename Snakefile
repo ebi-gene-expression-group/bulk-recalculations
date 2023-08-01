@@ -1442,7 +1442,8 @@ rule generate_methods_differential_rnaseq:
 
 rule deconvolution:
     """
-    Runs three deconvolution tools (DWLS, FARDEEP, EpiDIS) for experiments selected in accession_deconvolution.yaml.
+    Runs three deconvolution tools (DWLS, FARDEEP, EpiDIS) for experiments selected in accession_deconvolution.yaml
+    which are baseline or differential RNA-seq experiments for species with a reference.
     """
     conda: "envs/deconvolution.yaml"
     log: "logs/{accession}-deconvolution.log"
@@ -1451,7 +1452,6 @@ rule deconvolution:
     input: 
         fpkms="{accession}-fpkms.tsv.undecorated",
         methods=get_methods_file_for_deconv_rule,
-        final_methods="{accession}-analysis-methods.tsv",
         sdrf=get_sdrf()
     params:
         signature_dir=config["deconv_ref"] + get_organism()
@@ -1532,7 +1532,7 @@ rule deconvolution:
     	    Rscript {workflow.basedir}/atlas-analysis/deconvolution/summarizeDeconvolutionResults.R {wildcards.accession} $tissue $sc_reference_C1 {output.proportions} $DECONV_STATUS
     	    # append the analysis-methods file with info about devonvolution
     	    Rscript {workflow.basedir}/atlas-analysis/deconvolution/appendAnalysisMethods.R $INPUT_METHODS {wildcards.accession} $tissue $sc_reference_C1 {workflow.basedir} $DECONV_STATUS {output.methods}
-    	    cp {output.methods} {input.final_methods} # $INPUT_METHODS
+    	    cp {output.methods} {wildcards.accession}-analysis-methods.tsv # $INPUT_METHODS
         done
 
         # Count the number of lines in the final output file
