@@ -1469,9 +1469,9 @@ rule deconvolution:
     resources: mem_mb=64000
     threads: 8
     input:
-        fpkms=lambda wildcards: f"{wildcards.accession}-fpkms.tsv.undecorated" if 'reprocess' in config['goal'] else f"{wildcards.accession}-touch_input_deconvolution.done"
         methods=get_methods_file_for_deconv_rule,
-        sdrf=get_sdrf()
+        sdrf=get_sdrf(),
+        fpkms=lambda wildcards: f"{wildcards.accession}-fpkms.tsv.undecorated" if 'reprocess' in config['goal'] else f"{wildcards.accession}-touch_input_deconvolution.done"
     params:
         signature_dir=config["deconv_ref"] + get_organism()
     output:
