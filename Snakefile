@@ -611,6 +611,25 @@ rule touch_inputs_baseline:
         touch {output}
         """
 
+rule touch_input_deconvolution:
+    """
+    Rule to avoid execution of upstream rules when forceall=true in deconvolution rna-seq recalculations.
+    """
+    log: 
+        "logs/{accession}-touch_input_deconvolution.log"
+    output:
+        temp("{accession}-touch_input_deconvolution.done")
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+
+        # Do not create the file if it does not exist (-c)
+        touch -c -m -a {wildcards.accession}-fpkms.tsv.undecorated
+
+        touch {output}
+        """
+
 rule baseline_coexpression:
     conda: "envs/clusterseq.yaml"
     log: "logs/{accession}-{metric}-baseline_coexpression.log"
@@ -1449,8 +1468,8 @@ rule deconvolution:
     log: "logs/{accession}-deconvolution.log"
     resources: mem_mb=64000
     threads: 8
-    input: 
-        fpkms="{accession}-fpkms.tsv.undecorated",
+    input:
+        fpkms=lambda wildcards: f"{wildcards.accession}-fpkms.tsv.undecorated" if 'reprocess' in config['goal'] else f"{wildcards.accession}-touch_input_deconvolution.done"
         methods=get_methods_file_for_deconv_rule,
         sdrf=get_sdrf()
     params:
