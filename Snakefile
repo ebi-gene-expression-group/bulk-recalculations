@@ -82,6 +82,7 @@ def read_run_deconv_file():
                 run_deconv=yaml.safe_load(stream)
             except yaml.YAMLError as exc:
                 print(exc)
+                sys.exit("Error parsing deconvolution yaml configuration file.")
         return run_deconv
 
 def get_from_config_or_metadata_summary(label):
