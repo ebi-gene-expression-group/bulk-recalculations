@@ -1495,7 +1495,7 @@ rule deconvolution:
         echo "starting..."
         # Split fpkms into organism parts and scale counts
         mkdir -p Tissue_splits/{wildcards.accession}
-        Rscript {workflow.basedir}/atlas-analysis/deconvolution/splitAndScale.R {input.fpkms} {input.sdrf} {wildcards.accession}
+        Rscript {workflow.basedir}/atlas-analysis/deconvolution/splitAndScale.R {wildcards.accession}-fpkms.tsv.undecorated {input.sdrf} {wildcards.accession}
 
         # list all files that FPKMs were split into
         files=$(ls Tissue_splits/{wildcards.accession}/{wildcards.accession}*-fpkms_scaled.rds)
@@ -1551,7 +1551,7 @@ rule deconvolution:
     	    Rscript {workflow.basedir}/atlas-analysis/deconvolution/summarizeDeconvolutionResults.R {wildcards.accession} $tissue $sc_reference_C1 {output.proportions} $DECONV_STATUS
     	    # append the analysis-methods file with info about devonvolution
     	    Rscript {workflow.basedir}/atlas-analysis/deconvolution/appendAnalysisMethods.R $INPUT_METHODS {wildcards.accession} $tissue $sc_reference_C1 {workflow.basedir} $DECONV_STATUS {output.methods}
-    	    cp {output.methods} {wildcards.accession}-analysis-methods.tsv # $INPUT_METHODS
+    	    cp {output.methods} {wildcards.accession}-analysis-methods.tsv
         done
 
         # Count the number of lines in the final output file
