@@ -1,0 +1,30 @@
+name: celltype-deconvolution
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - r-base
+  - r-essentials
+  - bioconductor-edger
+  - bioconductor-preprocesscore
+  - r-dplyr
+  - r-matrix
+  - r-future
+  - r-future.apply
+  - r-dwls
+  - bioconductor-epidish
+  - r-polychrome
+  - jq
+  - r-devtools
+  - r-seurat
+  - r-ontologyindex
+  - r-stringr
+  - r-ontologyplot
+  - r-rcpptoml
+  - r-anndata
+  - anndata
+  - bioconductor-rgraphviz
+  - r-optparse
+  - r-xml
+  - r-httr
+  - r-jsonlite

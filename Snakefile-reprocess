@@ -35,6 +35,8 @@ def get_outputs():
     read_metadata_summary()
     global skip_accession
     skip_accession = read_skip_steps_file()
+    global run_deconv_accession
+    run_deconv_accession = read_run_deconv_file()
     required_config=['tool']
     check_config_required(fields=required_config)
 
@@ -78,8 +80,9 @@ def get_outputs():
         if skip(config['accession'],'baseline-coexpression'):
             outputs.extend(expand(f"{config['accession']}"+"-{metric}-coexpressions.tsv.gz", metric=metrics ))
             outputs.append(f"{config['accession']}-coexpressions.tsv.gz")
-
-
+        # add deconvolution results for some accessions
+        if run_deconvolution(config['accession']):
+            outputs.append(f"{config['accession']}-deconvolution.proportions.tsv")
     # collect output for differential rna-seq
     if experiment_type == 'rnaseq_mrna_differential':
         outputs.extend(expand("logs/"+f"{config['accession']}"+"-add_runs_to_db.done" ))
@@ -114,6 +117,9 @@ def get_outputs():
         if skip(config['accession'],'differential-tracks'):
             outputs.extend(expand(config['accession']+".{id}.{type}", id=get_contrast_ids(), type=["genes.pval.bedGraph", "genes.log2foldchange.bedGraph"]))
         outputs.extend(expand("logs/"+f"{config['accession']}"+"-decorate_differential_rnaseq.done" ))
+        # add deconvolution results for some accessions
+        if run_deconvolution(config['accession']):
+            outputs.append(f"{config['accession']}-deconvolution.proportions.tsv")
 
     # collect output for differential microarrays
     if experiment_type == 'microarray_1colour_mrna_differential' or experiment_type =='microarray_2colour_mrna_differential' or experiment_type =='microarray_1colour_microrna_differential':

@@ -13,6 +13,9 @@ SKIP_ACC_REPROC=$( pwd )/accession_skip_reprocess.yaml
 TEMPLATE_METHODS_BASELINE=$( pwd )/baseline_atlas_methods_template.conf
 TEMPLATE_METHODS_DIFFERENTIAL=$( pwd )/differential_atlas_methods_template.conf
 ZOOMA_EXCLUSIONS=$( pwd )/zooma_exclusions.yml
+RUN_DECONVOLUTION=$( pwd )/accession_deconvolution.yaml
+DECONV_REF=$atlas_prod/deconvolution_references/YYYY-MM-DD/
+
 ISL_DIR=path/to/isl_dir
 ISL_GENOMES_REFERENCES=$ISL_GENOMES
 IRAP_VERSIONS=path/to/atlasprod/irap_versions.mk
@@ -111,10 +114,12 @@ snakemake --use-conda --conda-frontend mamba \
         atlas_prod=path/to/atlasprod \
         atlas_exps=path/to/atlasexps \
         lsf_config=$LSF_CONFIG \
+        deconv_ref=$DECONV_REF \
         goal=$GOAL \
         atlas_meta_config=path/to/supporting_files \
         skip_steps_file=$SKIP_STEPS \
         skip_accessions_reproc_file=$SKIP_ACC_REPROC \
+        run_deconv_file=$RUN_DECONVOLUTION \
         methods_base=$TEMPLATE_METHODS_BASELINE \
         methods_dif=$TEMPLATE_METHODS_DIFFERENTIAL \
         zooma_exclusions=$ZOOMA_EXCLUSIONS \

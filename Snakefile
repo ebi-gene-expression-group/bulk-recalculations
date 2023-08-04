@@ -74,6 +74,16 @@ def read_skip_steps_file():
                 print(exc)
         return skip_steps
 
+def read_run_deconv_file():
+    if 'run_deconv_file' in config:
+        global run_deconv
+        with open(config['run_deconv_file'], 'r') as stream:
+            try:
+                run_deconv=yaml.safe_load(stream)
+            except yaml.YAMLError as exc:
+                print(exc)
+                sys.exit("Error parsing deconvolution yaml configuration file.")
+        return run_deconv
 
 def get_from_config_or_metadata_summary(label):
     if label in config:
@@ -212,6 +222,12 @@ def skip(acc, tool):
         return False
     else:
         return True
+
+def run_deconvolution(acc):
+    if acc in run_deconv_accession['deconv']['accession']:
+        return True
+    else:
+        return False
 
 def get_number_columns(tsvfile):
     import csv
@@ -376,7 +392,20 @@ def input_round_log2_fold_changes(wildcards):
         inputs_files.append( f"logs/{wildcards['accession']}-rename_differential_proteomics_files.done" )
     return inputs_files
 
+def get_methods_file_for_deconv_rule(wildcards):
+    differential_methods = f"{wildcards['accession']}-analysis-methods.tsv_differential_rnaseq"
+    baseline_methods = f"{wildcards['accession']}-analysis-methods.tsv_baseline_rnaseq"
+    
+    if config['goal'] == 'reprocess':
+        if experiment_type == 'rnaseq_mrna_baseline':
+            return baseline_methods
+        elif experiment_type == 'rnaseq_mrna_differential':
+            return differential_methods
+    
+    if config['goal'] == 'recalculations':
+        return []
 
+      
 localrules: check_differential_gsea, link_baseline_coexpression, link_baseline_heatmap, create_tracks_symlinks, check_mvaPlot_rnaseq, check_normalized_expressions_microarray, delete_intermediate_files_microarray, touch_inputs_baseline
 
 ruleorder: decorate_differential_rnaseq > decorate_differential_proteomics
@@ -579,6 +608,25 @@ rule touch_inputs_baseline:
         # Do not create the file if it does not exist (-c)
         touch -c -m -a {wildcards.accession}-{wildcards.metric}.tsv
         touch -c -m -a {wildcards.accession}-{wildcards.metric}.tsv.undecorated.aggregated
+
+        touch {output}
+        """
+
+rule touch_input_deconvolution:
+    """
+    Rule to avoid execution of upstream rules when forceall=true in deconvolution rna-seq recalculations.
+    """
+    log: 
+        "logs/{accession}-touch_input_deconvolution.log"
+    output:
+        temp("{accession}-touch_input_deconvolution.done")
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+
+        # Do not create the file if it does not exist (-c)
+        touch -c -m -a {wildcards.accession}-fpkms.tsv.undecorated
 
         touch {output}
         """
@@ -1412,6 +1460,110 @@ rule generate_methods_differential_rnaseq:
         cp {output.methods} {wildcards.accession}-analysis-methods.tsv
         """
 
+rule deconvolution:
+    """
+    Runs three deconvolution tools (DWLS, FARDEEP, EpiDIS) for experiments selected in accession_deconvolution.yaml
+    which are baseline or differential RNA-seq experiments for species with a reference.
+    """
+    conda: "envs/deconvolution.yaml"
+    log: "logs/{accession}-deconvolution.log"
+    resources: mem_mb=64000
+    threads: 8
+    input:
+        methods=get_methods_file_for_deconv_rule,
+        sdrf=get_sdrf(),
+        fpkms=lambda wildcards: f"{wildcards.accession}-fpkms.tsv.undecorated" if 'reprocess' in config['goal'] else f"{wildcards.accession}-touch_input_deconvolution.done"
+    params:
+        signature_dir=config["deconv_ref"] + get_organism()
+    output:
+        proportions = "{accession}-deconvolution.proportions.tsv",
+        methods = temp("{accession}-deconvolution-analysis-methods.tsv"),
+        results = temp(directory('Output/{accession}')),
+        splits = temp(directory('Tissue_splits/{accession}')),
+        scratch = temp(directory('scratch/{accession}'))
+    shell:
+        """
+        exec &> "logs/{wildcards.accession}-deconvolution.log"
+        set -b  # Notify of job termination immediately
+
+        INPUT_METHODS={input.methods}
+
+        # If mode is recalculations don't force recreation of new methods file and append existing one
+        if [ -z "$INPUT_METHODS" ]; then
+    	    INPUT_METHODS="{wildcards.accession}-analysis-methods.tsv"
+        fi
+
+        echo "starting..."
+        # Split fpkms into organism parts and scale counts
+        mkdir -p Tissue_splits/{wildcards.accession}
+        Rscript {workflow.basedir}/atlas-analysis/deconvolution/splitAndScale.R {wildcards.accession}-fpkms.tsv.undecorated {input.sdrf} {wildcards.accession}
+
+        # list all files that FPKMs were split into
+        files=$(ls Tissue_splits/{wildcards.accession}/{wildcards.accession}*-fpkms_scaled.rds)
+
+        # Check if at least one file was genereated
+        if [[ -z $files ]]; then
+    	    echo "Error: something went wrong while spliting FPKMS into organism parts."
+    	    exit 1
+        fi
+
+        # iterate through tissues 
+        for file in ${{files[@]}}; do
+    	    # get tissue name from filename
+    	    file=$(basename "$file")
+    	    tissue="${{file#{wildcards.accession}-}}"
+    	    tissue="${{tissue%-fpkms_scaled.rds}}"
+    	    printf "\n__________________ $tissue ____________________ \n"
+    	    echo "trying to deconvolve $tissue from {wildcards.accession}"
+
+    	    # search for suitable reference in deconvolution library
+    	    REFERENCE_FOUND=$(Rscript {workflow.basedir}/atlas-analysis/deconvolution/findReference.R $tissue {params.signature_dir} {workflow.basedir})
+
+    	    # check if a refererence for this organism part was found
+    	    if [[ "$REFERENCE_FOUND" == "noref"* ]]; then
+                echo "no reference for $tissue found"
+                sc_reference_C1="noref"
+                DECONV_STATUS="no_reference_for_deconvolution_found"
+    	    else
+                # check whether one reference (consisting of four different files UBERON_*_C1.rds, UBERON_*_C0_scaled.rds, UBERON_*_phenData.rds and UBERON_*_seurat.rds)
+                # exists for organism part
+                number_of_files=$(ls {params.signature_dir}/${{REFERENCE_FOUND}}* | wc -l)
+
+                if [ "$number_of_files" != 4 ]; then
+                    echo "Error in reference library, check that there are no duplicated or missing references for $REFERENCE_FOUND!" 
+                    exit 1
+                fi 
+
+                # find the different reference files
+                sc_reference_C1=$(ls {params.signature_dir}/${{REFERENCE_FOUND}}_*_C1.rds | head -1)
+                sc_reference_C0=$(ls {params.signature_dir}/${{REFERENCE_FOUND}}_*_C0_scaled.rds | head -1)
+                sc_reference_phen=$(ls {params.signature_dir}/${{REFERENCE_FOUND}}_*_phenData.rds | head -1)
+
+                echo "$REFERENCE_FOUND for $tissue found, running deconvolution"
+
+                # run deconvlution for this tisssue with FARDEEP, DWLS and EpiDISH
+                mkdir -p Output/{wildcards.accession}
+                mkdir -p scratch/{wildcards.accession}
+                bash {workflow.basedir}/atlas-analysis/deconvolution/run_deconvolution.sh $tissue {wildcards.accession} $sc_reference_C1 $sc_reference_C0 $sc_reference_phen {workflow.basedir}
+                DECONV_STATUS=$(Rscript {workflow.basedir}/atlas-analysis/deconvolution/checkDeconvolutionCorr.R {wildcards.accession} $tissue)
+    	    fi
+    	    echo $DECONV_STATUS
+    	    # produce output files
+    	    Rscript {workflow.basedir}/atlas-analysis/deconvolution/summarizeDeconvolutionResults.R {wildcards.accession} $tissue $sc_reference_C1 {output.proportions} $DECONV_STATUS
+    	    # append the analysis-methods file with info about devonvolution
+    	    Rscript {workflow.basedir}/atlas-analysis/deconvolution/appendAnalysisMethods.R $INPUT_METHODS {wildcards.accession} $tissue $sc_reference_C1 {workflow.basedir} $DECONV_STATUS {output.methods}
+    	    cp {output.methods} {wildcards.accession}-analysis-methods.tsv
+        done
+
+        # Count the number of lines in the final output file
+        results_count=$(wc -l < "{output.proportions}")
+
+        # Check if there are any results in the file
+        if [ "$results_count" -lt 2 ]; then
+    	    echo "Error: Deconvolution was unsuccesful for all organims parts. Check log file and remove {wildcards.accession} from acession_deconvolution.yaml!"
+    	    exit 1
+        fi
+        """
 
 rule decorate_differential_rnaseq:
     """
@@ -1947,7 +2099,7 @@ rule copy_experiment_from_analysis_to_atlas_exps:
     log: "logs/{accession}-copy_experiment_from_analysis_to_atlas_exps.log"
     input: get_checkpoints_cp_atlas_exps
     params:
-        target_dir=config['atlas_exps'], #get_tmp_dir()
+        target_dir=config['atlas_exps'], # get_tmp_dir() for testing
         privacy_status_file=config['priv_stat_file']
     output:
         temp("logs/{accession}-copy_experiment_from_analysis_to_atlas_exps.done")
@@ -1977,7 +2129,7 @@ rule get_magetab_for_experiment:
     log: "logs/{accession}-get_magetab_for_experiment.log"
     input: rules.copy_experiment_from_analysis_to_atlas_exps.output
     params:
-        target_dir=config['atlas_exps'], #get_tmp_dir(),
+        target_dir=config['atlas_exps'], # get_tmp_dir() for testing
         exp_type=get_from_config_or_metadata_summary('experiment_type'),
         zooma_exclusions=get_zooma_exclusions()
     output:
