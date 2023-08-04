@@ -281,8 +281,8 @@ rule decorate_differential_proteomics:
 
 # rule percentile_ranks (Snakefile use as well for diff proteomics)
 
- # Perform GSEA against Go/Interpro/Reactome
- # rule differential_gsea (Snakefile use as well for diff proteomics)
+# Perform GSEA against Go/Interpro/Reactome
+# rule differential_gsea (Snakefile use as well for diff proteomics)
 
- # Generate Genome browser tracks (bedGraph) for the experiment
- # rule differential_tracks (Snakefile use as well for diff proteomics)
+# Generate Genome browser tracks (bedGraph) for the experiment
+# rule differential_tracks (Snakefile use as well for diff proteomics)
