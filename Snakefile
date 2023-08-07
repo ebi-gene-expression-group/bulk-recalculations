@@ -1501,7 +1501,7 @@ rule deconvolution:
         # list all files that FPKMs were split into
         files=$(ls Tissue_splits/{wildcards.accession}/{wildcards.accession}*-fpkms_scaled.rds)
 
-        # Check if at least one file was genereated
+        # Check if at least one file was generated
         if [[ -z $files ]]; then
     	    echo "Error: something went wrong while spliting FPKMS into organism parts."
     	    exit 1
