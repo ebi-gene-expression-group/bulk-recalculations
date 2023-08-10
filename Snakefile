@@ -1495,12 +1495,7 @@ rule deconvolution:
     	    echo "Deconvolution - deconv methods based on {wildcards.accession}-analysis-methods.tsv"
         fi
 
-        #INPUT_METHODS={input.methods}
-
-        # If mode is recalculations don't force recreation of new methods file and append existing one
-        #if [ -z "$INPUT_METHODS" ]; then
         INPUT_METHODS="{wildcards.accession}-analysis-methods.tsv"
-        #fi
 
         if [ ! -s "{wildcards.accession}-analysis-methods.tsv" ] ; then
     	    echo "ERROR: {wildcards.accession}-analysis-methods.tsv not found " >&2
@@ -1555,7 +1550,7 @@ rule deconvolution:
 
                 echo "$REFERENCE_FOUND for $tissue found, running deconvolution"
 
-                # run deconvlution for this tisssue with FARDEEP, DWLS and EpiDISH
+                # run deconvolution for this tisssue with FARDEEP, DWLS and EpiDISH
                 mkdir -p Output/{wildcards.accession}
                 mkdir -p scratch/{wildcards.accession}
                 bash {workflow.basedir}/atlas-analysis/deconvolution/run_deconvolution.sh $tissue {wildcards.accession} $sc_reference_C1 $sc_reference_C0 $sc_reference_phen {workflow.basedir}
