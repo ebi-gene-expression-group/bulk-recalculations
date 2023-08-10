@@ -1474,10 +1474,11 @@ rule deconvolution:
         sdrf=get_sdrf(),
         fpkms=lambda wildcards: f"{wildcards.accession}-fpkms.tsv.undecorated" if 'reprocess' in config['goal'] else f"{wildcards.accession}-touch_input_deconvolution.done"
     params:
-        signature_dir=config["deconv_ref"] + get_organism()
+        signature_dir=config["deconv_ref"] + get_organism(),
+        analysis_type=config['goal']
     output:
         proportions = "{accession}-deconvolution.proportions.tsv",
-        methods = "{accession}-deconvolution-analysis-methods.tsv",
+        methods = temp("{accession}-deconvolution-analysis-methods.tsv"),
         results = temp(directory('Output/{accession}')),
         splits = temp(directory('Tissue_splits/{accession}')),
         scratch = temp(directory('scratch/{accession}'))
@@ -1486,20 +1487,25 @@ rule deconvolution:
         exec &> "logs/{wildcards.accession}-deconvolution.log"
         set -b  # Notify of job termination immediately
 
-        INPUT_METHODS={input.methods}
+        if [ {params.analysis_type} == "reprocess" ]; then
+    	    echo "Reprocessing - deconv methods based on {input.methods}"
+            # check consistency of input methods files
+            cmp --silent {input.methods} {wildcards.accession}-analysis-methods.tsv || (echo "Input methods files are different" && exit 1)
+        else
+    	    echo "Deconvolution - deconv methods based on {wildcards.accession}-analysis-methods.tsv"
+        fi
+
+        #INPUT_METHODS={input.methods}
 
         # If mode is recalculations don't force recreation of new methods file and append existing one
-        if [ -z "$INPUT_METHODS" ]; then
-    	    INPUT_METHODS="{wildcards.accession}-analysis-methods.tsv"
-        fi
+        #if [ -z "$INPUT_METHODS" ]; then
+        INPUT_METHODS="{wildcards.accession}-analysis-methods.tsv"
+        #fi
 
         if [ ! -s "{wildcards.accession}-analysis-methods.tsv" ] ; then
     	    echo "ERROR: {wildcards.accession}-analysis-methods.tsv not found " >&2
     	    exit 1
         fi
-
-        # check consistency of input methods files
-        cmp --silent $INPUT_METHODS {wildcards.accession}-analysis-methods.tsv  || (echo "Input methods files are different" && exit 1)
 
         echo "starting..."
         # Split fpkms into organism parts and scale counts
