@@ -1477,7 +1477,7 @@ rule deconvolution:
         signature_dir=config["deconv_ref"] + get_organism()
     output:
         proportions = "{accession}-deconvolution.proportions.tsv",
-        methods = temp("{accession}-deconvolution-analysis-methods.tsv"),
+        methods = "{accession}-deconvolution-analysis-methods.tsv",
         results = temp(directory('Output/{accession}')),
         splits = temp(directory('Tissue_splits/{accession}')),
         scratch = temp(directory('scratch/{accession}'))
@@ -1492,6 +1492,14 @@ rule deconvolution:
         if [ -z "$INPUT_METHODS" ]; then
     	    INPUT_METHODS="{wildcards.accession}-analysis-methods.tsv"
         fi
+
+        if [ ! -s "{wildcards.accession}-analysis-methods.tsv" ] ; then
+    	    echo "ERROR: {wildcards.accession}-analysis-methods.tsv not found " >&2
+    	    exit 1
+        fi
+
+        # check consistency of input methods files
+        cmp --silent $INPUT_METHODS {wildcards.accession}-analysis-methods.tsv  || (echo "Input methods files are different" && exit 1)
 
         echo "starting..."
         # Split fpkms into organism parts and scale counts
@@ -1547,7 +1555,7 @@ rule deconvolution:
                 bash {workflow.basedir}/atlas-analysis/deconvolution/run_deconvolution.sh $tissue {wildcards.accession} $sc_reference_C1 $sc_reference_C0 $sc_reference_phen {workflow.basedir}
                 DECONV_STATUS=$(Rscript {workflow.basedir}/atlas-analysis/deconvolution/checkDeconvolutionCorr.R {wildcards.accession} $tissue)
     	    fi
-    	    echo $DECONV_STATUS
+    	    echo "Deconv STATUS: $DECONV_STATUS "
     	    # produce output files
     	    Rscript {workflow.basedir}/atlas-analysis/deconvolution/summarizeDeconvolutionResults.R {wildcards.accession} $tissue $sc_reference_C1 {output.proportions} $DECONV_STATUS
     	    # append the analysis-methods file with info about devonvolution
