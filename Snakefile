@@ -1474,7 +1474,8 @@ rule deconvolution:
         sdrf=get_sdrf(),
         fpkms=lambda wildcards: f"{wildcards.accession}-fpkms.tsv.undecorated" if 'reprocess' in config['goal'] else f"{wildcards.accession}-touch_input_deconvolution.done"
     params:
-        signature_dir=config["deconv_ref"] + get_organism()
+        signature_dir=config["deconv_ref"] + get_organism(),
+        analysis_type=config['goal']
     output:
         proportions = "{accession}-deconvolution.proportions.tsv",
         methods = temp("{accession}-deconvolution-analysis-methods.tsv"),
@@ -1486,11 +1487,19 @@ rule deconvolution:
         exec &> "logs/{wildcards.accession}-deconvolution.log"
         set -b  # Notify of job termination immediately
 
-        INPUT_METHODS={input.methods}
+        if [ {params.analysis_type} == "reprocess" ]; then
+    	    echo "Reprocessing - deconv methods based on {input.methods}"
+            # check consistency of input methods files
+            cmp --silent {input.methods} {wildcards.accession}-analysis-methods.tsv || (echo "Input methods files are different" && exit 1)
+        else
+    	    echo "Deconvolution - deconv methods based on {wildcards.accession}-analysis-methods.tsv"
+        fi
 
-        # If mode is recalculations don't force recreation of new methods file and append existing one
-        if [ -z "$INPUT_METHODS" ]; then
-    	    INPUT_METHODS="{wildcards.accession}-analysis-methods.tsv"
+        INPUT_METHODS="{wildcards.accession}-analysis-methods.tsv"
+
+        if [ ! -s "{wildcards.accession}-analysis-methods.tsv" ] ; then
+    	    echo "ERROR: {wildcards.accession}-analysis-methods.tsv not found " >&2
+    	    exit 1
         fi
 
         echo "starting..."
@@ -1501,7 +1510,7 @@ rule deconvolution:
         # list all files that FPKMs were split into
         files=$(ls Tissue_splits/{wildcards.accession}/{wildcards.accession}*-fpkms_scaled.rds)
 
-        # Check if at least one file was genereated
+        # Check if at least one file was generated
         if [[ -z $files ]]; then
     	    echo "Error: something went wrong while spliting FPKMS into organism parts."
     	    exit 1
@@ -1541,13 +1550,13 @@ rule deconvolution:
 
                 echo "$REFERENCE_FOUND for $tissue found, running deconvolution"
 
-                # run deconvlution for this tisssue with FARDEEP, DWLS and EpiDISH
+                # run deconvolution for this tisssue with FARDEEP, DWLS and EpiDISH
                 mkdir -p Output/{wildcards.accession}
                 mkdir -p scratch/{wildcards.accession}
                 bash {workflow.basedir}/atlas-analysis/deconvolution/run_deconvolution.sh $tissue {wildcards.accession} $sc_reference_C1 $sc_reference_C0 $sc_reference_phen {workflow.basedir}
                 DECONV_STATUS=$(Rscript {workflow.basedir}/atlas-analysis/deconvolution/checkDeconvolutionCorr.R {wildcards.accession} $tissue)
     	    fi
-    	    echo $DECONV_STATUS
+    	    echo "Deconv STATUS: $DECONV_STATUS "
     	    # produce output files
     	    Rscript {workflow.basedir}/atlas-analysis/deconvolution/summarizeDeconvolutionResults.R {wildcards.accession} $tissue $sc_reference_C1 {output.proportions} $DECONV_STATUS
     	    # append the analysis-methods file with info about devonvolution
