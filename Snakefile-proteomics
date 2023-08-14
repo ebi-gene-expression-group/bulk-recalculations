@@ -26,9 +26,9 @@ rule check_pride_tsv_files:
     """
     log: "logs/{accession}-check_pride_tsv_files.log"
     input:
-        "{accession}.tsv.undecorated",
-        "{accession}.tsv.undecorated.aggregated",
-        "{accession}.tsv"
+        "{accession}-configuration.xml"
+    params:
+        is_old=is_old_proteomics_dataset
     output:
         temp("logs/{accession}-check_pride_tsv_files.done")
     shell:
@@ -38,11 +38,21 @@ rule check_pride_tsv_files:
 
         source {workflow.basedir}/bin/proteomics_functions.sh
 
-        # currently this does not exit if the files do not exist
-        check_tsv_data_file_not_empty_of_data {wildcards.accession}.tsv.undecorated 2
-        check_tsv_data_file_not_empty_of_data {wildcards.accession}.tsv.undecorated.aggregated 2
-        check_tsv_data_file_not_empty_of_data {wildcards.accession}.tsv 3
-
+        if [ {params.is_old} == "False" ]; then
+            # currently check_tsv_data_file_not_empty_of_data does not exit if the files do not exist
+            if [ -e {wildcards.accession}.tsv.undecorated ] && [ -e {wildcards.accession}.tsv.undecorated.aggregated ] && [ -e {wildcards.accession}.tsv ]; then
+                check_tsv_data_file_not_empty_of_data {wildcards.accession}.tsv.undecorated 2
+                check_tsv_data_file_not_empty_of_data {wildcards.accession}.tsv.undecorated.aggregated 2
+                check_tsv_data_file_not_empty_of_data {wildcards.accession}.tsv 3
+            else
+                echo "Starting files do not exist for proteomics experiment {wildcards.accession} "
+                exit 1
+            fi
+        else
+            # these files do not initially exist for older proteomics datasets
+            echo "Skipping check_tsv_data_file_not_empty_of_data for {wildcards.accession} "
+        fi
+            
         touch {output}
         """
 
@@ -79,6 +89,10 @@ rule processing_steps_newer_datasets:
 
         else
             source {workflow.basedir}/bin/proteomics_functions.sh
+
+            # it will generate: 
+            # {wildcards.accession}.tsv.undecorated.backup, {wildcards.accession}.tsv.undecorated, {wildcards.accession}.tsv.undecorated.aggregated
+
             # rename analysis methods
             echo "renaming {wildcards.accession}"
             rename_files_baseline {wildcards.accession}
