@@ -178,10 +178,10 @@ rule final_check_tsv_data_file_not_empty_of_data:
     """
     log: "logs/{accession}-final_check_tsv_data_file_not_empty_of_data.log" 
     input:
-        rules.decorate_baseline_proteomics_experiment.output.done,
-        "{accession}.tsv.undecorated",
-        "{accession}.tsv.undecorated.aggregated",
-        "{accession}.tsv"
+        rules.decorate_baseline_proteomics_experiment.output.done #,
+        #"{accession}.tsv.undecorated",
+        #"{accession}.tsv.undecorated.aggregated",
+        #"{accession}.tsv"
     output:
         temp("logs/{accession}-final_check_tsv_data_file_not_empty_of_data")
     shell:
