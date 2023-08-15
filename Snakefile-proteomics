@@ -93,6 +93,13 @@ rule processing_steps_newer_datasets:
             # it will generate: 
             # {wildcards.accession}.tsv.undecorated.backup, {wildcards.accession}.tsv.undecorated, {wildcards.accession}.tsv.undecorated.aggregated
 
+            if [ -e {wildcards.accession}.tsv.undecorated ] && [ -e {wildcards.accession}.tsv.undecorated.aggregated ] && [ -e {wildcards.accession}.tsv ]; then
+                echo "These three files already exist for proteomics baseline experiment {wildcards.accession}: {wildcards.accession}.tsv.undecorated, {wildcards.accession}.tsv.undecorated.aggregated, {wildcards.accession}.tsv"
+                echo "If you want to recreate them, please delete them first and rerun the pipeline."
+                echo "If you don't want to recreate them, perhaps delete {wildcards.accession}.old_proteomics_dataset to skip this rule."
+                exit 1
+            fi
+
             # rename analysis methods
             echo "renaming {wildcards.accession}"
             rename_files_baseline {wildcards.accession}
@@ -192,10 +199,7 @@ rule final_check_tsv_data_file_not_empty_of_data:
     """
     log: "logs/{accession}-final_check_tsv_data_file_not_empty_of_data.log" 
     input:
-        rules.decorate_baseline_proteomics_experiment.output.done #,
-        #"{accession}.tsv.undecorated",
-        #"{accession}.tsv.undecorated.aggregated",
-        #"{accession}.tsv"
+        rules.decorate_baseline_proteomics_experiment.output.done
     output:
         temp("logs/{accession}-final_check_tsv_data_file_not_empty_of_data")
     shell:
