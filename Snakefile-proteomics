@@ -237,6 +237,12 @@ rule rename_differential_proteomics_files:
         source {workflow.basedir}/bin/proteomics_functions.sh
         echo "renaming files for differential proteomics {wildcards.accession}"
         rename_files_differential {wildcards.accession}
+
+        if [ ! -s {wildcards.accession}-analytics.tsv.undecorated ] ; then
+            echo "Missing file {wildcards.accession}-analytics.tsv.undecorated "
+            exit 1
+        fi
+
         touch {output}
         """
 
