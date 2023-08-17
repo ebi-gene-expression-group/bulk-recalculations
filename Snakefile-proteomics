@@ -125,7 +125,7 @@ rule processing_steps_newer_datasets:
 
             # aggregate technical replicates
             echo "summarise expression for {wildcards.accession}"
-            perl {workflow.basedir}/bin \
+            perl {workflow.basedir}/bin/gxa_summarize_expression.pl \
                 --aggregate-quartiles \
                 --configuration {wildcards.accession}-configuration.xml \
                 < {wildcards.accession}.tsv.undecorated \
