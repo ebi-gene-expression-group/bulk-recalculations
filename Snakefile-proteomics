@@ -149,10 +149,10 @@ rule decorate_baseline_proteomics_experiment:
     log: "logs/{accession}-decorate_baseline_proteomics_experiment.log"
     resources: mem_mb=get_mem_mb   
     input:
-        preprocess_done=rules.processing_steps_newer_datasets.output,
-        proteinExpressionsFile="{accession}.tsv.undecorated.aggregated"
+        preprocess_done=rules.processing_steps_newer_datasets.output
     params:
-        organism=get_organism()
+        organism=get_organism(),
+        proteinExpressionsFile="{accession}.tsv.undecorated.aggregated"
     output:
         decoexpression="{accession}.tsv",
         done=temp("logs/{accession}-decorate_baseline_proteomics_experiment")
@@ -167,6 +167,11 @@ rule decorate_baseline_proteomics_experiment:
 
         echo "Decorating .undecorated data files for experiment: {wildcards.accession}"
 
+        if [ ! -f {params.proteinExpressionsFile} ]; then
+            echo "Missing file {params.proteinExpressionsFile} "
+            exit 1
+        fi
+
         #organism=$({workflow.basedir}/bin/get_organism.sh {wildcards.accession} {workflow.basedir}/bin  || (  >&2 echo "Error: failed to retrieve organism!" ; exit 1 ) )
         geneNameFile=$( get_geneNameFile_given_organism {params.organism}  )
         echo $geneNameFile
@@ -179,7 +184,7 @@ rule decorate_baseline_proteomics_experiment:
         export JAVA_OPTS="-Xmx{resources.mem_mb}M"
         amm -s {workflow.basedir}/bin/decorateFile.sc \
             --geneNameFile "$geneNameFile" \
-            --source {input.proteinExpressionsFile} \
+            --source {params.proteinExpressionsFile} \
             | awk 'NR == 1; NR > 1 {{print $0 | "sort -n"}}' \
             > $decoratedFile.swp
 
