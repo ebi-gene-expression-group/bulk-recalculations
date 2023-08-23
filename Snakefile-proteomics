@@ -9,11 +9,8 @@ import os.path
 
 # baseline proteomics rules
 
-#wildcard_constraints:
-#    accession="E-\D+-\d+"
-#
-#is_old_proteomics_dataset = os.path.exists( f"{wildcards['accession']}.old_proteomics_dataset" )
 is_old_proteomics_dataset = os.path.exists( f"{config['accession']}.old_proteomics_dataset" )
+# this file might be necessary also for initial processing of newer proteomics datasets
 
 localrules: check_pride_tsv_files, final_check_tsv_data_file_not_empty_of_data
 
