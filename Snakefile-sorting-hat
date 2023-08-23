@@ -290,7 +290,7 @@ rule produce_reprocess_call:
     params:
         bioentities_properties=config['bioentities_properties'],
         skip_steps_file=get_skip_steps_file(),
-	run_deconv_file=get_run_deconv_file(),
+        run_deconv_file=get_run_deconv_file(),
         methods_base=config['methods_base'],
         methods_dif=config['methods_dif'],
         zooma_exclusions=config['zooma_exclusions'],
@@ -310,7 +310,7 @@ rule produce_reprocess_call:
         python_user=get_db_params('python_user'),
         python_connect_string=get_db_params('python_connect_string'),
         python_password=get_db_params('python_password'),
-	deconv_ref=config['deconv_ref']
+        deconv_ref=config['deconv_ref']
 
     output:
         touch("{accession}/{accession}.reprocess.done")
@@ -338,7 +338,7 @@ rule produce_reprocess_call:
                 metadata_summary=../{input.metadata} \
                 bioentities_properties={params.bioentities_properties} \
                 skip_steps_file={params.skip_steps_file} \
-		run_deconv_file={params.run_deconv_file} \
+                run_deconv_file={params.run_deconv_file} \
                 methods_base={params.methods_base} \
                 methods_dif={params.methods_dif} \
                 atlas_exps={params.atlas_exps} \
@@ -354,7 +354,7 @@ rule produce_reprocess_call:
                 python_user={params.python_user} \
                 python_connect_string={params.python_connect_string} \
                 python_password={params.python_password} \
-		deconv_ref={params.deconv_ref} \
+                deconv_ref={params.deconv_ref} \
                 -s {workflow.basedir}/Snakefile-reprocess {params.log_handler_script}
 
         else
@@ -375,23 +375,23 @@ rule produce_recalculations_call:
         bioentities_properties=config['bioentities_properties'],
         skip_steps_file=get_skip_steps_file(),
         lsf_config = get_lsf_config_file(),
-	run_deconv_file=get_run_deconv_file(),
+        run_deconv_file=get_run_deconv_file(),
         log_handler_script=get_log_handler_script(),
         goal=config['goal'],
-	atlas_exps = config['atlas_exps'],
-	priv_stat_file = config['priv_stat_file'],
-	tmp_dir=config['tmp_dir'],
+        atlas_exps = config['atlas_exps'],
+        priv_stat_file = config['priv_stat_file'],
+        tmp_dir=config['tmp_dir'],
         allowed_organism=get_user_species,
         oracle_home=get_db_params('oracle_home'),
         python_user=get_db_params('python_user'),
         python_connect_string=get_db_params('python_connect_string'),
         python_password=get_db_params('python_password'),
-	deconv_ref=config['deconv_ref'],
-	irap_versions=config['irap_versions'],
+        deconv_ref=config['deconv_ref'],
+        irap_versions=config['irap_versions'],
         irap_container=config['irap_container'],
-	methods_base=config['methods_base'],
+        methods_base=config['methods_base'],
         methods_dif=config['methods_dif'],
-	isl_dir=config['isl_dir'],
+        isl_dir=config['isl_dir'],
         isl_genomes=config['isl_genomes']
 	
     output:

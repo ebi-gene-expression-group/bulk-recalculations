@@ -9,11 +9,8 @@ import os.path
 
 # baseline proteomics rules
 
-#wildcard_constraints:
-#    accession="E-\D+-\d+"
-#
-#is_old_proteomics_dataset = os.path.exists( f"{wildcards['accession']}.old_proteomics_dataset" )
 is_old_proteomics_dataset = os.path.exists( f"{config['accession']}.old_proteomics_dataset" )
+# this file might be necessary also for initial processing of newer proteomics datasets
 
 localrules: check_pride_tsv_files, final_check_tsv_data_file_not_empty_of_data
 
@@ -26,9 +23,9 @@ rule check_pride_tsv_files:
     """
     log: "logs/{accession}-check_pride_tsv_files.log"
     input:
-        "{accession}.tsv.undecorated",
-        "{accession}.tsv.undecorated.aggregated",
-        "{accession}.tsv"
+        "{accession}-configuration.xml"
+    params:
+        is_old=is_old_proteomics_dataset
     output:
         temp("logs/{accession}-check_pride_tsv_files.done")
     shell:
@@ -38,11 +35,21 @@ rule check_pride_tsv_files:
 
         source {workflow.basedir}/bin/proteomics_functions.sh
 
-        # currently this does not exit if the files do not exist
-        check_tsv_data_file_not_empty_of_data {wildcards.accession}.tsv.undecorated 2
-        check_tsv_data_file_not_empty_of_data {wildcards.accession}.tsv.undecorated.aggregated 2
-        check_tsv_data_file_not_empty_of_data {wildcards.accession}.tsv 3
-
+        if [ {params.is_old} == "False" ]; then
+            # currently check_tsv_data_file_not_empty_of_data does not exit if the files do not exist
+            if [ -e {wildcards.accession}.tsv.undecorated ] && [ -e {wildcards.accession}.tsv.undecorated.aggregated ] && [ -e {wildcards.accession}.tsv ]; then
+                check_tsv_data_file_not_empty_of_data {wildcards.accession}.tsv.undecorated 2
+                check_tsv_data_file_not_empty_of_data {wildcards.accession}.tsv.undecorated.aggregated 2
+                check_tsv_data_file_not_empty_of_data {wildcards.accession}.tsv 3
+            else
+                echo "Starting files do not exist for proteomics experiment {wildcards.accession} "
+                exit 1
+            fi
+        else
+            # these files do not initially exist for older proteomics datasets
+            echo "Skipping check_tsv_data_file_not_empty_of_data for {wildcards.accession} "
+        fi
+            
         touch {output}
         """
 
@@ -79,6 +86,17 @@ rule processing_steps_newer_datasets:
 
         else
             source {workflow.basedir}/bin/proteomics_functions.sh
+
+            # it will generate: 
+            # {wildcards.accession}.tsv.undecorated.backup, {wildcards.accession}.tsv.undecorated, {wildcards.accession}.tsv.undecorated.aggregated
+
+            if [ -e {wildcards.accession}.tsv.undecorated ] && [ -e {wildcards.accession}.tsv.undecorated.aggregated ] && [ -e {wildcards.accession}.tsv ]; then
+                echo "These three files already exist for proteomics baseline experiment {wildcards.accession}: {wildcards.accession}.tsv.undecorated, {wildcards.accession}.tsv.undecorated.aggregated, {wildcards.accession}.tsv"
+                echo "If you want to recreate them, please delete them first and rerun the pipeline."
+                echo "If you don't want to recreate them, perhaps delete {wildcards.accession}.old_proteomics_dataset to skip this rule."
+                exit 1
+            fi
+
             # rename analysis methods
             echo "renaming {wildcards.accession}"
             rename_files_baseline {wildcards.accession}
@@ -104,7 +122,7 @@ rule processing_steps_newer_datasets:
 
             # aggregate technical replicates
             echo "summarise expression for {wildcards.accession}"
-            perl {workflow.basedir}/bin \
+            perl {workflow.basedir}/bin/gxa_summarize_expression.pl \
                 --aggregate-quartiles \
                 --configuration {wildcards.accession}-configuration.xml \
                 < {wildcards.accession}.tsv.undecorated \
@@ -128,10 +146,10 @@ rule decorate_baseline_proteomics_experiment:
     log: "logs/{accession}-decorate_baseline_proteomics_experiment.log"
     resources: mem_mb=get_mem_mb   
     input:
-        preprocess_done=rules.processing_steps_newer_datasets.output,
-        proteinExpressionsFile="{accession}.tsv.undecorated.aggregated"
+        preprocess_done=rules.processing_steps_newer_datasets.output
     params:
-        organism=get_organism()
+        organism=get_organism(),
+        proteinExpressionsFile="{accession}.tsv.undecorated.aggregated"
     output:
         decoexpression="{accession}.tsv",
         done=temp("logs/{accession}-decorate_baseline_proteomics_experiment")
@@ -146,6 +164,11 @@ rule decorate_baseline_proteomics_experiment:
 
         echo "Decorating .undecorated data files for experiment: {wildcards.accession}"
 
+        if [ ! -f {params.proteinExpressionsFile} ]; then
+            echo "Missing file {params.proteinExpressionsFile} "
+            exit 1
+        fi
+
         #organism=$({workflow.basedir}/bin/get_organism.sh {wildcards.accession} {workflow.basedir}/bin  || (  >&2 echo "Error: failed to retrieve organism!" ; exit 1 ) )
         geneNameFile=$( get_geneNameFile_given_organism {params.organism}  )
         echo $geneNameFile
@@ -158,7 +181,7 @@ rule decorate_baseline_proteomics_experiment:
         export JAVA_OPTS="-Xmx{resources.mem_mb}M"
         amm -s {workflow.basedir}/bin/decorateFile.sc \
             --geneNameFile "$geneNameFile" \
-            --source {input.proteinExpressionsFile} \
+            --source {params.proteinExpressionsFile} \
             | awk 'NR == 1; NR > 1 {{print $0 | "sort -n"}}' \
             > $decoratedFile.swp
 
@@ -178,10 +201,7 @@ rule final_check_tsv_data_file_not_empty_of_data:
     """
     log: "logs/{accession}-final_check_tsv_data_file_not_empty_of_data.log" 
     input:
-        rules.decorate_baseline_proteomics_experiment.output.done,
-        "{accession}.tsv.undecorated",
-        "{accession}.tsv.undecorated.aggregated",
-        "{accession}.tsv"
+        rules.decorate_baseline_proteomics_experiment.output.done
     output:
         temp("logs/{accession}-final_check_tsv_data_file_not_empty_of_data")
     shell:
@@ -219,6 +239,12 @@ rule rename_differential_proteomics_files:
         source {workflow.basedir}/bin/proteomics_functions.sh
         echo "renaming files for differential proteomics {wildcards.accession}"
         rename_files_differential {wildcards.accession}
+
+        if [ ! -s {wildcards.accession}-analytics.tsv.undecorated ] ; then
+            echo "Missing file {wildcards.accession}-analytics.tsv.undecorated "
+            exit 1
+        fi
+
         touch {output}
         """
 
@@ -281,8 +307,8 @@ rule decorate_differential_proteomics:
 
 # rule percentile_ranks (Snakefile use as well for diff proteomics)
 
- # Perform GSEA against Go/Interpro/Reactome
- # rule differential_gsea (Snakefile use as well for diff proteomics)
+# Perform GSEA against Go/Interpro/Reactome
+# rule differential_gsea (Snakefile use as well for diff proteomics)
 
- # Generate Genome browser tracks (bedGraph) for the experiment
- # rule differential_tracks (Snakefile use as well for diff proteomics)
+# Generate Genome browser tracks (bedGraph) for the experiment
+# rule differential_tracks (Snakefile use as well for diff proteomics)
