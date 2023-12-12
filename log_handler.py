@@ -26,9 +26,9 @@ def log_handler(msg):
                 job['log'] = msg['log'][0]
             jobs[msg['jobid']] = job
 
-        #for k, v in msg.items():
-        #    print(f"Key: {k}")
-        #    print(f"Value: {v}")
+        for k, v in msg.items():
+            print(f"Key: {k}")
+            print(f"Value: {v}")
 
         jobs_to_remove = []
         for j_id, j_cont in jobs.items():
