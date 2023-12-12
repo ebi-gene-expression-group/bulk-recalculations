@@ -3,6 +3,8 @@ import logging
 import os
 import re
 
+# log handler script for Snakefile-sorting-hat
+
 l = logging.getLogger(__name__)
 l.setLevel(logging.DEBUG)
 fh = logging.FileHandler(os.environ.get('LOG_PATH'), mode='w')
