@@ -331,7 +331,7 @@ rule produce_reprocess_call:
 
         if [[ "{params.allowed_organism}" == "True" ]]; then
 
-            snakemake --use-singularity --restart-times 1 --latency-wait 100 {config['sm_options']} --config \
+            snakemake --slurm --use-singularity --restart-times 1 --latency-wait 100 {config['sm_options']} --config \
                 accession={wildcards.accession} \
                 goal={params.goal} \
                 tool={get_tool(wildcards.accession)} \
@@ -413,7 +413,7 @@ rule produce_recalculations_call:
 
         if [[ "{params.allowed_organism}" == "True" ]]; then
 
-            snakemake --restart-times 4 --latency-wait 250 {config['sm_options']} --config \
+            snakemake --slurm --restart-times 4 --latency-wait 250 {config['sm_options']} --config \
                 accession={wildcards.accession} \
                 goal={params.goal} \
                 tool={get_tool(wildcards.accession)} \
