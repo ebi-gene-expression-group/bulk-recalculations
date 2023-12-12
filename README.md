@@ -13,8 +13,8 @@ A recalculations run requires that reprocess has been performed a priori, and it
 
 ## Prerequisites
 
- * Snakemake (tested with version 6.6.1)
- * LSF batch scheduler
+ * Snakemake (tested with version 7.32.4)
+ * LSF or SLURM batch schedulers
  * Set up configuration variables at `run_sorting_hat_test_data.sample.sh` for goal 'reprocess' or 'recalculations'.
 
 ## Run pipeline
