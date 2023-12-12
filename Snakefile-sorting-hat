@@ -186,8 +186,6 @@ rule all:
 
 
 rule get_experiment_metadata:
-    container:
-        "docker://quay.io/biocontainers/perl-atlas-modules:0.2.0--h1b792b2_0"
     conda:
         "envs/perl-atlas-modules.yaml"
     log: "{accession}/logs/get_experiment_metadata.log"
