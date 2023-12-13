@@ -202,7 +202,6 @@ rule get_experiment_metadata:
         metadata = "{accession}/{accession}.metadata_summary.yaml"
     shell:
         """
-        set -x
         set -e 
         mkdir -p {wildcards.accession}/logs
         exec &> "{log}"
@@ -210,7 +209,6 @@ rule get_experiment_metadata:
         export ATLAS_PROD="{params.atlas_prod}"
         export ATLAS_EXPS="{params.atlas_exps}"
         source "{workflow.basedir}/atlas-bash-util/generic_routines.sh"
-	echo "source completed"
 
         # proteomics baseline experiments do not need to include exp type assays/contrasts in the summary yaml
         prot_exp_type='experimentType="proteomics_baseline'
