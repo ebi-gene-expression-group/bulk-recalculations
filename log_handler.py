@@ -3,7 +3,7 @@ import logging
 import os
 import re
 
-# log handler script for Snakefile-sorting-hat
+# log handler script for Snakefile-sorting-hat. It works with lsf and slurm
 
 l = logging.getLogger(__name__)
 l.setLevel(logging.DEBUG)
@@ -26,9 +26,9 @@ def log_handler(msg):
                 job['log'] = msg['log'][0]
             jobs[msg['jobid']] = job
 
-        for k, v in msg.items():
-            print(f"Key: {k}")
-            print(f"Value: {v}")
+        #for k, v in msg.items():
+        #    print(f"Key: {k}")
+        #    print(f"Value: {v}")
 
         jobs_to_remove = []
         for j_id, j_cont in jobs.items():
