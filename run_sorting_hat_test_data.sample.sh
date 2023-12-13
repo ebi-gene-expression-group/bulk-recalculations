@@ -3,6 +3,8 @@
 GOAL='recalculations'
 # recalculations not currently implemented for proteomics experiments
 
+CLUSTER=${CLUSTER:-"SLURM"}
+
 NEXPS=${NEXPS:-30}
 NJOBS=${NJOBS:-10}
 GTF=$( pwd )/test-data/gff
@@ -28,8 +30,18 @@ BIOENTITIES_PROPERTIES=$( pwd )/test-data/bioentity_properties
 SORTING_HAT=${SORTING_HAT:-$( pwd )/Snakefile-sorting-hat}
 LOG_HANDLER=${LOG_HANDLER:-$( pwd )/log_handler.py}
 SN_CONDA_PREFIX=${SN_CONDA_PREFIX:-$( pwd )/conda_installs}
-PROFILE_LINE="--profile profilename"
-LSF_CONFIG=${LSF_CONFIG:-$( pwd )/lsf.yaml}
+
+
+if [ "$CLUSTER" = "LSF" ]; then
+        PROFILE_LINE="--profile lsf-profilename"
+elif [ "$CLUSTER" = "SLURM" ]; then
+        PROFILE_LINE="--profile slurm-profilename"
+else
+        echo "'$CLUSTER' must be either LSF or SLURM"
+        exit 1
+fi
+CLUSTER_CONFIG=${CLUSTER_CONFIG:-$( pwd )/cluster.yaml}
+
 
 [ ! -z ${BIOSTUDIES_AE_PRIVACY_STATUS_FILE+x} ] || (echo "Env var BIOSTUDIES_AE_PRIVACY_STATUS_FILE not defined." && exit 1)
 
@@ -103,7 +115,7 @@ tail -f $LOG_PATH &
 start=`date +%s`
 echo 'starting bulk '$GOAL'...'
 
-snakemake --use-conda --conda-frontend mamba \
+snakemake --slurm --use-conda --conda-frontend mamba \
         --log-handler-script $LOG_HANDLER \
         $PROFILE_LINE \
         $FORCE_ALL \
@@ -113,7 +125,7 @@ snakemake --use-conda --conda-frontend mamba \
         --config $ACC $SPE gtf_dir=$GTF \
         atlas_prod=path/to/atlasprod \
         atlas_exps=path/to/atlasexps \
-        lsf_config=$LSF_CONFIG \
+        cluster_config=$CLUSTER_CONFIG \
         deconv_ref=$DECONV_REF \
         goal=$GOAL \
         atlas_meta_config=path/to/supporting_files \
@@ -138,7 +150,7 @@ snakemake --use-conda --conda-frontend mamba \
         tomcat_host_password=$TOMCAT_HOST_PASSWORD \
         tomcat_host=$TOMCAT_HOST \
         prot_magetabfiles=$PROT_MAGETABFILES \
-        sm_options="--use-conda --conda-frontend mamba --keep-going $PROFILE_LINE -j $NJOBS $CONDA_PREFIX_LINE $FORCE_ALL --restart-times $RESTART_TIMES " \
+        sm_options="--slurm --use-conda --conda-frontend mamba --keep-going $PROFILE_LINE -j $NJOBS $CONDA_PREFIX_LINE $FORCE_ALL --restart-times $RESTART_TIMES " \
         bioentities_properties=$BIOENTITIES_PROPERTIES -j $NEXPS -s $SORTING_HAT &> $USUAL_SM_ERR_OUT
 
 end=`date +%s`
