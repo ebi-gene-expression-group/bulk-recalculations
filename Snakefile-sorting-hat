@@ -204,6 +204,7 @@ rule get_experiment_metadata:
         """
         # needed for container conda env activation
         # /usr/local/env-execute
+        set -x # enable debugging
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         mkdir -p {wildcards.accession}/logs
         exec &> {log}
