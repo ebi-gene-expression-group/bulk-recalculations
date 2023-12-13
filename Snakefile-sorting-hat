@@ -8,13 +8,13 @@ min_version("7.32.4")
 
 metadata = {}
 
-def get_lsf_config_file():
+def get_cluster_config_file():
     """
-    Returns the rule-specific LSF resource settings file to be copied to
+    Returns the rule-specific cluster (lsf or slurm) resource settings file to be copied to
     acc working directory before the snakemake call
     """
-    if 'lsf_config' in config:
-        return config['lsf_config']
+    if 'cluster_config' in config:
+        return config['cluster_config']
     else:
         return None
 
@@ -296,7 +296,7 @@ rule produce_reprocess_call:
         tmp_dir=config['tmp_dir'],
         atlas_exps = config['atlas_exps'],
         priv_stat_file = config['priv_stat_file'],
-        lsf_config = get_lsf_config_file(),
+        cluster_config = get_cluster_config_file(),
         log_handler_script=get_log_handler_script(),
         goal=config['goal'],
         atlasmeta_config=get_meta_config(),
@@ -315,12 +315,12 @@ rule produce_reprocess_call:
         mkdir -p {wildcards.accession}/logs
         exec &> {log}
         pushd {input.working_directory}
-        if [ -f {params.lsf_config} ]; then
-            if [ ! -f "lsf.yaml" ]; then
-                ln -sf {params.lsf_config} lsf.yaml
+        if [ -f {params.cluster_config} ]; then
+            if [ ! -f "cluster.yaml" ]; then
+                ln -sf {params.cluster_config} cluster.yaml
             fi
         else
-            echo "lsf resource settings file does not exist"
+            echo "cluster resource settings file does not exist"
             exit 1
         fi
 
@@ -369,7 +369,7 @@ rule produce_recalculations_call:
     params:
         bioentities_properties=config['bioentities_properties'],
         skip_steps_file=get_skip_steps_file(),
-        lsf_config = get_lsf_config_file(),
+        cluster_config = get_cluster_config_file(),
         run_deconv_file=get_run_deconv_file(),
         log_handler_script=get_log_handler_script(),
         goal=config['goal'],
@@ -397,12 +397,12 @@ rule produce_recalculations_call:
         mkdir -p {wildcards.accession}/logs
         exec &> {log}
         pushd {input.working_directory}
-        if [ -f {params.lsf_config} ]; then
-            if [ ! -f "lsf.yaml" ]; then
-                ln -sf {params.lsf_config} lsf.yaml
+        if [ -f {params.cluster_config} ]; then
+            if [ ! -f "cluster.yaml" ]; then
+                ln -sf {params.cluster_config} cluster.yaml
             fi
         else
-            echo "lsf resource settings file does not exist"
+            echo "cluster resource settings file does not exist"
             exit 1	    
         fi
 

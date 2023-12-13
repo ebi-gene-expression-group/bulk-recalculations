@@ -217,6 +217,7 @@ copy_experiment() {
     	    --exclude '*archive/**' \
     	    --exclude '*condensed-sdrf*' \
     	    --exclude '*lsf*' \
+    	    --exclude '*cluster*' \
             --exclude 'logs' \
     	    --include '*/' \
     	    --include '*.tsv' \
