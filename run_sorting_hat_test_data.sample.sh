@@ -115,7 +115,7 @@ tail -f $LOG_PATH &
 start=`date +%s`
 echo 'starting bulk '$GOAL'...'
 
-snakemake --slurm --use-conda --conda-frontend mamba \
+snakemake $SLURM_OR_NONE --use-conda --conda-frontend mamba \
         --log-handler-script $LOG_HANDLER \
         $PROFILE_LINE \
         $FORCE_ALL \
