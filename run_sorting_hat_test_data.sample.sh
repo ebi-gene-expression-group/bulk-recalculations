@@ -150,7 +150,7 @@ snakemake $SLURM_OR_NONE --use-conda --conda-frontend mamba \
         tomcat_host_password=$TOMCAT_HOST_PASSWORD \
         tomcat_host=$TOMCAT_HOST \
         prot_magetabfiles=$PROT_MAGETABFILES \
-        sm_options="--slurm --use-conda --conda-frontend mamba --keep-going $PROFILE_LINE -j $NJOBS $CONDA_PREFIX_LINE $FORCE_ALL --restart-times $RESTART_TIMES " \
+        sm_options="$SLURM_OR_NONE --use-conda --conda-frontend mamba --keep-going $PROFILE_LINE -j $NJOBS $CONDA_PREFIX_LINE $FORCE_ALL --restart-times $RESTART_TIMES " \
         bioentities_properties=$BIOENTITIES_PROPERTIES -j $NEXPS -s $SORTING_HAT &> $USUAL_SM_ERR_OUT
 
 end=`date +%s`
