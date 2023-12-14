@@ -34,8 +34,10 @@ SN_CONDA_PREFIX=${SN_CONDA_PREFIX:-$( pwd )/conda_installs}
 
 if [ "$CLUSTER" = "LSF" ]; then
         PROFILE_LINE="--profile lsf-profilename"
+        SLURM_OR_NONE=""
 elif [ "$CLUSTER" = "SLURM" ]; then
         PROFILE_LINE="--profile slurm-profilename"
+        SLURM_OR_NONE="--slurm"
 else
         echo "'$CLUSTER' must be either LSF or SLURM"
         exit 1
