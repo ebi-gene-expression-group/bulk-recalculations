@@ -80,7 +80,7 @@ rule processing_steps_newer_datasets:
 
         # skip some steps for older proteomics datasets that break otherwise
 
-        if [ {params.is_old} == "False" ]; then
+        if [ {params.is_old} == "False"] && [ -e *.done ]; then
             echo "Skipping: "
             echo "- rename_files"
             echo "- removeGeneNamesInDataMatrix.R"
