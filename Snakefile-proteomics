@@ -43,7 +43,11 @@ rule check_pride_tsv_files:
                 check_tsv_data_file_not_empty_of_data {wildcards.accession}.tsv 3
             else
                 echo "Starting files do not exist for proteomics experiment {wildcards.accession} "
-                exit 1
+                if [ -e *.done ]; then
+                    exit 1
+                else
+                    echo "It looks like the study is new and it was never processed. Skipping check_tsv_data_file_not_empty_of_data for {wildcards.accession} "
+                fi
             fi
         else
             # these files do not initially exist for older proteomics datasets
