@@ -580,7 +580,8 @@ rule baseline_tracks:
         analytics="{accession}-{metric}.tsv"
     input:
         gff=get_gff(),
-        analytics=lambda wildcards: f"{wildcards.accession}-{wildcards.metric}.tsv" if 'reprocess' in config['goal'] else f"{wildcards.accession}-{wildcards.metric}-touch_inputs_baseline.done"
+        analytics=lambda wildcards: f"{wildcards.accession}-{wildcards.metric}.tsv" if 'reprocess' in config['goal'] else f"{wildcards.accession}-{wildcards.metric}-touch_inputs_baseline.done",
+        decorate_completed=lambda wildcards: rules.decorate_expression_baseline.output.decoexpression if 'reprocess' in config['goal'] else 'none_necessary'
     output:
         bedGraph="{accession}.{assay_id}.genes.expressions_{metric}.bedGraph"
     shell:
@@ -589,6 +590,7 @@ rule baseline_tracks:
         exec &> {log:q}
         source {workflow.basedir}/bin/tracks_functions.sh
         echo "Past sourcing"
+	echo {input.decorate_completed}
         generate_baseline_tracks {wildcards.accession} {wildcards.assay_id} {params.analytics} {input.gff} ./ {params.assay_label:q}
         """
 
