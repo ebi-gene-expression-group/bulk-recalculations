@@ -1,6 +1,6 @@
 # Expression Atlas Bulk (re)processing and recalculations
 
-This set of Snakemake workflows replaces the Atlas new experiments processing, reprocessing and recalculations operations done from Atlas-Prod codebase which had direct involvement of the LSF CLI and could only run on the original cluster. 
+This set of Snakemake workflows replaces the Atlas new experiments processing, reprocessing and recalculations operations done from Atlas-Prod codebase which had direct involvement of the LSF CLI and could only run on the original cluster.
 
 It contains data analysis rules for:
 - RNA-Seq baseline analysis
