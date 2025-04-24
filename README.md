@@ -26,3 +26,9 @@ A recalculations run requires that reprocess has been performed a priori, and it
 The experiments path contains one or more directories with Atlas accession names E-* (e.g. `E-MTAB-5577`), having at least configuration files in xml format after curation process. Completed processing by iRAP Single Lib (ISL) is necessary before new experiment processing.
 
 Optionally, worflow execution can be tailored to specific accessions or species by defining these variables in the sorting-hat script.
+
+## New experiment processing and re-processing
+
+## Recalculations
+This is necessary for Ensembl Update (E! Update) part of a Data Release. E! Update brings annotations from Biomart, E! Mysql databases and ftp sites for all the relevant organisms in Expressiona Atlas, and leaves them in a format that can be consumed for the decoration process and the web applications. Ensembl Update validators (for Biomart attributes and GTF URL validations) are performed before running recalculations.
+
