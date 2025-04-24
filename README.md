@@ -27,13 +27,13 @@ The experiments path contains one or more directories with Atlas accession names
 
 Optionally, worflow execution can be tailored to specific accessions or species by defining these variables in the sorting-hat script.
 
-## New experiment processing and re-processing
+### New experiment processing and re-processing
 
-Completed processing by iRAP Single Lib (ISL) is necessary before new experiment processing.
+Completed processing by iRAP Single Lib (ISL) is necessary before new experiment processing. It will run all rules avilable for the experiment type.
 
-## Recalculations
+### Recalculations
 
-This is necessary for Ensembl Update (E! Update) part of a Data Release. E! Update brings annotations from Biomart, E! Mysql databases and ftp sites for all the relevant organisms in Expressiona Atlas, and leaves them in a format that can be consumed for the decoration process and the web applications. Ensembl Update validators (for Biomart attributes and GTF URL validations) are performed before running recalculations.
+This is necessary for the Ensembl Update (E! Update) part of a Data Release. E! Update brings annotations from Biomart, E! Mysql databases and ftp sites for all the relevant organisms in Expressiona Atlas, and leaves them in a format that can be consumed for the decoration process and the web applications. Ensembl Update validators (for Biomart attributes and GTF URL validations) are performed before running recalculations.
 
 
 For differial experiments, the following outputs are generated (which correspond to rules):
@@ -49,8 +49,8 @@ For differial experiments, the following outputs are generated (which correspond
 - Outputs: `{accession}.{contrast_id}.{ext_db}.gsea.tsv`
 - Outputs: `{accession}.{contrast_id}.{ext_db}.gsea_list.tsv`
 
-4. **rule atlas_experiment_summary**
-- Outputs: `{accession}-atlasExperimentSummary.Rdata`
+4. **atlas_experiment_summary rule**
+- Output: `{accession}-atlasExperimentSummary.Rdata`
 
 
 For baseline RNA-seq experiments, the following outputs are generated:
@@ -63,14 +63,14 @@ For baseline RNA-seq experiments, the following outputs are generated:
 - Outputs: `{accession}-heatmap-{metric}.pdf`
 - Output: `{accession}-heatmap.pdf`
 
-3. **Baseline coexpression rule** (if expression file size > 0 and columns > 4)
+3. **Baseline coexpression rule**
 - Outputs: `{accession}-{metric}-coexpressions.tsv.gz`
 - Output: `{accession}-coexpressions.tsv.gz`
 
-4. **rule atlas_experiment_summary**
-- Outputs: `{accession}-atlasExperimentSummary.Rdata`
+4. **atlas_experiment_summary rule**
+- Output: `{accession}-atlasExperimentSummary.Rdata`
 
-For proteomics experiments (`proteomics_baseline`, `proteomics_baseline_dia`, `proteomics_differential`), recalculations are not being implemented.
+For proteomics experiments (`proteomics_baseline`, `proteomics_baseline_dia`, `proteomics_differential`), recalculations are not implemented.
 
 
 | Rule                        |  Baseline  | Differential RNA-seq | Differential microarray |
