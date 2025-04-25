@@ -72,7 +72,7 @@ For baseline RNA-seq experiments, the following outputs are generated:
 
 For proteomics experiments (`proteomics_baseline`, `proteomics_baseline_dia`, `proteomics_differential`), recalculations are not implemented.
 
-
+### Snakemake rules by experiment types
 | Rule                        |  Baseline  | Differential RNA-seq | Differential microarray |
 |-----------------------------|------------|----------------------|-------------------------|
 | atlas_experiment_summary    |  &#x2713;  |       &#x2713;       |         &#x2713;        |
