@@ -33,10 +33,10 @@ Completed processing by iRAP Single Lib (ISL) is necessary before new experiment
 
 ### Recalculations
 
-This is necessary for the Ensembl Update (E! Update) part of a Data Release. E! Update brings annotations from Biomart, E! Mysql databases and ftp sites for all the relevant organisms in Expressiona Atlas, and leaves them in a format that can be consumed for the decoration process and the web applications. Ensembl Update validators (for Biomart attributes and GTF URL validations) are performed before running recalculations.
+This is necessary for the Ensembl Update (E! Update) part of a Data Release. E! Update brings annotations from Biomart, E! Mysql databases and ftp sites for all the relevant organisms in Expressiona Atlas, and leaves them in a format that can be consumed for the decoration process and the web applications. Ensembl Update validators (for Biomart attributes, GTF URL validations and existence of MySQL database) are performed before running recalculations.
 
 
-For differial experiments, the following outputs are generated (which correspond to rules):
+For differential RNA-seq and microarray experiments, the following outputs are generated (which correspond to rules):
 
 1. **Percentile ranks rule**
 - Output: `{accession}-percentile-ranks.tsv`
@@ -72,6 +72,7 @@ For baseline RNA-seq experiments, the following outputs are generated:
 
 For proteomics experiments (`proteomics_baseline`, `proteomics_baseline_dia`, `proteomics_differential`), recalculations are not implemented.
 
+### Snakemake rules by experiment types
 
 | Rule                        |  Baseline  | Differential RNA-seq | Differential microarray |
 |-----------------------------|------------|----------------------|-------------------------|
