@@ -105,10 +105,10 @@ def get_outputs():
         # differential gsea
         if skip(config['accession'],'differential-gsea'):
             check_config_required(fields=['bioentities_properties'], method='differential-gsea')
-            outputs.extend( expand( config['accession']+".{c_id}.{ext_db}.{type}",
-                        c_id=get_contrast_ids(),
-                        ext_db=get_ext_db(),
-                        type=["gsea.tsv", "gsea_list.tsv"]))
+            #outputs.extend( expand( config['accession']+".{c_id}.{ext_db}.{type}",
+            #            c_id=get_contrast_ids(),
+            #            ext_db=get_ext_db(),
+            #            type=["gsea.tsv", "gsea_list.tsv"]))
             outputs.extend( expand("logs/"+config['accession']+".{c_id}.{ext_db}.{type}",
                         c_id=get_contrast_ids(),
                         ext_db=get_ext_db(),
