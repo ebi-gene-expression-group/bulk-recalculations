@@ -369,9 +369,9 @@ def get_array_design_from_xml(wildcards):
 
 def get_checkpoints_cp_atlas_exps(wildcards):
     """
-    Only for reprocessing, to enable rule copy_experiment_from_analysis_to_atlas_exps
+    Enable rule copy_experiment_from_analysis_to_atlas_exps
     """
-    if config['goal'] == 'reprocess':
+    if config['goal'] == 'reprocess' or rule == 'recalculations':
         inputs = get_outputs()
         inputs.remove( f"logs/{wildcards['accession']}-copy_experiment_from_analysis_to_atlas_exps.done" )
         inputs.remove( f"logs/{wildcards['accession']}-get_magetab_for_experiment.done" )
@@ -2097,7 +2097,7 @@ rule delete_intermediate_files_microarray:
 
 
 ######################################################
-# Final reprocessing rules, for all experiments
+# Final reprocessing and recalculations rules, for all experiments
 
 rule copy_experiment_from_analysis_to_atlas_exps:
     """
