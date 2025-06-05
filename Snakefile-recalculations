@@ -82,6 +82,11 @@ def get_outputs():
         if metric_link_coexp == True:
             outputs.extend(expand(f"{config['accession']}-coexpressions.tsv.gz" ))
 
+
+    # For all experiment types, move data to atlas_exps and create condensed SDRF
+    outputs.extend(expand("logs/"+f"{config['accession']}"+"-copy_experiment_from_analysis_to_atlas_exps.done" ))
+    outputs.extend(expand("logs/"+f"{config['accession']}"+"-get_magetab_for_experiment.done" ))
+
     print(outputs)
     print('Getting list of outputs.. done')
     print(datetime.datetime.now())
