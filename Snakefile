@@ -371,7 +371,7 @@ def get_checkpoints_cp_atlas_exps(wildcards):
     """
     Enable rule copy_experiment_from_analysis_to_atlas_exps
     """
-    if config['goal'] == 'reprocess' or rule == 'recalculations':
+    if config['goal'] in ['reprocess', 'recalculations']:
         inputs = get_outputs()
         inputs.remove( f"logs/{wildcards['accession']}-copy_experiment_from_analysis_to_atlas_exps.done" )
         inputs.remove( f"logs/{wildcards['accession']}-get_magetab_for_experiment.done" )
