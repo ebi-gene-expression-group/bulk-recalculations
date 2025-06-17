@@ -2095,6 +2095,28 @@ rule delete_intermediate_files_microarray:
         """   
 
 
+rule baseline_markers:
+    conda: "envs/XXX.yaml"
+    log: "logs/{accession}-{metric}-baseline_markers.log"
+    resources: mem_mb=get_mem_mb
+    params:
+        assay_label=get_assay_label,
+        analytics="{accession}-{metric}.tsv"
+    input:
+        tpm=
+	fpkm=
+	configxml=
+    output:
+        markers=
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> {log:q}
+
+        echo "Calcualtion markers with bioconductor package MGFR"
+
+        """
+
 
 ######################################################
 # Final reprocessing rules, for all experiments
