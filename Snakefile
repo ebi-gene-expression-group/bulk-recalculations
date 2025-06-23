@@ -2103,8 +2103,7 @@ rule baseline_markers:
         assay_label=get_assay_label,
         analytics="{accession}-{metric}.tsv"
     input:
-        tpm=
-	fpkm=
+        expression_file="{accession}-{metric}.tsv.undecorated"
 	configxml=
     output:
         markers=
@@ -2114,6 +2113,7 @@ rule baseline_markers:
         exec &> {log:q}
 
         echo "Calcualtion markers with bioconductor package MGFR"
+	.r input. input. output.
 
         """
 
