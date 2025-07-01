@@ -2105,7 +2105,8 @@ rule baseline_markers_rnaseq:
     input:
         config_xml="{accession}-configuration.xml",
         expression_file_undecorated="{accession}-{metric}.tsv.undecorated",
-        expression_file="{accession}-{metric}.tsv"
+        expression_file="{accession}-{metric}.tsv",
+        methods_file=rules.generate_methods_baseline_rnaseq.output.methods
     output:
         markers="{accession}-{metric}-markers.tsv"
     shell:
@@ -2116,6 +2117,12 @@ rule baseline_markers_rnaseq:
         echo "Calculating markers for {wildcards.accession} with bioconductor package MGFR"
 
 	    {workflow.basedir}/atlas-analysis/baselinemarkers/get_marker_genes_rnaseq.R {input.config_xml} {input.expression_file_undecorated} {input.expression_file} {output.markers} 0.25 0.5
+
+        echo "Adding markers software version to the methods file {input.methods_file}"
+        MGFR_VERSION=$(Rscript -e "cat(as.character(packageVersion('MGFR')))")
+        echo -e "Gene marker identification\tMGFR version: $MGFR_VERSION" >> {input.methods_file}
+
+        echo "Markers calculation completed for {wildcards.accession} with metric {wildcards.metric}"        
         """
 
 rule baseline_markers_proteomics:
