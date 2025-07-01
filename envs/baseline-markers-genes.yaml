@@ -1,1 +1,8 @@
-
+channels:
+ - conda-forge
+ - bioconda
+dependencies:
+ - bioconductor-mgfr
+ - r-xml2
+ - r-dplyr
+ - r-data.table
