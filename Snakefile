@@ -2095,26 +2095,50 @@ rule delete_intermediate_files_microarray:
         """   
 
 
-rule baseline_markers:
-    conda: "envs/XXX.yaml"
+rule baseline_markers_rnaseq:
+    """
+    Markers calculation for baseline rna-seq experiments.
+    """
+    conda: "envs/baseline-markers-genes.yaml"
     log: "logs/{accession}-{metric}-baseline_markers.log"
     resources: mem_mb=get_mem_mb
-    params:
-        assay_label=get_assay_label,
-        analytics="{accession}-{metric}.tsv"
     input:
-        expression_file="{accession}-{metric}.tsv.undecorated"
-	configxml=
+        config_xml="{accession}-configuration.xml",
+        expression_file_undecorated="{accession}-{metric}.tsv.undecorated",
+        expression_file="{accession}-{metric}.tsv"
     output:
-        markers=
+        markers="{accession}-{metric}-markers.tsv"
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
-        exec &> {log:q}
+        exec &> "{log}"
 
-        echo "Calcualtion markers with bioconductor package MGFR"
-	.r input. input. output.
+        echo "Calculating markers for {wildcards.accession} with bioconductor package MGFR"
 
+	    {workflow.basedir}/atlas-analysis/baselinemarkers/get_marker_genes_rnaseq.R {input.config_xml} {input.expression_file_undecorated} {input.expression_file} {output.markers} 0.25 0.5
+        """
+
+rule baseline_markers_proteomics:
+    """
+    Markers calculation for baseline proteomics experiments.
+    """
+    conda: "envs/baseline-markers-genes.yaml"
+    log: "logs/{accession}-baseline_markers.log"
+    resources: mem_mb=get_mem_mb
+    input:
+        config_xml="{accession}-configuration.xml",
+        expression_file_undecorated="{accession}.tsv.undecorated",
+        expression_file="{accession}.tsv"
+    output:
+        markers="{accession}-markers.tsv"
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+
+        echo "Calculating markers for {wildcards.accession} with bioconductor package MGFR"
+
+	    {workflow.basedir}/atlas-analysis/baselinemarkers/get_marker_genes_proteomics.R {input.config_xml} {input.expression_file_undecorated} {input.expression_file} {output.markers} 0.25 0.5
         """
 
 

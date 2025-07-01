@@ -50,7 +50,8 @@ def get_outputs():
         outputs.extend(expand(config['accession']+".{a_id}.genes.expressions_{metric}.bedGraph",
                             a_id=get_assay_ids(),
                             metric=metrics))
-        outputs.extend() # output for baseline markers genes
+        outputs.extend(expand(f"{config['accession']}"+"-{metric}-markers.tsv", metric=metrics ))
+        
     if 'differential-gsea' in config['tool'] or config['tool']=="all-diff" and skip(config['accession'],'differential-gsea'):
         check_config_required(fields=['bioentities_properties'], method='differential-gsea')
         #outputs.extend(
