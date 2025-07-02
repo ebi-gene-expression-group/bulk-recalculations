@@ -2116,7 +2116,7 @@ rule baseline_markers_rnaseq:
 
         echo "Calculating markers for {wildcards.accession} with metric {wildcards.metric} using bioconductor package MGFR"
 
-	    {workflow.basedir}/atlas-analysis/baselinemarkers/get_marker_genes_rnaseq.R {input.config_xml} {input.expression_file_undecorated} {input.expression_file} {output.markers} 0.25 0.5
+        Rscript {workflow.basedir}/atlas-analysis/baselinemarkers/get_marker_genes_rnaseq.R {input.config_xml} {input.expression_file_undecorated} {input.expression_file} {output.markers} 0.25 0.5
 
         echo "Adding markers software version to the methods file {input.methods_file}"
         MGFR_VERSION=$(Rscript -e "cat(as.character(packageVersion('MGFR')))")
@@ -2145,7 +2145,7 @@ rule baseline_markers_proteomics:
 
         echo "Calculating markers for {wildcards.accession} with bioconductor package MGFR"
 
-	    {workflow.basedir}/atlas-analysis/baselinemarkers/get_marker_genes_proteomics.R {input.config_xml} {input.expression_file_undecorated} {input.expression_file} {output.markers} 0.25 0.5
+        Rscript {workflow.basedir}/atlas-analysis/baselinemarkers/get_marker_genes_proteomics.R {input.config_xml} {input.expression_file_undecorated} {input.expression_file} {output.markers} 0.25 0.5
         """
 
 
