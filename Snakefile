@@ -2114,7 +2114,7 @@ rule baseline_markers_rnaseq:
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
 
-        echo "Calculating markers for {wildcards.accession} with bioconductor package MGFR"
+        echo "Calculating markers for {wildcards.accession} with metric {wildcards.metric} using bioconductor package MGFR"
 
 	    {workflow.basedir}/atlas-analysis/baselinemarkers/get_marker_genes_rnaseq.R {input.config_xml} {input.expression_file_undecorated} {input.expression_file} {output.markers} 0.25 0.5
 
