@@ -2118,9 +2118,12 @@ rule baseline_markers_rnaseq:
 
         Rscript {workflow.basedir}/atlas-analysis/baselinemarkers/get_marker_genes_rnaseq.R {input.config_xml} {input.expression_file_undecorated} {input.expression_file} {output.markers} 0.25 0.5
 
-        echo "Adding markers software version to the methods file {input.methods_file}"
-        MGFR_VERSION=$(Rscript -e "cat(as.character(packageVersion('MGFR')))")
-        echo -e "Gene marker identification\tMGFR version: $MGFR_VERSION" >> {input.methods_file}
+        # write only once
+	if [ "{wildcards.metric}" = "tpms" ]; then
+            echo "Adding markers software version to the methods file {wildcards.accession}-analysis-methods.tsv"
+            MGFR_VERSION=$(Rscript -e "cat(as.character(packageVersion('MGFR')))")
+            echo -e "Gene marker identification\tMGFR version: $MGFR_VERSION" >> {wildcards.accession}-analysis-methods.tsv
+	fi
 
         echo "Markers calculation completed for {wildcards.accession} with metric {wildcards.metric}"        
         """
