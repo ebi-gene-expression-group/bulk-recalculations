@@ -2116,7 +2116,7 @@ rule baseline_markers_rnaseq:
 
         echo "Calculating markers for {wildcards.accession} with metric {wildcards.metric} using bioconductor package MGFR"
 
-        Rscript {workflow.basedir}/atlas-analysis/baselinemarkers/get_marker_genes_rnaseq.R {input.config_xml} {input.expression_file_undecorated} {input.expression_file} {output.markers} 0.25 0.5
+        Rscript {workflow.basedir}/atlas-analysis/baselinemarkers/get_marker_genes_rnaseq.R {input.config_xml} {input.expression_file_undecorated} {input.expression_file} {output.markers} 0.3 0.5
 
         # write only once
 	if [ "{wildcards.metric}" = "tpms" ]; then
