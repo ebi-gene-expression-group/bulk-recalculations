@@ -222,6 +222,39 @@ rule final_check_tsv_data_file_not_empty_of_data:
         touch {output}
         """
 
+
+
+rule baseline_markers_proteomics:
+    """
+    Markers calculation for baseline proteomics experiments.
+    """
+    conda: "envs/baseline-markers-genes.yaml"
+    log: "logs/{accession}-baseline_markers.log"
+    resources: mem_mb=get_mem_mb
+    input:
+        starting_check=rules.final_check_tsv_data_file_not_empty_of_data.output,
+        config_xml="{accession}-configuration.xml",
+        expression_file_undecorated="{accession}.tsv.undecorated.aggregated",
+        expression_file="{accession}.tsv",
+        methods_file="{accession}-analysis-methods.tsv"
+    output:
+        markers="{accession}-markers.tsv"
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+
+        echo "Calculating markers for {wildcards.accession} using bioconductor package MGFR"
+
+        Rscript {workflow.basedir}/atlas-analysis/baselinemarkers/get_marker_genes_proteomics.R {input.config_xml} {input.expression_file_undecorated} {input.expression_file} {output.markers} 0.3 0.5
+
+        echo "Adding markers software version to the methods file {input.methods_file}"
+        MGFR_VERSION=$(Rscript -e "cat(as.character(packageVersion('MGFR')))")
+        echo -e "Gene marker identification\tMGFR version: $MGFR_VERSION" >> {input.methods_file}
+
+        echo "Markers calculation completed for {wildcards.accession}"        
+        """
+
 # rules copy_experiment_from_analysis_to_atlas_exps and get_magetab_for_experiment
 # are common for all experiments types and
 # will run after the final_check_tsv_data_file_not_empty_of_data rule

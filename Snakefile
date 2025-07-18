@@ -2119,37 +2119,15 @@ rule baseline_markers_rnaseq:
         Rscript {workflow.basedir}/atlas-analysis/baselinemarkers/get_marker_genes_rnaseq.R {input.config_xml} {input.expression_file_undecorated} {input.expression_file} {output.markers} 0.3 0.5
 
         # write only once
-	if [ "{wildcards.metric}" = "tpms" ]; then
+	    if [ "{wildcards.metric}" = "tpms" ]; then
             echo "Adding markers software version to the methods file {wildcards.accession}-analysis-methods.tsv"
             MGFR_VERSION=$(Rscript -e "cat(as.character(packageVersion('MGFR')))")
             echo -e "Gene marker identification\tMGFR version: $MGFR_VERSION" >> {wildcards.accession}-analysis-methods.tsv
-	fi
+	    fi
 
         echo "Markers calculation completed for {wildcards.accession} with metric {wildcards.metric}"        
         """
 
-rule baseline_markers_proteomics:
-    """
-    Markers calculation for baseline proteomics experiments.
-    """
-    conda: "envs/baseline-markers-genes.yaml"
-    log: "logs/{accession}-baseline_markers.log"
-    resources: mem_mb=get_mem_mb
-    input:
-        config_xml="{accession}-configuration.xml",
-        expression_file_undecorated="{accession}.tsv.undecorated",
-        expression_file="{accession}.tsv"
-    output:
-        markers="{accession}-markers.tsv"
-    shell:
-        """
-        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
-        exec &> "{log}"
-
-        echo "Calculating markers for {wildcards.accession} with bioconductor package MGFR"
-
-        Rscript {workflow.basedir}/atlas-analysis/baselinemarkers/get_marker_genes_proteomics.R {input.config_xml} {input.expression_file_undecorated} {input.expression_file} {output.markers} 0.25 0.5
-        """
 
 
 ######################################################
