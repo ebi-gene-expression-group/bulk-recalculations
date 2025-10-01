@@ -218,12 +218,16 @@ rule get_experiment_metadata:
             echo "experiment_type: "$(grep "$prot_exp_type" {input.config_file}  | cut -d'"' -f 2) >> {output.metadata}
         else
             perl {workflow.basedir}/bin/get_exptype_contrasts_assays.pl {wildcards.accession} {input.config_file} {output.metadata}
+			echo "perl {workflow.basedir}/bin/get_exptype_contrasts_assays.pl {wildcards.accession} {input.config_file} {output.metadata}"  # to be deleted
+			cat {output.metadata}  # to be deleted
         fi
         # we may avoid this adding proteomics_baseline_dia to AtlasSiteConfig.yml (perl-atlas-modules)
 
         if [ -e "{params.atlas_exps}/{wildcards.accession}/{wildcards.accession}.condensed-sdrf.tsv" ]; then
             echo "Trying with condensed in atlas_exps..."
             organism=$(get_organism_from_condensed_sdrf "{params.atlas_exps}/{wildcards.accession}/{wildcards.accession}.condensed-sdrf.tsv")
+			echo "Tried with condensed in atlas_exps..."  # to be deleted
+			echo "organism $organism"  # to be deleted
         elif [ -e "{wildcards.accession}/{wildcards.accession}.condensed-sdrf.tsv" ]; then
             echo "Trying with condensed in local experiment dir..."
             organism=$(get_organism_from_condensed_sdrf "{wildcards.accession}/{wildcards.accession}.condensed-sdrf.tsv")
