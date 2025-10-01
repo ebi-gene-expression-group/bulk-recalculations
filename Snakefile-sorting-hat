@@ -235,6 +235,8 @@ rule get_experiment_metadata:
             >&2 echo "Can't retrieve organism: neither {wildcards.accession}.condensed-sdrf.tsv nor {wildcards.accession}/{wildcards.accession}-configuration.xml not found "
             exit 1
         fi
+		echo "organism $organism"
+
         # fix species name
         while read line; do
             echo "$line"
@@ -244,12 +246,17 @@ rule get_experiment_metadata:
 
         ##echo $organism "check-> "$organism_check >> organisms.txt
         organism=$organism_check
-
+		echo "organism $organism"
+		
         gff_file=$( find {input.gtf_dir}/$organism -iname "$organism.*.gff3" | head -n1)
+		echo "gff_file $gff_file"
+		
         if [ -z "$gff_file" ]; then
             gff_file=$( find {input.gtf_dir}/$organism -iname "$organism_*.gff3" | head -n1)
         fi
+		
 	    echo "GTF file location sourced"
+		echo "gff_file $gff_file"
 
         prot_exp_type_all='experimentType="proteomics_'
         # this applies to all proteomics experiments
@@ -262,6 +269,7 @@ rule get_experiment_metadata:
             idf=$( echo $magetabfiles | awk -F',' '{{ print $1 }}' )
             sdrf=$( echo $magetabfiles | awk -F',' '{{ print $2 }}' )
         fi
+		echo "magetabfiles $magetabfiles"
 
         if [ -z "$gff_file" ] || [ -z "$idf" ] || [ -z "$sdrf" ]; then
             echo "GFF: $gff_file"
@@ -275,6 +283,7 @@ rule get_experiment_metadata:
             echo "idf: $idf" >> {output.metadata}
             echo "sdrf: $sdrf" >> {output.metadata}
         fi
+		echo "Done"
         """
 
 rule produce_reprocess_call:
