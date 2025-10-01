@@ -224,6 +224,9 @@ rule get_experiment_metadata:
         if [ -e "{params.atlas_exps}/{wildcards.accession}/{wildcards.accession}.condensed-sdrf.tsv" ]; then
             echo "Trying with condensed in atlas_exps..."
             organism=$(get_organism_from_condensed_sdrf "{params.atlas_exps}/{wildcards.accession}/{wildcards.accession}.condensed-sdrf.tsv")
+            echo "Tried with condensed in atlas_exps..."
+			echo "$organism"
+			
         elif [ -e "{wildcards.accession}/{wildcards.accession}.condensed-sdrf.tsv" ]; then
             echo "Trying with condensed in local experiment dir..."
             organism=$(get_organism_from_condensed_sdrf "{wildcards.accession}/{wildcards.accession}.condensed-sdrf.tsv")
