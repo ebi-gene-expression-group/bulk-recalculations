@@ -35,24 +35,28 @@ def get_zooma_exclusions():
     else:
         return None
 
+# To be remove/modify
 def get_isl_dir():
     if 'isl_dir' in config:
         return config['isl_dir']
     else:
         return None
 
+# To be remove/modify
 def get_isl_genomes():
     if 'isl_genomes' in config:
         return config['isl_genomes']
     else:
         return None
 
+# To be remove/modify
 def get_irap_versions():
     if 'irap_versions' in config:
         return config['irap_versions']
     else:
         return None
 
+# To be remove/modify
 def get_irap_container():
     if 'irap_container' in config:
         return config['irap_container']
@@ -152,6 +156,7 @@ def get_metrics_recalculations():
         else:
             sys.exit("No metric available for baseline analyses.")
 
+# To be remove/modify
 def get_metrics_reprocess():
     """
     The logic is based on files processed by iRAP/ISL.
@@ -183,6 +188,7 @@ def get_meta_config():
         print(f" WARNING - atlas_meta_config not provided in config")
         return None
 
+# To be remove/modify
 def get_db_params():
     """
     When goal is reprocess, return config parameters to establish connection with isl db.
@@ -450,6 +456,7 @@ rule percentile_ranks:
         fi
         """
 
+# To be remove/modify
 rule differential_tracks:
     conda: "envs/irap.yaml"
     log: "logs/{accession}.{contrast_id}-differential_tracks.log"
@@ -481,6 +488,7 @@ rule differential_tracks:
         generate_differential_tracks {wildcards.accession} {wildcards.contrast_id} $analyticsFile {input.gff} {params.contrast_label:q} ./
         """
 
+# To be remove/modify
 rule differential_gsea:
     conda: "envs/irap.yaml"
     log: "logs/{accession}.{contrast_id}.{ext_db}-differential_gsea.log"
@@ -572,6 +580,7 @@ rule check_differential_gsea:
         touch {output.temp_gsea_list}
         """
 
+# To be remove/modify
 rule baseline_tracks:
     conda: "envs/irap.yaml"
     log: "logs/{accession}-{assay_id}-{metric}-baseline_tracks.log"
@@ -930,6 +939,7 @@ rule summarize_expression:
             > {output.sum_expression}
         """
 
+# To be remove/modify
 rule transcripts_na_check:
     """
     Replace NAs with 0 in Kallisto TPM transcripts, if the file exists
