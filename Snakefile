@@ -724,38 +724,7 @@ rule atlas_experiment_summary:
 
 # baseline_rnaseq_experiment
 
-rule add_runs_to_db:
-    """
-    Get run ids from config file and add them to isl db.
-    """
-    conda: "envs/isl-db.yaml"
-    log: "logs/{accession}-add_runs_to_db.log"
-    input:
-        config_xml="{accession}-configuration.xml"
-    params:
-        db_params=get_db_params()
-    output:
-        temp("logs/{accession}-add_runs_to_db.done")
-    shell:
-        """
-        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
-        exec &> "{log}"
-        export TNS_ADMIN={params.db_params[0]}/network/admin
-        export LD_LIBRARY_PATH={params.db_params[0]}/lib:$LD_LIBRARY_PATH
-        export PATH={params.db_params[0]}/bin:$PATH
-        export PYTHON_USER={params.db_params[1]}
-        export PYTHON_CONNECT_STRING={params.db_params[2]}
-        export PYTHON_PASSWORD={params.db_params[3]}
-
-        python {workflow.basedir}/isl/db/scripts/get_run_ids_atlas_prod.py {input.config_xml}
-        if [ $? -ne 0 ]; then
-	        echo "ERROR: Failed to parse atlas config file and get run ids for {wildcards.accession} " >&2
-	        exit 1
-        fi
-        touch {output}
-        """
-
-rule copy_raw_gene_counts_from_isl:
+rule copy_raw_gene_counts_from_nf-core:
     """
     Copy raw gene counts file.
     """
@@ -786,7 +755,7 @@ rule copy_raw_gene_counts_from_isl:
         """
 
 
-rule copy_normalised_counts_from_isl:
+rule copy_normalised_counts_from_nf-core:
     """
     Copy fpkm and tpm gene expression files.
     Replaces copy_unit_matrices_from_isl in experiment_loading_routines.sh
@@ -823,7 +792,7 @@ rule copy_normalised_counts_from_isl:
         """
 
 
-rule copy_transcript_files_from_isl:
+rule copy_transcript_files_from_nf-core:
     """
     This rule attemps to copy Kallisto TPM transcripts if metrics 'tpms' exists.
     If file does not exist for an accession, this rule can be skipped.
@@ -850,7 +819,7 @@ rule copy_transcript_files_from_isl:
         fi
         """
 
-rule copy_transcript_relative_isoforms:
+rule copy_transcript_relative_isoforms_from_nf-core:
     """
     Copy transcripts relative isoform usage files.
     If file does not exist for an accession, this rule can be skipped.
@@ -884,6 +853,7 @@ rule rnaseq_qc:
     QC step for rnaseq experiments.
     Non-standard experiments for which there is no QC information stored in the database
     should be added to 'skip_steps_file' to skip this rule.
+	QC can be done in nf-core
     """
     conda: "envs/perl-atlas-modules.yaml"
     input: "{accession}-raw-counts.tsv.undecorated"
@@ -1064,7 +1034,7 @@ rule summarize_transcripts:
         touch {output}
         """
 
-rule get_irap_versions_file:
+rule get_nf-core_versions:
     """
     If iRAP versions file not present, get it from the container.
     """
@@ -1097,6 +1067,7 @@ rule generate_methods_baseline_rnaseq:
     """
     Fetches metadata about the analysis methods used in ISL/iRap to preprocess the experiment,
     to generate analysis methods.
+	Update to support nf-core
     """
     conda: "envs/perl-atlas-modules.yaml"
     log: "logs/{accession}-generate_methods_baseline_rnaseq.log"
@@ -1398,6 +1369,7 @@ rule generate_methods_differential_rnaseq:
     """
     Fetches metadata about the analysis methods used in ISL/iRap to preprocess the experiment,
     to generate analysis methods.
+	Update to support nf-core
     """
     conda: "envs/perl-atlas-modules.yaml"
     log: "logs/{accession}-generate_methods_differential_rnaseq.log"
