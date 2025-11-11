@@ -36,9 +36,9 @@ def get_zooma_exclusions():
         return None
 
 # To be remove/modify
-def get_isl_dir():
-    if 'isl_dir' in config:
-        return config['isl_dir']
+def get_quantification_dir():
+    if 'quantification_dir' in config:
+        return config['quantification_dir']
     else:
         return None
 
@@ -166,10 +166,10 @@ def get_metrics_reprocess():
         return config['metric'].split(":")
     else:
         metrics_reprocess = []
-        isl_dir = get_isl_dir()
+        quantification_dir = get_quantification_dir()
         organism = get_organism()
         acc = config['accession']
-        files_ils_dir = os.listdir( f"{isl_dir}/{acc}/{organism}" )
+        files_ils_dir = os.listdir( f"{quantification_dir}/{acc}/{organism}" )
         # we only need one match, no need to traverse the full list
         if next((s for s in files_ils_dir if '.tpm.' in s), None):
             metrics_reprocess.append('tpms')
@@ -744,21 +744,21 @@ rule copy_raw_gene_counts_from_nf-core:
         raw_counts_undecorated="{accession}-raw-counts.tsv.undecorated"
     params:
         organism=get_organism(),
-        isl_dir=get_isl_dir()
+        quantification_dir=get_quantification_dir()
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
-        expIslDir={params.isl_dir}/{wildcards.accession}/{params.organism}
-        echo "ISL dir: $expIslDir"
+        expQuantDir={params.quantification_dir}/{wildcards.accession}/{params.organism}
+        echo "ISL dir: $expQuantDir"
 
-        [ ! -z $expIslDir+x ] || (echo "Env var $expIslDir needs to defined" && exit 1)
-        if [ -s "$expIslDir/genes.raw.htseq2.tsv" ]; then
-            rsync -avz $expIslDir/genes.raw.htseq2.tsv {output.raw_counts_undecorated}
-        elif [ -s "$expIslDir/genes.raw.featurecounts.tsv" ]; then
-            rsync -avz $expIslDir/genes.raw.featurecounts.tsv {output.raw_counts_undecorated}
+        [ ! -z $expQuantDir+x ] || (echo "Env var $expQuantDir needs to defined" && exit 1)
+        if [ -s "$expQuantDir/genes.raw.htseq2.tsv" ]; then
+            rsync -avz $expQuantDir/genes.raw.htseq2.tsv {output.raw_counts_undecorated}
+        elif [ -s "$expQuantDir/genes.raw.featurecounts.tsv" ]; then
+            rsync -avz $expQuantDir/genes.raw.featurecounts.tsv {output.raw_counts_undecorated}
         else
-            echo "Neither genes.raw.htseq2.tsv nor genes.raw.featurecounts.tsv found on $expIslDir"
+            echo "Neither genes.raw.htseq2.tsv nor genes.raw.featurecounts.tsv found on $expQuantDir"
             exit 1
         fi
         """
@@ -766,23 +766,23 @@ rule copy_raw_gene_counts_from_nf-core:
 
 rule copy_normalised_counts_from_nf-core:
     """
-    Copy fpkm and tpm gene expression files.
+    Copy tpm gene expression files.
     Replaces copy_unit_matrices_from_isl in experiment_loading_routines.sh
     """
     log: "logs/{accession}-{metric}-copy_normalised_counts_from_isl.log"
     params:
         organism=get_organism(),
-        isl_dir=get_isl_dir()  
+        quantification_dir=get_quantification_dir()  
     output:
         normalised_counts_undecorated="{accession}-{metric}.tsv.undecorated"
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
-        expIslDir={params.isl_dir}/{wildcards.accession}/{params.organism}
-        echo "ISL dir: $expIslDir"
+        expQuantDir={params.quantification_dir}/{wildcards.accession}/{params.organism}
+        echo "ISL dir: $expQuantDir"
 
-        [ ! -z $expIslDir+x ] || (echo "snakemake param exp_isl_dir needs to defined in rule" && exit 1)
+        [ ! -z $expQuantDir+x ] || (echo "snakemake param exp_quantification_dir needs to defined in rule" && exit 1)
 
         if [[ "{wildcards.metric}" == "tpms" ]]; then
             metrictype="tpm"
@@ -790,14 +790,19 @@ rule copy_normalised_counts_from_nf-core:
             metrictype="fpkm"
         fi
 
-        if [ -s "$expIslDir/genes.$metrictype.htseq2.tsv" ]; then
-            rsync -avz $expIslDir/genes.$metrictype.htseq2.tsv {output.normalised_counts_undecorated}
-        elif [ -s "$expIslDir/genes.$metrictype.featurecounts.tsv" ]; then
-            rsync -avz $expIslDir/genes.$metrictype.featurecounts.tsv {output.normalised_counts_undecorated}
+        if [ -s "$expQuantDir/salmon.merged.gene_tpm.tsv" ]; then
+            rsync -avz $expQuantDir/salmon.merged.gene_tpm.tsv tmp.tsv
+        elif [ -s "$expQuantDir/salmon.merged.gene_counts.tsv" ]; then
+            rsync -avz $expQuantDir/salmon.merged.gene_counts.tsv tmp.tsv
         else
-            echo "$expIslDir/genes.$metrictype.htseqORfeaturecounts.tsv not found"
+            echo "$expQuantDir/salmon.merged.gene_tpm.tsv OR salmon.merged.gene_counts.tsv not found"
             exit 1
         fi
+
+		# removing column 2, which contains gene_name and not present in iRAP result, might affect downstream processes so
+		# Can be added back in future after making downstream process compatible
+		cut --complement -f2 tmp.tsv > {output.normalised_counts_undecorated} 
+		
         """
 
 
@@ -809,22 +814,22 @@ rule copy_transcript_files_from_nf-core:
     log: "logs/{accession}-copy_transcript_files_{metric}_from_isl.log"
     params:
         organism=get_organism(),
-        isl_dir=get_isl_dir()  
+        quantification_dir=get_quantification_dir()  
     output:
         transcripts="{accession}-transcripts-{metric}.tsv.undecorated"
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
-        expIslDir={params.isl_dir}/{wildcards.accession}/{params.organism}
-        echo "ISL dir: $expIslDir"
+        expQuantDir={params.quantification_dir}/{wildcards.accession}/{params.organism}
+        echo "ISL dir: $expQuantDir"
 
-        [ ! -z $expIslDir+x ] || (echo "snakemake param exp_isl_dir needs to defined in rule" && exit 1)
+        [ ! -z $expQuantDir+x ] || (echo "snakemake param exp_quantification_dir needs to defined in rule" && exit 1)
 
-        if [ -s "$expIslDir/transcripts.tpm.kallisto.tsv" ] ; then
-            rsync -avz $expIslDir/transcripts.tpm.kallisto.tsv {output.transcripts}
+        if [ -s "$expQuantDir/transcripts.tpm.kallisto.tsv" ] ; then
+            rsync -avz $expQuantDir/transcripts.tpm.kallisto.tsv {output.transcripts}
         else
-            echo "$expIslDir/transcripts.tpm.kallisto.tsv not found - skipping"
+            echo "$expQuantDir/transcripts.tpm.kallisto.tsv not found - skipping"
         fi
         """
 
@@ -839,20 +844,20 @@ rule copy_transcript_relative_isoforms_from_nf-core:
     params:
         transcripts_relative_isoforms="{accession}-transcripts.riu.tsv",
         organism=get_organism(),
-        isl_dir=get_isl_dir()  
+        quantification_dir=get_quantification_dir()  
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
-        expIslDir={params.isl_dir}/{wildcards.accession}/{params.organism}
-        echo "ISL dir: $expIslDir"
+        expQuantDir={params.quantification_dir}/{wildcards.accession}/{params.organism}
+        echo "ISL dir: $expQuantDir"
 
-        [ ! -z $expIslDir+x ] || (echo "snakemake param exp_isl_dir needs to defined in rule" && exit 1)
+        [ ! -z $expQuantDir+x ] || (echo "snakemake param exp_quantification_dir needs to defined in rule" && exit 1)
 
-        if [ -s "$expIslDir/transcripts.riu.kallisto.tsv" ] ; then
-            rsync -avz $expIslDir/transcripts.riu.kallisto.tsv {params.transcripts_relative_isoforms}
+        if [ -s "$expQuantDir/transcripts.riu.kallisto.tsv" ] ; then
+            rsync -avz $expQuantDir/transcripts.riu.kallisto.tsv {params.transcripts_relative_isoforms}
         else
-            echo "$expIslDir/transcripts.riu.kallisto.tsv not found for {wildcards.accession} - skipping"
+            echo "$expQuantDir/transcripts.riu.kallisto.tsv not found for {wildcards.accession} - skipping"
         fi
         touch {output}
         """
@@ -950,7 +955,7 @@ rule transcripts_na_check:
     resources: mem_mb=get_mem_mb
     params:
         organism=get_organism(),
-        isl_dir=get_isl_dir()  
+        quantification_dir=get_quantification_dir()  
     input:
         transcripts="{accession}-transcripts-{metric}.tsv.undecorated"
     output:
@@ -959,16 +964,16 @@ rule transcripts_na_check:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
-        expIslDir={params.isl_dir}/{wildcards.accession}/{params.organism}
-        echo "ISL dir: $expIslDir"
+        expQuantDir={params.quantification_dir}/{wildcards.accession}/{params.organism}
+        echo "ISL dir: $expQuantDir"
 
-        [ ! -z $expIslDir+x ] || (echo "snakemake param exp_isl_dir needs to defined in rule" && exit 1)
+        [ ! -z $expQuantDir+x ] || (echo "snakemake param exp_quantification_dir needs to defined in rule" && exit 1)
 
-        if [ -s "$expIslDir/transcripts.raw.kallisto.tsv" ] ; then
-            {workflow.basedir}/atlas-analysis/transcripts_expr_values_check.R {input.transcripts} $expIslDir/transcripts.raw.kallisto.tsv
+        if [ -s "$expQuantDir/transcripts.raw.kallisto.tsv" ] ; then
+            {workflow.basedir}/atlas-analysis/transcripts_expr_values_check.R {input.transcripts} $expQuantDir/transcripts.raw.kallisto.tsv
             echo "transcripts NA check -  executed for {input.transcripts} "
         else
-            echo "$expIslDir/transcripts.raw.kallisto.tsv not found for {wildcards.accession} - skipping rule_transcripts_na_check for {input.transcripts}"
+            echo "$expQuantDir/transcripts.raw.kallisto.tsv not found for {wildcards.accession} - skipping rule_transcripts_na_check for {input.transcripts}"
         fi
         touch {output}
         """
@@ -1086,7 +1091,7 @@ rule generate_methods_baseline_rnaseq:
     params:
         organism=get_organism(),
         template=get_methods_template_baseline(),
-        isl_dir=get_isl_dir(),
+        quantification_dir=get_quantification_dir(),
         isl_genomes=get_isl_genomes(),
         irap_versions=get_irap_versions()
     output:
@@ -1102,20 +1107,20 @@ rule generate_methods_baseline_rnaseq:
         fi
 
         source {workflow.basedir}/bin/reprocessing_routines.sh
-        expIslDir={params.isl_dir}/{wildcards.accession}/{params.organism}
-        echo "ISL dir: $expIslDir"
+        expQuantDir={params.quantification_dir}/{wildcards.accession}/{params.organism}
+        echo "ISL dir: $expQuantDir"
         echo "ISL genome references: {params.isl_genomes}"
 
-        [ ! -z $expIslDir+x ] || (echo "snakemake param exp_isl_dir needs to defined in rule" && exit 1)
+        [ ! -z $expQuantDir+x ] || (echo "snakemake param exp_quantification_dir needs to defined in rule" && exit 1)
 
         # IRAP methods version file
-        if [ ! -s "$expIslDir/irap.versions.tsv" ] ; then
-            echo "$expIslDir/irap.versions.tsv not found for {wildcards.accession} "
+        if [ ! -s "$expQuantDir/irap.versions.tsv" ] ; then
+            echo "$expQuantDir/irap.versions.tsv not found for {wildcards.accession} "
             exit 1
         fi
 
         # set env variables for mapper and quantification methods from used in irap.
-        get_methods_from_irap "$expIslDir/irap.versions.tsv"
+        get_methods_from_irap "$expQuantDir/irap.versions.tsv"
         [ ! -z ${{baseline_mapper+x}} ] || (echo "Env var baseline_mapper not defined." && exit 1)
         [ ! -z ${{baseline_quantMethod+x}} ] || (echo "Env var baseline_quantMethod not defined." && exit 1)
         [ ! -z ${{de_mapper+x}} ] || (echo "Env var de_mapper not defined." && exit 1)
@@ -1132,7 +1137,7 @@ rule generate_methods_baseline_rnaseq:
         deseq2version='none'
         echo $deseq2version
 
-        perl {workflow.basedir}/bin/gxa_generate_methods.pl "$expIslDir/irap.versions.tsv" {wildcards.accession} {params.organism} {params.template} "${{baseline_mapper:?}}" "${{baseline_quantMethod:?}}" "${{de_mapper:?}}" "${{de_quantMethod:?}}" "${{de_deMethod:?}}" "${{deseq2version:?}}" {params.isl_genomes} {params.irap_versions} > {output.methods}
+        perl {workflow.basedir}/bin/gxa_generate_methods.pl "$expQuantDir/irap.versions.tsv" {wildcards.accession} {params.organism} {params.template} "${{baseline_mapper:?}}" "${{baseline_quantMethod:?}}" "${{de_mapper:?}}" "${{de_quantMethod:?}}" "${{de_deMethod:?}}" "${{deseq2version:?}}" {params.isl_genomes} {params.irap_versions} > {output.methods}
 
         if [ $? -ne 0 ]; then
             echo "ERROR: Failed to generate analysis methods for {wildcards.accession}" >&2
@@ -1389,7 +1394,7 @@ rule generate_methods_differential_rnaseq:
     params:
         organism=get_organism(),
         template=get_methods_template_differential(),
-        isl_dir=get_isl_dir(),
+        quantification_dir=get_quantification_dir(),
         isl_genomes=get_isl_genomes(),
         irap_versions=get_irap_versions()
     output:
@@ -1405,20 +1410,20 @@ rule generate_methods_differential_rnaseq:
         fi
 
         source {workflow.basedir}/bin/reprocessing_routines.sh
-        expIslDir={params.isl_dir}/{wildcards.accession}/{params.organism}
-        echo "ISL dir: $expIslDir"
+        expQuantDir={params.quantification_dir}/{wildcards.accession}/{params.organism}
+        echo "ISL dir: $expQuantDir"
         echo "ISL genome references: {params.isl_genomes}"
 
-        [ ! -z $expIslDir+x ] || (echo "snakemake param exp_isl_dir needs to defined in rule" && exit 1)
+        [ ! -z $expQuantDir+x ] || (echo "snakemake param exp_quantification_dir needs to defined in rule" && exit 1)
 
         # IRAP methods version file
-        if [ ! -s "$expIslDir/irap.versions.tsv" ] ; then
-            echo "$expIslDir/irap.versions.tsv not found for {wildcards.accession} "
+        if [ ! -s "$expQuantDir/irap.versions.tsv" ] ; then
+            echo "$expQuantDir/irap.versions.tsv not found for {wildcards.accession} "
             exit 1
         fi
 
         # set env variables for mapper and quantification methods from used in irap.
-        get_methods_from_irap "$expIslDir/irap.versions.tsv"
+        get_methods_from_irap "$expQuantDir/irap.versions.tsv"
         [ ! -z ${{baseline_mapper+x}} ] || (echo "Env var baseline_mapper not defined." && exit 1)
         [ ! -z ${{baseline_quantMethod+x}} ] || (echo "Env var baseline_quantMethod not defined." && exit 1)
         [ ! -z ${{de_mapper+x}} ] || (echo "Env var de_mapper not defined." && exit 1)
@@ -1434,7 +1439,7 @@ rule generate_methods_differential_rnaseq:
         deseq2version=`cat {input.deseq2version}`
         echo $deseq2version
 
-        perl {workflow.basedir}/bin/gxa_generate_methods.pl "$expIslDir/irap.versions.tsv" {wildcards.accession} {params.organism} {params.template} "${{baseline_mapper:?}}" "${{baseline_quantMethod:?}}" "${{de_mapper:?}}" "${{de_quantMethod:?}}" "${{de_deMethod:?}}" "${{deseq2version:?}}" {params.isl_genomes} {params.irap_versions} > {output.methods}
+        perl {workflow.basedir}/bin/gxa_generate_methods.pl "$expQuantDir/irap.versions.tsv" {wildcards.accession} {params.organism} {params.template} "${{baseline_mapper:?}}" "${{baseline_quantMethod:?}}" "${{de_mapper:?}}" "${{de_quantMethod:?}}" "${{de_deMethod:?}}" "${{deseq2version:?}}" {params.isl_genomes} {params.irap_versions} > {output.methods}
 
         if [ $? -ne 0 ]; then
             echo "ERROR: Failed to generate analysis methods for {wildcards.accession}" >&2
