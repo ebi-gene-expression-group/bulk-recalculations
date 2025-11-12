@@ -790,12 +790,12 @@ rule copy_normalised_counts_from_nf-core:
             metrictype="fpkm"
         fi
 
-        if [ -s "$expQuantDir/salmon.merged.gene_tpm.tsv" ]; then
+        if [ -s "$expQuantDir/star_salmon/salmon.merged.gene_tpm.tsv" ]; then
             rsync -avz $expQuantDir/salmon.merged.gene_tpm.tsv tmp.tsv
-        elif [ -s "$expQuantDir/salmon.merged.gene_counts.tsv" ]; then
-            rsync -avz $expQuantDir/salmon.merged.gene_counts.tsv tmp.tsv
+        elif [ -s "$expQuantDir/star_salmon/salmon.merged.gene_counts.tsv" ]; then
+            rsync -avz $expQuantDir/star_salmon/salmon.merged.gene_counts.tsv tmp.tsv
         else
-            echo "$expQuantDir/salmon.merged.gene_tpm.tsv OR salmon.merged.gene_counts.tsv not found"
+            echo "$expQuantDir/star_salmon/salmon.merged.gene_tpm.tsv OR salmon.merged.gene_counts.tsv not found"
             exit 1
         fi
 
@@ -822,15 +822,24 @@ rule copy_transcript_files_from_nf-core:
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
         expQuantDir={params.quantification_dir}/{wildcards.accession}/{params.organism}
-        echo "ISL dir: $expQuantDir"
+        echo "Quantification dir: $expQuantDir"
 
         [ ! -z $expQuantDir+x ] || (echo "snakemake param exp_quantification_dir needs to defined in rule" && exit 1)
 
-        if [ -s "$expQuantDir/transcripts.tpm.kallisto.tsv" ] ; then
-            rsync -avz $expQuantDir/transcripts.tpm.kallisto.tsv {output.transcripts}
+        if [ -s "$expQuantDir/star_salmon/salmon.merged.transcript_tpm.tsv" ] ; then
+            rsync -avz $expQuantDir/star_salmon/salmon.merged.transcript_tpm.tsv tmp.tsv 
         else
-            echo "$expQuantDir/transcripts.tpm.kallisto.tsv not found - skipping"
+            echo "$expQuantDir/star_salmon/salmon.merged.transcript_tpm.tsv not found - skipping"
         fi
+
+		# removing column 2, which contains gene_id and not present in iRAP result, might affect downstream processes so
+		# Can be added back in future after making downstream process compatible
+
+check which column to remove 
+
+
+		cut --complement -f1 tmp.tsv > {output.transcripts}
+
         """
 
 rule copy_transcript_relative_isoforms_from_nf-core:
