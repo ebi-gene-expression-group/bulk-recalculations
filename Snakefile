@@ -167,9 +167,8 @@ def get_metrics_reprocess():
     else:
         metrics_reprocess = []
         quantification_dir = get_quantification_dir()
-        organism = get_organism()
         acc = config['accession']
-        files_ils_dir = os.listdir( f"{quantification_dir}/{acc}/{organism}" )
+        files_ils_dir = os.listdir( f"{quantification_dir}/{acc}/star_salmon/" )
         # we only need one match, no need to traverse the full list
         if next((s for s in files_ils_dir if '.tpm.' in s), None):
             metrics_reprocess.append('tpms')
