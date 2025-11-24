@@ -748,18 +748,20 @@ rule copy_raw_gene_counts_from_nf-core:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
-        expQuantDir={params.quantification_dir}/{wildcards.accession}/{params.organism}
+        expQuantDir={params.quantification_dir}/{wildcards.accession}
         echo "ISL dir: $expQuantDir"
 
         [ ! -z $expQuantDir+x ] || (echo "Env var $expQuantDir needs to defined" && exit 1)
-        if [ -s "$expQuantDir/genes.raw.htseq2.tsv" ]; then
-            rsync -avz $expQuantDir/genes.raw.htseq2.tsv {output.raw_counts_undecorated}
-        elif [ -s "$expQuantDir/genes.raw.featurecounts.tsv" ]; then
-            rsync -avz $expQuantDir/genes.raw.featurecounts.tsv {output.raw_counts_undecorated}
+        if [ -s "$expQuantDir/star_salmon/salmon.merged.gene_counts.tsv" ]; then
+            rsync -avz $expQuantDir/star_salmon/salmon.merged.gene_counts.tsv tmp.tsv
         else
-            echo "Neither genes.raw.htseq2.tsv nor genes.raw.featurecounts.tsv found on $expQuantDir"
+            echo "salmon.merged.gene_counts.tsv not found on $expQuantDir"
             exit 1
         fi
+
+		# removing column 2, which contains gene_name and not present in iRAP result, might affect downstream processes so
+		# Can be added back in future after making downstream process compatible
+		cut --complement -f2 tmp.tsv > {output.raw_counts_undecorated}
         """
 
 
@@ -778,7 +780,7 @@ rule copy_normalised_counts_from_nf-core:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
-        expQuantDir={params.quantification_dir}/{wildcards.accession}/{params.organism}
+        expQuantDir={params.quantification_dir}/{wildcards.accession}
         echo "ISL dir: $expQuantDir"
 
         [ ! -z $expQuantDir+x ] || (echo "snakemake param exp_quantification_dir needs to defined in rule" && exit 1)
@@ -790,11 +792,9 @@ rule copy_normalised_counts_from_nf-core:
         fi
 
         if [ -s "$expQuantDir/star_salmon/salmon.merged.gene_tpm.tsv" ]; then
-            rsync -avz $expQuantDir/salmon.merged.gene_tpm.tsv tmp.tsv
-        elif [ -s "$expQuantDir/star_salmon/salmon.merged.gene_counts.tsv" ]; then
-            rsync -avz $expQuantDir/star_salmon/salmon.merged.gene_counts.tsv tmp.tsv
+            rsync -avz $expQuantDir/star_salmon/salmon.merged.gene_tpm.tsv tmp.tsv
         else
-            echo "$expQuantDir/star_salmon/salmon.merged.gene_tpm.tsv OR salmon.merged.gene_counts.tsv not found"
+            echo "$expQuantDir/star_salmon/salmon.merged.gene_tpm.tsv not found"
             exit 1
         fi
 
