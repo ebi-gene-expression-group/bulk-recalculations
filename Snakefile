@@ -834,10 +834,11 @@ rule copy_transcript_files_from_nf-core:
 		# removing column 2, which contains gene_id and not present in iRAP result, might affect downstream processes so
 		# Can be added back in future after making downstream process compatible
 
-check which column to remove 
+		# removing column 2, which contains gene_id and not present in iRAP result, might affect downstream processes so
+		# Can be added back in future after making downstream process compatible
 
 
-		cut --complement -f1 tmp.tsv > {output.transcripts}
+		cut --complement -f2 tmp.tsv > {output.transcripts}
 
         """
 
