@@ -963,16 +963,16 @@ rule transcripts_na_check:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
-        expQuantDir={params.quantification_dir}/{wildcards.accession}/{params.organism}
+        expQuantDir={params.quantification_dir}/{wildcards.accession}
         echo "ISL dir: $expQuantDir"
 
         [ ! -z $expQuantDir+x ] || (echo "snakemake param exp_quantification_dir needs to defined in rule" && exit 1)
 
-        if [ -s "$expQuantDir/transcripts.raw.kallisto.tsv" ] ; then
-            {workflow.basedir}/atlas-analysis/transcripts_expr_values_check.R {input.transcripts} $expQuantDir/transcripts.raw.kallisto.tsv
+        if [ -s "$expQuantDir/star_salmon/salmon.merged.transcript_counts.tsv" ] ; then
+            {workflow.basedir}/atlas-analysis/transcripts_expr_values_check.R {input.transcripts} $expQuantDir/star_salmon/salmon.merged.transcript_counts.tsv
             echo "transcripts NA check -  executed for {input.transcripts} "
         else
-            echo "$expQuantDir/transcripts.raw.kallisto.tsv not found for {wildcards.accession} - skipping rule_transcripts_na_check for {input.transcripts}"
+            echo "$expQuantDir/star_salmon/salmon.merged.transcript_counts.tsv not found for {wildcards.accession} - skipping rule_transcripts_na_check for {input.transcripts}"
         fi
         touch {output}
         """
