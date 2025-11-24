@@ -842,6 +842,7 @@ rule copy_transcript_files_from_nf-core:
 
         """
 
+# Can be skipped for now
 rule copy_transcript_relative_isoforms_from_nf-core:
     """
     Copy transcripts relative isoform usage files.
