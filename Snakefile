@@ -872,6 +872,7 @@ rule copy_transcript_relative_isoforms_from_nf-core:
         touch {output}
         """
 
+# use nf-core/rnaseq MultiQC report
 rule rnaseq_qc:
     """
     QC step for rnaseq experiments.
