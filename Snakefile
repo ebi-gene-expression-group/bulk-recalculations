@@ -1048,6 +1048,7 @@ rule summarize_transcripts:
         touch {output}
         """
 
+#To be deleted
 rule get_nf-core_versions:
     """
     If iRAP versions file not present, get it from the container.
