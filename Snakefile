@@ -159,7 +159,7 @@ def get_metrics_recalculations():
 # To be remove/modify
 def get_metrics_reprocess():
     """
-    The logic is based on files processed by iRAP/ISL.
+    The logic is based on files processed by nf-core/rnaseq.
     """
     import os
     if 'metric' in config:
