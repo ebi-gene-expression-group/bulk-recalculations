@@ -1085,8 +1085,6 @@ rule generate_methods_baseline_rnaseq:
     """
     conda: "envs/perl-atlas-modules.yaml"
     log: "logs/{accession}-generate_methods_baseline_rnaseq.log"
-    input:
-        rules.get_irap_versions_file.output
     params:
         organism=get_organism(),
         template=get_methods_template_baseline(),
@@ -1100,48 +1098,37 @@ rule generate_methods_baseline_rnaseq:
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
 
-        if [ ! -s {params.template} ] ; then
-            echo "Methods template not found "
-            exit 1
-        fi
-
-        source {workflow.basedir}/bin/reprocessing_routines.sh
-        expQuantDir={params.quantification_dir}/{wildcards.accession}/{params.organism}
-        echo "ISL dir: $expQuantDir"
-        echo "ISL genome references: {params.isl_genomes}"
+        expQuantDir={params.quantification_dir}/{wildcards.accession}
+        echo "Quantification dir: $expQuantDir"
 
         [ ! -z $expQuantDir+x ] || (echo "snakemake param exp_quantification_dir needs to defined in rule" && exit 1)
 
-        # IRAP methods version file
-        if [ ! -s "$expQuantDir/irap.versions.tsv" ] ; then
-            echo "$expQuantDir/irap.versions.tsv not found for {wildcards.accession} "
+		params_json=$(ls -t "$expQuantDir"/pipeline_info/params_.*.json | head -n 1)
+
+        # nf-core/rnaseq methods version file
+        if [ ! -s "$expQuantDir/pipeline_info/nf_core_rnaseq_software_mqc_versions.yml" ] ; then
+            echo "$expQuantDir/pipeline_info/nf_core_rnaseq_software_mqc_versions.yml not found for {wildcards.accession} "
             exit 1
         fi
 
-        # set env variables for mapper and quantification methods from used in irap.
-        get_methods_from_irap "$expQuantDir/irap.versions.tsv"
-        [ ! -z ${{baseline_mapper+x}} ] || (echo "Env var baseline_mapper not defined." && exit 1)
-        [ ! -z ${{baseline_quantMethod+x}} ] || (echo "Env var baseline_quantMethod not defined." && exit 1)
-        [ ! -z ${{de_mapper+x}} ] || (echo "Env var de_mapper not defined." && exit 1)
-        [ ! -z ${{de_quantMethod+x}} ] || (echo "Env var de_mapper not defined." && exit 1)
-        [ ! -z ${{de_deMethod+x}} ] || (echo "Env var de_mapper not defined." && exit 1)
+		if [ ! -s "$params_json" ] ; then
+            echo "$params_json not found for {wildcards.accession} "
+            exit 1
+        fi
 
-        echo $baseline_mapper
-        echo $baseline_quantMethod
-        echo $de_mapper
-        echo $de_quantMethod
-        echo $de_deMethod
-
-        # not used, only for differential rnaseq
-        deseq2version='none'
-        echo $deseq2version
-
-        perl {workflow.basedir}/bin/gxa_generate_methods.pl "$expQuantDir/irap.versions.tsv" {wildcards.accession} {params.organism} {params.template} "${{baseline_mapper:?}}" "${{baseline_quantMethod:?}}" "${{de_mapper:?}}" "${{de_quantMethod:?}}" "${{de_deMethod:?}}" "${{deseq2version:?}}" {params.isl_genomes} {params.irap_versions} > {output.methods}
+        python {workflow.basedir}/bin/gxa_generate_methods.py "$expQuantDir/pipeline_info/nf_core_rnaseq_software_mqc_versions.yml" > {output.methods}
 
         if [ $? -ne 0 ]; then
             echo "ERROR: Failed to generate analysis methods for {wildcards.accession}" >&2
             exit 1
         fi
+
+		ref_fasta=jq -r '.fasta' $params_json | xargs basename
+		ref_gtf=jq -r '.gtf' $params_json | xargs basename
+
+		echo -e "Genome\tFasta\t$ref_fasta" >> {output.methods}
+		echo -e "Genes\tGTF\t$ref_gtf" >> {output.methods}
+
         cp {output.methods} {wildcards.accession}-analysis-methods.tsv
         """
 
