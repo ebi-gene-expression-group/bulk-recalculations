@@ -1087,11 +1087,7 @@ rule generate_methods_baseline_rnaseq:
     conda: "envs/perl-atlas-modules.yaml"
     log: "logs/{accession}-generate_methods_baseline_rnaseq.log"
     params:
-        organism=get_organism(),
-        template=get_methods_template_baseline(),
-        quantification_dir=get_quantification_dir(),
-        isl_genomes=get_isl_genomes(),
-        irap_versions=get_irap_versions()
+        quantification_dir=get_quantification_dir()
     output:
         methods=temp("{accession}-analysis-methods.tsv_baseline_rnaseq")
     shell:
