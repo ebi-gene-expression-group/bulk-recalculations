@@ -35,17 +35,9 @@ def get_zooma_exclusions():
     else:
         return None
 
-# To be remove/modify
 def get_quantification_dir():
     if 'quantification_dir' in config:
         return config['quantification_dir']
-    else:
-        return None
-
-# To be remove/modify
-def get_isl_genomes():
-    if 'isl_genomes' in config:
-        return config['isl_genomes']
     else:
         return None
 
