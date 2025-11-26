@@ -710,7 +710,7 @@ rule atlas_experiment_summary:
 
 # baseline_rnaseq_experiment
 
-rule copy_raw_gene_counts_from_nf-core:
+rule copy_raw_gene_counts_from_nf_core:
     """
     Copy raw gene counts file.
     """
