@@ -41,20 +41,6 @@ def get_quantification_dir():
     else:
         return None
 
-# To be remove/modify
-def get_irap_versions():
-    if 'irap_versions' in config:
-        return config['irap_versions']
-    else:
-        return None
-
-# To be remove/modify
-def get_irap_container():
-    if 'irap_container' in config:
-        return config['irap_container']
-    else:
-        return None
-
 def get_tmp_dir():
     if 'tmp_dir' in config:
         return config['tmp_dir']
@@ -1036,36 +1022,6 @@ rule summarize_transcripts:
             rm {params.qn_transcripts}
         else
             echo "File {params.qn_transcripts} not found. Transcript summary not performed "
-        fi
-        touch {output}
-        """
-
-#To be deleted
-rule get_nf-core_versions:
-    """
-    If iRAP versions file not present, get it from the container.
-    """
-    log: 
-        "logs/{accession}-get_irap_versions_file.log"
-    params:
-        irap_versions=get_irap_versions(),
-        irap_container=get_irap_container()
-    output:
-        temp("logs/{accession}-get_irap_versions_file.done")
-    shell:
-        """
-        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
-        exec &> "{log}"
-
-        if [ ! -s {params.irap_versions} ] ; then
-            echo "Attempting to transfer the file {params.irap_versions} from the singularity container {params.irap_container}"
-            singularity exec {params.irap_container} cp /opt/irap/aux/mk/irap_versions.mk {params.irap_versions}
-            if [ ! -s {params.irap_versions} ] ; then
-                echo "ERROR: Failed to retrieve {params.irap_versions} from the container" >&2
-                exit 1
-            fi
-        else
-            echo "The file {params.irap_versions} already exists."
         fi
         touch {output}
         """
