@@ -293,7 +293,7 @@ rule produce_reprocess_call:
         methods_base=config['methods_base'],
         methods_dif=config['methods_dif'],
         zooma_exclusions=config['zooma_exclusions'],
-        isl_dir=config['isl_dir'],
+        quantification_dir=config['quantification_dir'],
         isl_genomes=config['isl_genomes'],
         irap_versions=config['irap_versions'],
         irap_container=config['irap_container'],
@@ -343,7 +343,7 @@ rule produce_reprocess_call:
                 atlas_exps={params.atlas_exps} \
                 priv_stat_file={params.priv_stat_file} \
                 zooma_exclusions={params.zooma_exclusions} \
-                isl_dir={params.isl_dir} \
+                quantification_dir={params.quantification_dir} \
                 isl_genomes={params.isl_genomes} \
                 irap_versions={params.irap_versions} \
                 irap_container={params.irap_container} \
@@ -390,7 +390,7 @@ rule produce_recalculations_call:
         irap_container=config['irap_container'],
         methods_base=config['methods_base'],
         methods_dif=config['methods_dif'],
-        isl_dir=config['isl_dir'],
+        quantification_dir=config['quantification_dir'],
         isl_genomes=config['isl_genomes']
 	
     output:
@@ -432,7 +432,7 @@ rule produce_recalculations_call:
                 irap_container={params.irap_container} \
 		methods_base={params.methods_base} \
                 methods_dif={params.methods_dif} \
-		isl_dir={params.isl_dir} \
+		quantification_dir={params.quantification_dir} \
                 isl_genomes={params.isl_genomes} \
                 -s {workflow.basedir}/Snakefile-recalculations {params.log_handler_script}
                 
