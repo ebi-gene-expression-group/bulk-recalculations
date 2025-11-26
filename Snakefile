@@ -2095,6 +2095,40 @@ rule delete_intermediate_files_microarray:
         """   
 
 
+rule baseline_markers_rnaseq:
+    """
+    Markers calculation for baseline rna-seq experiments.
+    """
+    conda: "envs/baseline-markers-genes.yaml"
+    log: "logs/{accession}-{metric}-baseline_markers.log"
+    resources: mem_mb=get_mem_mb
+    input:
+        config_xml="{accession}-configuration.xml",
+        expression_file_undecorated="{accession}-{metric}.tsv.undecorated",
+        expression_file="{accession}-{metric}.tsv",
+        methods_file=rules.generate_methods_baseline_rnaseq.output.methods
+    output:
+        markers="{accession}-{metric}-markers.tsv"
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+
+        echo "Calculating markers for {wildcards.accession} with metric {wildcards.metric} using bioconductor package MGFR"
+
+        Rscript {workflow.basedir}/atlas-analysis/baselinemarkers/get_marker_genes_rnaseq.R {input.config_xml} {input.expression_file_undecorated} {input.expression_file} {output.markers} 0.3 0.5
+
+        # write only once
+	    if [ "{wildcards.metric}" = "tpms" ]; then
+            echo "Adding markers software version to the methods file {wildcards.accession}-analysis-methods.tsv"
+            MGFR_VERSION=$(Rscript -e "cat(as.character(packageVersion('MGFR')))")
+            echo -e "Gene marker identification\tMGFR version: $MGFR_VERSION" >> {wildcards.accession}-analysis-methods.tsv
+	    fi
+
+        echo "Markers calculation completed for {wildcards.accession} with metric {wildcards.metric}"        
+        """
+
+
 
 ######################################################
 # Final reprocessing rules, for all experiments
