@@ -716,7 +716,7 @@ rule copy_raw_gene_counts_from_nf-core:
     """
     log: "logs/{accession}-copy_raw_gene_counts_from_isl.log"
     input:
-        rules.add_runs_to_db.output
+		rnaseq_done="{quantification_dir}/{accession}/{accession}.rnaseq.done"
     output:
         raw_counts_undecorated="{accession}-raw-counts.tsv.undecorated"
     params:
@@ -728,6 +728,11 @@ rule copy_raw_gene_counts_from_nf-core:
         exec &> "{log}"
         expQuantDir={params.quantification_dir}/{wildcards.accession}
         echo "ISL dir: $expQuantDir"
+
+		if [ ! -s "{input.config_xml}" ] ; then
+            echo "{input.rnaseq_done} not found for {wildcards.accession} "
+            exit 1
+        fi
 
         [ ! -z $expQuantDir+x ] || (echo "Env var $expQuantDir needs to defined" && exit 1)
         if [ -s "$expQuantDir/star_salmon/salmon.merged.gene_counts.tsv" ]; then
