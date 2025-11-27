@@ -1070,7 +1070,7 @@ rule generate_methods_baseline_rnaseq:
             exit 1
         fi
 
-        python {workflow.basedir}/bin/gxa_generate_methods.py "$expQuantDir/pipeline_info/nf_core_rnaseq_software_mqc_versions.yml" > {output.methods}
+        python {workflow.basedir}/bin/gxa_generate_method.py "$expQuantDir/pipeline_info/nf_core_rnaseq_software_mqc_versions.yml" > {output.methods}
 
         if [ $? -ne 0 ]; then
             echo "ERROR: Failed to generate analysis methods for {wildcards.accession}" >&2
@@ -1360,7 +1360,7 @@ rule generate_methods_differential_rnaseq:
             exit 1
         fi
 
-        python {workflow.basedir}/bin/gxa_generate_methods.py "$expQuantDir/pipeline_info/nf_core_rnaseq_software_mqc_versions.yml" > {output.methods}
+        python {workflow.basedir}/bin/gxa_generate_method.py "$expQuantDir/pipeline_info/nf_core_rnaseq_software_mqc_versions.yml" > {output.methods}
 
         if [ $? -ne 0 ]; then
             echo "ERROR: Failed to generate analysis methods for {wildcards.accession}" >&2
