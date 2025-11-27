@@ -1059,6 +1059,8 @@ rule generate_methods_baseline_rnaseq:
 
 		params_json=$(ls -t "$expQuantDir"/pipeline_info/params_*.json | head -n 1)
 
+		echo "parameters $params_json"
+
         # nf-core/rnaseq methods version file
         if [ ! -s "$expQuantDir/pipeline_info/nf_core_rnaseq_software_mqc_versions.yml" ] ; then
             echo "$expQuantDir/pipeline_info/nf_core_rnaseq_software_mqc_versions.yml not found for {wildcards.accession} "
@@ -1076,6 +1078,8 @@ rule generate_methods_baseline_rnaseq:
             echo "ERROR: Failed to generate analysis methods for {wildcards.accession}" >&2
             exit 1
         fi
+
+		cat {output.methods}
 
 		ref_fasta=jq -r '.fasta' $params_json | xargs basename
 		ref_gtf=jq -r '.gtf' $params_json | xargs basename
@@ -1344,6 +1348,9 @@ rule generate_methods_differential_rnaseq:
         [ ! -z $expQuantDir+x ] || (echo "snakemake param exp_quantification_dir needs to defined in rule" && exit 1)
 
         params_json=$(ls -t "$expQuantDir"/pipeline_info/params_.*.json | head -n 1)
+
+
+		echo "parameters $params_json"
 
         # set env variables for mapper and quantification methods from used in irap.
         deseq2version=`cat {input.deseq2version}`
