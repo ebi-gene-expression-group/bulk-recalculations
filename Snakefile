@@ -148,10 +148,11 @@ def get_metrics_reprocess():
         acc = config['accession']
         files_ils_dir = os.listdir( f"{quantification_dir}/{acc}/star_salmon/" )
         # we only need one match, no need to traverse the full list
-        if next((s for s in files_ils_dir if '.tpm.' in s), None):
+        if next((s for s in files_ils_dir if '_tpm.' in s), None):
             metrics_reprocess.append('tpms')
-        if next((s for s in files_ils_dir if '.fpkm.' in s), None):
-            metrics_reprocess.append('fpkms')
+        # No FPKMs in nf-core/rnaseq
+ 		# if next((s for s in files_ils_dir if '.fpkm.' in s), None):
+        #    metrics_reprocess.append('fpkms')
 
         if not metrics_reprocess:
             sys.exit("No metrics for reprocessing found in isl path.")
