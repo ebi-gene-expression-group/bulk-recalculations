@@ -716,8 +716,6 @@ rule copy_raw_gene_counts_from_nf_core:
     Copy raw gene counts file.
     """
     log: "logs/{accession}-copy_raw_gene_counts_from_isl.log"
-    input:
-        rnaseq_done="{accession}.rnaseq.done"
     output:
         raw_counts_undecorated="{accession}-raw-counts.tsv.undecorated"
     params:
@@ -731,12 +729,6 @@ rule copy_raw_gene_counts_from_nf_core:
         echo "Qunatification dir: $expQuantDir"
 
 		[ ! -z $expQuantDir+x ] || (echo "Env var $expQuantDir needs to defined" && exit 1)
-	
-		if [ ! -s "$expQuantDir/{input.rnaseq_done}" ] ; then
-            echo "$expQuantDir/{input.rnaseq_done} not found for {wildcards.accession} "
-            exit 1
-        fi
-
         
         if [ -s "$expQuantDir/star_salmon/salmon.merged.gene_counts.tsv" ]; then
             rsync -avz $expQuantDir/star_salmon/salmon.merged.gene_counts.tsv tmp.tsv
