@@ -1081,8 +1081,8 @@ rule generate_methods_baseline_rnaseq:
 
 		cat {output.methods}
 
-		ref_fasta=jq -r '.fasta' $params_json | xargs basename
-		ref_gtf=jq -r '.gtf' $params_json | xargs basename
+		ref_fasta=$(jq -r '.fasta' "$params_json" | xargs basename)
+		ref_gtf=$(jq -r '.gtf' "$params_json" | xargs basename)
 
 		echo -e "Genome\tFasta\t$ref_fasta" >> {output.methods}
 		echo -e "Genes\tGTF\t$ref_gtf" >> {output.methods}
@@ -1374,8 +1374,9 @@ rule generate_methods_differential_rnaseq:
             exit 1
         fi
 
-		ref_fasta=jq -r '.fasta' $params_json | xargs basename
-		ref_gtf=jq -r '.gtf' $params_json | xargs basename
+		ref_fasta=$(jq -r '.fasta' "$params_json" | xargs basename)
+		ref_gtf=$(jq -r '.gtf' "$params_json" | xargs basename)
+
 
 		echo -e "Genome\tFasta\t$ref_fasta" >> {output.methods}
 		echo -e "Genes\tGTF\t$ref_gtf" >> {output.methods}
