@@ -1042,6 +1042,7 @@ rule generate_methods_baseline_rnaseq:
     to generate analysis methods.
 	Update to support nf-core
     """
+    conda: "envs/deconvolution.yaml"
     log: "logs/{accession}-generate_methods_baseline_rnaseq.log"
     params:
         quantification_dir=get_quantification_dir()
@@ -1330,6 +1331,7 @@ rule generate_methods_differential_rnaseq:
     to generate analysis methods.
 	Update to support nf-core
     """
+    conda: "envs/deconvolution.yaml"
     log: "logs/{accession}-generate_methods_differential_rnaseq.log"
     input:
         deseq2version=rules.differential_statistics_rnaseq.output.deseq2version,
