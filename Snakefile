@@ -1058,7 +1058,7 @@ rule generate_methods_baseline_rnaseq:
 
         [ ! -z $expQuantDir+x ] || (echo "snakemake param exp_quantification_dir needs to defined in rule" && exit 1)
 
-		params_json=$(ls -t "$expQuantDir"/pipeline_info/params.*.json | head -n 1)
+		params_json=$(ls -t "$expQuantDir"/pipeline_info/params_*.json | head -n 1)
 
         # nf-core/rnaseq methods version file
         if [ ! -s "$expQuantDir/pipeline_info/nf_core_rnaseq_software_mqc_versions.yml" ] ; then
