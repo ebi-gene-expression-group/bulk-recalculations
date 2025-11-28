@@ -1089,8 +1089,8 @@ rule generate_methods_baseline_rnaseq:
 		ref_fasta=$(jq -r '.fasta' "$params_json" | xargs basename)
 		ref_gtf=$(jq -r '.gtf' "$params_json" | xargs basename)
 
-		echo -e "Genome\tFasta\t$ref_fasta" >> {output.methods}
-		echo -e "Genes\tGTF\t$ref_gtf" >> {output.methods}
+		echo -e "Genome (Fasta)\t$ref_fasta" >> {output.methods}
+		echo -e "Genes (GTF)\t$ref_gtf" >> {output.methods}
 
         cp {output.methods} {wildcards.accession}-analysis-methods.tsv
         """
@@ -1384,10 +1384,10 @@ rule generate_methods_differential_rnaseq:
 		ref_gtf=$(jq -r '.gtf' "$params_json" | xargs basename)
 
 
-		echo -e "Genome\tFasta\t$ref_fasta" >> {output.methods}
-		echo -e "Genes\tGTF\t$ref_gtf" >> {output.methods}
+		echo -e "Genome (Fasta)\t$ref_fasta" >> {output.methods}
+		echo -e "Genes (GTF)\t$ref_gtf" >> {output.methods}
 
-		echo -e "Differential Expression\tDifferential Expression\t$deseq2version" >> {output.methods}
+		echo -e "Differential Expression\t$deseq2version" >> {output.methods}
 
         cp {output.methods} {wildcards.accession}-analysis-methods.tsv
         """
