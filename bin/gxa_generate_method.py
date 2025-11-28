@@ -17,10 +17,6 @@ print("Tool\tVersion")
 seen = set()
 
 for module, tools in data.items():
-    # Skip workflow block
-    if module == "Workflow":
-        continue
-
     # tools may be dict or other
     if isinstance(tools, dict):
         for tool, ver in tools.items():
