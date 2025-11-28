@@ -12,7 +12,7 @@ with open(sys.argv[1]) as f:
     data = yaml.safe_load(f)
 
 # Output header
-print("module\ttool\tversion")
+print("Tool\tVersion")
 
 for module, tools in data.items():
     # Skip workflow block
@@ -22,4 +22,4 @@ for module, tools in data.items():
     # tools may be dict or other
     if isinstance(tools, dict):
         for tool, ver in tools.items():
-            print(f"{module}\t{tool}\t{ver}")
+            print(f"{tool}\t{ver}")
