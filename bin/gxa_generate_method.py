@@ -14,6 +14,8 @@ with open(sys.argv[1]) as f:
 # Output header
 print("Tool\tVersion")
 
+seen = set()
+
 for module, tools in data.items():
     # Skip workflow block
     if module == "Workflow":
@@ -22,4 +24,18 @@ for module, tools in data.items():
     # tools may be dict or other
     if isinstance(tools, dict):
         for tool, ver in tools.items():
-            print(f"{tool}\t{ver}")
+            # normalize values to avoid duplicates caused by formatting differences
+            tool_str = str(tool).strip() if tool is not None else ""
+            ver_str = str(ver).strip() if ver is not None else ""
+            line = f"{tool_str}\t{ver_str}"
+
+            # skip completely empty entries
+            if not tool_str and not ver_str:
+                continue
+
+            # ensure we don't print duplicate Tool\tVersion lines
+            if line in seen:
+                continue
+            seen.add(line)
+
+            print(line)
