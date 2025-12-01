@@ -850,6 +850,33 @@ rule copy_transcript_relative_isoforms_from_nf_core:
         touch {output}
         """
 
+rule copy_bigwig_from_nf_core:
+    """
+    Copy bigwig file.
+    """
+    log: "logs/{accession}-copy_bigwig_from_isl.log"
+    output:
+        bigwig="*.bigWig"
+    params:
+        quantification_dir=get_quantification_dir()
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+        expQuantDir={params.quantification_dir}/{wildcards.accession}
+        echo "Qunatification dir: $expQuantDir"
+
+		[ ! -z $expQuantDir+x ] || (echo "Env var $expQuantDir needs to defined" && exit 1)
+        
+        if [ -s "$expQuantDir/star_salmon/bigwig/"*bigWig ]; then
+            rsync -avz "$expQuantDir/star_salmon/bigwig/"*.bigWig .
+        else
+            echo "bigWig file not found on $expQuantDir/star_salmon/bigwig"
+            exit 1
+        fi
+        """
+
+
 rule rnaseq_qc:
     """
     QC step for rnaseq experiments.
