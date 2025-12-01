@@ -856,6 +856,7 @@ rule copy_bigwig_from_nf_core:
     """
     log: "logs/{accession}-copy_bigwig_from_isl.log"
     output:
+        # Fix it with lib names
         bigwig="*.bigWig"
     params:
         quantification_dir=get_quantification_dir()
@@ -863,19 +864,20 @@ rule copy_bigwig_from_nf_core:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
-        expQuantDir={params.quantification_dir}/{wildcards.accession}
-        echo "Qunatification dir: $expQuantDir"
+        expQuantDir="{params.quantification_dir}/{wildcards.accession}"
+        echo "Quantification dir: $expQuantDir"
 
-		[ ! -z $expQuantDir+x ] || (echo "Env var $expQuantDir needs to defined" && exit 1)
-        
-        if [ -s "$expQuantDir/star_salmon/bigwig/"*bigWig ]; then
+        [ ! -z $expQuantDir+x ] || (echo "Env var $expQuantDir needs to defined" && exit 1)
+
+		if ls "$expQuantDir/star_salmon/bigwig/"*.bigWig 1> /dev/null 2>&1; then
+            echo "Found bigWig in $expQuantDir/star_salmon/bigwig"
+            # rsync keeps the original filename when dest is a directory (.)
             rsync -avz "$expQuantDir/star_salmon/bigwig/"*.bigWig .
         else
-            echo "bigWig file not found on $expQuantDir/star_salmon/bigwig"
+            echo "bigWig file not found in $expQuantDir/star_salmon/bigwig"
             exit 1
         fi
         """
-
 
 rule rnaseq_qc:
     """
