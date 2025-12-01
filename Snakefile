@@ -857,7 +857,7 @@ rule copy_bigwig_from_nf_core:
     log: "logs/{accession}-copy_bigwig_from_isl.log"
     output:
         # Fix it with lib names
-        bigwig="*.bigWig"
+        bigwig_dir = directory("bigwig")
     params:
         quantification_dir=get_quantification_dir()
     shell:
@@ -866,17 +866,28 @@ rule copy_bigwig_from_nf_core:
         exec &> "{log}"
         expQuantDir="{params.quantification_dir}/{wildcards.accession}"
         echo "Quantification dir: $expQuantDir"
+		echo "Output dir: $outdir"
+
+        mkdir -p "$outdir"
 
         [ ! -z $expQuantDir+x ] || (echo "Env var $expQuantDir needs to defined" && exit 1)
 
-		if ls "$expQuantDir/star_salmon/bigwig/"*.bigWig 1> /dev/null 2>&1; then
-            echo "Found bigWig in $expQuantDir/star_salmon/bigwig"
-            # rsync keeps the original filename when dest is a directory (.)
-            rsync -avz "$expQuantDir/star_salmon/bigwig/"*.bigWig .
-        else
-            echo "bigWig file not found in $expQuantDir/star_salmon/bigwig"
+		# Collect bigWig files; avoid errors if glob doesn't match
+        shopt -s nullglob
+        files=("$expQuantDir"/star_salmon/bigwig/*.bigWig)
+        shopt -u nullglob
+
+        if (( ${#files[@]} == 0 )); then
+            echo "No bigWig files found in $expQuantDir/star_salmon/bigwig"
             exit 1
         fi
+
+        echo "Found ${#files[@]} bigWig file(s):"
+        printf '  %s\n' "${files[@]}"
+
+		# rsync keeps the original filename when dest is a directory (.)
+		rsync -avz "$expQuantDir/star_salmon/bigwig/"*.bigWig "$outdir"/
+       
         """
 
 rule rnaseq_qc:
