@@ -850,45 +850,6 @@ rule copy_transcript_relative_isoforms_from_nf_core:
         touch {output}
         """
 
-rule copy_bigwig_from_nf_core:
-    """
-    Copy bigwig file.
-    """
-    log: "logs/{accession}-copy_bigwig_from_isl.log"
-    output:
-        # Fix it with lib names
-        bigwig_dir = directory("bigwig")
-    params:
-        quantification_dir=get_quantification_dir()
-    shell:
-        """
-        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
-        exec &> "{log}"
-        expQuantDir="{params.quantification_dir}/{wildcards.accession}"
-        echo "Quantification dir: $expQuantDir"
-		echo "Output dir: $outdir"
-
-        mkdir -p "$outdir"
-
-        [ ! -z $expQuantDir+x ] || (echo "Env var $expQuantDir needs to defined" && exit 1)
-
-		# Collect bigWig files; avoid errors if glob doesn't match
-        shopt -s nullglob
-        files=("$expQuantDir"/star_salmon/bigwig/*.bigWig)
-        shopt -u nullglob
-
-        if (( ${#files[@]} == 0 )); then
-            echo "No bigWig files found in $expQuantDir/star_salmon/bigwig"
-            exit 1
-        fi
-
-        echo "Found ${#files[@]} bigWig file(s):"
-        printf '  %s\n' "${files[@]}"
-
-		# rsync keeps the original filename when dest is a directory (.)
-		rsync -avz "$expQuantDir/star_salmon/bigwig/"*.bigWig "$outdir"/
-       
-        """
 
 rule rnaseq_qc:
     """
