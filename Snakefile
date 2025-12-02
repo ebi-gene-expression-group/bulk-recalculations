@@ -1388,6 +1388,7 @@ rule generate_methods_differential_rnaseq:
 		echo -e "Genes (GTF)\t$ref_gtf" >> {output.methods}
 
 		echo -e "Differential Expression\tDESeq2 version: $deseq2version" >> {output.methods}
+		echo -e "Gene Set Overlap\tFisher (non-directional), FDR &lt; 0.1 using <a href="http://www.bioconductor.org/packages/release/bioc/html/piano.html">piano</a>"  >> {output.methods}
 
         cp {output.methods} {wildcards.accession}-analysis-methods.tsv
         """
