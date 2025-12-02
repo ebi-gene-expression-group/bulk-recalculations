@@ -850,7 +850,6 @@ rule copy_transcript_relative_isoforms_from_nf_core:
         touch {output}
         """
 
-
 rule rnaseq_qc:
     """
     QC step for rnaseq experiments.
@@ -1354,7 +1353,7 @@ rule generate_methods_differential_rnaseq:
 
         [ ! -z $expQuantDir+x ] || (echo "snakemake param exp_quantification_dir needs to defined in rule" && exit 1)
 
-        params_json=$(ls -t "$expQuantDir"/pipeline_info/params_.*.json | head -n 1)
+        params_json=$(ls -t "$expQuantDir"/pipeline_info/params_*.json | head -n 1)
 
 
 		echo "parameters $params_json"
