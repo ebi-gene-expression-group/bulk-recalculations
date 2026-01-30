@@ -2129,3 +2129,88 @@ rule get_magetab_for_experiment:
         touch {output} 
         """
 
+# Following part not tested
+import xml.etree.ElementTree as ET
+
+def parse_groups(xml_path):
+    root = ET.parse(xml_path).getroot()
+
+    def local(tag):
+        return tag.split("}", 1)[-1] if "}" in tag else tag
+
+    groups = {}
+    for g in root.iter():
+        if local(g.tag) != "assay_group":
+            continue
+
+        gid = g.attrib.get("id")
+        label = g.attrib.get("label", gid)
+
+        assays = []
+        for child in g:
+            if local(child.tag) == "assay" and child.text:
+                assays.append(child.text.strip())
+
+        groups[gid] = {"label": label, "assays": assays}
+
+    return groups
+
+GROUPS = parse_groups(f"{config['accession']}-configuration.xml")
+GROUP_IDS = list(GROUPS.keys())
+
+
+rule generate_bigwig_per_library:
+    input:
+        xml="{accession}-configuration.xml",
+        bam=lambda wc: f"{get_quantification_dir()}/{wc.accession}/star_salmon/{wc.assay}.markdup.sorted.bam"
+    output:
+        bw=f"{get_quantification_dir()}" + "/{accession}/star_salmon/{assay}.CPM.bw",
+        done=temp("logs/{accession}_bigwig/{gid}/{assay}-generate_bigwig_per_library.done")
+    log:
+        "logs/{accession}_bigwig/{gid}/{assay}-generate_bigwig_per_library.log"
+    params:
+        valid_assays=lambda wc: " ".join(GROUPS[wc.gid]["assays"])
+    shell:
+        r"""
+        mkdir -p $(dirname {output.done}) $(dirname {output.bw})
+
+        # Safety check: assay must belong to the group
+        if [[ ! " {params.valid_assays} " =~ " {wildcards.assay} " ]]; then
+            echo "ERROR: {wildcards.assay} not in group {wildcards.gid}" >&2
+            exit 1
+        fi
+
+        bamCoverage -b {input.bam} --normalizeUsing CPM -o {output.bw} &> {log}
+        touch {output.done}
+        """
+
+
+rule merge_bigwig_by_group_mean:
+    input:
+        bws=lambda wc: [
+            f"{get_quantification_dir()}/{wc.accession}/star_salmon/{a}.CPM.bw"
+            for a in GROUPS[wc.gid]["assays"]
+        ]
+    output:
+        bedGraph=temp("logs/{accession}_bigwig/{gid}-merged_sum.bedGraph"),
+        mean_bedGraph=temp("logs/{accession}_bigwig/{gid}-merged_mean.bedGraph"),
+        sorted_bedGraph=temp("logs/{accession}_bigwig/{gid}-merged_mean.sorted.bedGraph"),
+        mean_bw=f"{get_quantification_dir()}" + "/{accession}/star_salmon/{gid}.mean.CPM.bw",
+        done=temp("logs/{accession}_bigwig/{gid}-merge_bigwig_by_group_mean.done")
+    params:
+        chrom_sizes="chrom.sizes"
+    shell:
+        r"""
+        mkdir -p $(dirname {output.done}) $(dirname {output.mean_bw})
+
+        bigWigMerge {input.bws} {output.bedGraph}
+        N=$(printf "%s\n" {input.bws} | wc -l)
+
+        awk -v n="$N" 'BEGIN{OFS="\t"} {{$4=$4/n; print}}' {output.bedGraph} > {output.mean_bedGraph}
+        sort -k1,1 -k2,2n {output.mean_bedGraph} > {output.sorted_bedGraph}
+
+        bedGraphToBigWig {output.sorted_bedGraph} {params.chrom_sizes} {output.mean_bw}
+        touch {output.done}
+        """
+
+
