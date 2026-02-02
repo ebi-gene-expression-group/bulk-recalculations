@@ -2199,7 +2199,9 @@ rule merge_bigwig_by_group_mean:
         done=temp("logs/{accession}_bigwig/{gid}-merge_bigwig_by_group_mean.done")
     shell:
         r"""
-        mkdir -p $(dirname {output.done}) $(dirname {output.mean_bw})
+        expQuantDir={params.quantification_dir}/{wildcards.accession}
+		
+		mkdir -p $(dirname {output.done}) $(dirname {output.mean_bw})
 
         bigWigMerge {input.bws} {output.bedGraph}
         N=$(printf "%s\n" {input.bws} | wc -l)
