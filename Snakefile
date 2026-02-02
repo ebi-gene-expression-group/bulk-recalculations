@@ -2197,8 +2197,6 @@ rule merge_bigwig_by_group_mean:
         sorted_bedGraph=temp("logs/{accession}_bigwig/{gid}-merged_mean.sorted.bedGraph"),
         mean_bw=f"{get_quantification_dir()}" + "/{accession}/star_salmon/{gid}.mean.CPM.bw",
         done=temp("logs/{accession}_bigwig/{gid}-merge_bigwig_by_group_mean.done")
-    params:
-        chrom_sizes="chrom.sizes"
     shell:
         r"""
         mkdir -p $(dirname {output.done}) $(dirname {output.mean_bw})
@@ -2208,8 +2206,11 @@ rule merge_bigwig_by_group_mean:
 
         awk -v n="$N" 'BEGIN{OFS="\t"} {{$4=$4/n; print}}' {output.bedGraph} > {output.mean_bedGraph}
         sort -k1,1 -k2,2n {output.mean_bedGraph} > {output.sorted_bedGraph}
+		
+		params_json=$(ls -t "$expQuantDir"/pipeline_info/params_*.json | head -n 1)
 
-        bedGraphToBigWig {output.sorted_bedGraph} {params.chrom_sizes} {output.mean_bw}
+		chrom_sizes="$(jq -r 'toplevel.fa' "$params_json").sizes"
+        bedGraphToBigWig {output.sorted_bedGraph} $chrom_sizes {output.mean_bw}
         touch {output.done}
         """
 
