@@ -1,0 +1,9 @@
+name: ucsc_bw_env
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - ucsc-bedgraphtobigwig
+  - ucsc-bigwigmerge
+  - samtools
+  - coreutils
