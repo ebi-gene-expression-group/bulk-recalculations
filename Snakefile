@@ -2166,6 +2166,7 @@ rule generate_bigwig_per_library:
     output:
         bw=f"{get_quantification_dir()}" + "/{accession}/star_salmon/{assay}.CPM.bw",
         done=temp("logs/{accession}_bigwig/{gid}/{assay}-generate_bigwig_per_library.done")
+    conda: "envs/deeptools_env.yml"
     log:
         "logs/{accession}_bigwig/{gid}/{assay}-generate_bigwig_per_library.log"
     params:
