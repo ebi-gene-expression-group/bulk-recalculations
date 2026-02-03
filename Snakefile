@@ -2198,6 +2198,7 @@ rule merge_bigwig_by_group_mean:
         sorted_bedGraph=temp("logs/{accession}_bigwig/{gid}-merged_mean.sorted.bedGraph"),
         mean_bw=f"{get_quantification_dir()}" + "/{accession}/star_salmon/{gid}.mean.CPM.bw",
         done=temp("logs/{accession}_bigwig/{gid}-merge_bigwig_by_group_mean.done")
+    conda: "envs/ucsc_bw_env.yml"
     shell:
         r"""
         expQuantDir={params.quantification_dir}/{wildcards.accession}
