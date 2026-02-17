@@ -2168,7 +2168,7 @@ rule generate_bigwig_per_library:
         done=temp("logs/{accession}_bigwig/{assay}-generate_bigwig_per_library.done")
     conda: "envs/deeptools_env.yml"
     log:
-        "logs/{accession}_bigwig/{gid}/{assay}-generate_bigwig_per_library.log"
+        "logs/{accession}_bigwig/{assay}-generate_bigwig_per_library.log"
     params:
         valid_assays=lambda wc: " ".join(GROUPS[wc.gid]["assays"])
     shell:
