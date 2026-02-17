@@ -2165,7 +2165,7 @@ rule generate_bigwig_per_library:
         bam=lambda wc: f"{get_quantification_dir()}/{wc.accession}/star_salmon/{wc.assay}.markdup.sorted.bam"
     output:
         bw=f"{get_quantification_dir()}" + "/{accession}/star_salmon/{assay}.CPM.bw",
-        done=temp("logs/{accession}_bigwig/{gid}/{assay}-generate_bigwig_per_library.done")
+        done=temp("logs/{accession}_bigwig/{assay}-generate_bigwig_per_library.done")
     conda: "envs/deeptools_env.yml"
     log:
         "logs/{accession}_bigwig/{gid}/{assay}-generate_bigwig_per_library.log"
