@@ -66,6 +66,8 @@ def get_outputs():
         outputs.extend(expand(config['accession']+"-{metric}.tsv", metric=metrics))
         outputs.extend(expand("logs/"+f"{config['accession']}"+"-transcripts-{metric}.tsv.done", metric=["tpms"] ))
         outputs.extend(expand(f"{config['accession']}"+"-{metric}-markers.tsv", metric=metrics ))
+        outputs.extend(expand(config['accession']+".{a_id}.mean.CPM.bw",
+                                    a_id=get_assay_ids()))
 
         if skip(config['accession'],'baseline-heatmap'):
             outputs.extend(expand(f"{config['accession']}"+"-heatmap-{metric}.pdf", metric=metrics ))
@@ -102,6 +104,8 @@ def get_outputs():
         outputs.append(f"{config['accession']}-analytics.tsv.unrounded")
         outputs.extend(expand("logs/"+f"{config['accession']}"+".differential_statistics_rnaseq.done" ))
         outputs.append(f"{config['accession']}-raw-counts.tsv")
+        outputs.extend(expand(config['accession']+".{a_id}.mean.CPM.bw",
+                                            a_id=get_assay_ids()))
         if skip(config['accession'],'percentile_ranks'):
             outputs.append(f"{config['accession']}-percentile-ranks.tsv")
         # differential gsea
