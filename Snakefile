@@ -2191,8 +2191,8 @@ rule merge_bigwig_by_group_mean:
         mean_bw="{accession}.{gid}.mean.CPM.bw",
         done=temp("logs/{accession}_bigwig/{gid}-merge_bigwig_by_group_mean.done")
     conda: "envs/ucsc_bw_env.yml"
-	params:
-		quantification_dir=get_quantification_dir(),
+    params:
+        quantification_dir=get_quantification_dir()
     shell:
         r"""
         expQuantDir={params.quantification_dir}/{wildcards.accession}
