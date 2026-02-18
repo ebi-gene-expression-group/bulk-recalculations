@@ -2196,24 +2196,25 @@ rule merge_bigwig_by_group_mean:
         bedGraph=temp("logs/{accession}_bigwig/{gid}-merged_sum.bedGraph"),
         mean_bedGraph=temp("logs/{accession}_bigwig/{gid}-merged_mean.bedGraph"),
         sorted_bedGraph=temp("logs/{accession}_bigwig/{gid}-merged_mean.sorted.bedGraph"),
-        mean_bw=f"{accession}.{gid}.mean.CPM.bw",
+        mean_bw="{accession}.{gid}.mean.CPM.bw",
         done=temp("logs/{accession}_bigwig/{gid}-merge_bigwig_by_group_mean.done")
     conda: "envs/ucsc_bw_env.yml"
     shell:
         r"""
         expQuantDir={params.quantification_dir}/{wildcards.accession}
 		
-		mkdir -p $(dirname {output.done}) $(dirname {output.mean_bw})
+        mkdir -p $(dirname {output.done}) $(dirname {output.mean_bw})
 
         bigWigMerge {input.bws} {output.bedGraph}
         N=$(printf "%s\n" {input.bws} | wc -l)
 
-        awk -v n="$N" 'BEGIN{OFS="\t"} {{$4=$4/n; print}}' {output.bedGraph} > {output.mean_bedGraph}
+        awk -v n="$N" 'BEGIN{{OFS="\t"}} {{$4=$4/n; print}}' {output.bedGraph} > {output.mean_bedGraph}
         sort -k1,1 -k2,2n {output.mean_bedGraph} > {output.sorted_bedGraph}
 		
-		params_json=$(ls -t "$expQuantDir"/pipeline_info/params_*.json | head -n 1)
+        params_json=$(ls -t "$expQuantDir"/pipeline_info/params_*.json | head -n 1)
+        chrom_sizes="$(jq -r 'toplevel.fa' "$params_json").sizes"
 
-		chrom_sizes="$(jq -r 'toplevel.fa' "$params_json").sizes"
         bedGraphToBigWig {output.sorted_bedGraph} $chrom_sizes {output.mean_bw}
         touch {output.done}
         """
+
