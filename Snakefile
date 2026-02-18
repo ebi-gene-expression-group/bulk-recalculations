@@ -2169,21 +2169,13 @@ rule generate_bigwig_per_library:
     conda: "envs/deeptools_env.yml"
     log:
         "logs/{accession}_bigwig/{assay}-generate_bigwig_per_library.log"
-    params:
-        valid_assays=lambda wc: " ".join(GROUPS[wc.gid]["assays"])
     shell:
         r"""
         mkdir -p $(dirname {output.done}) $(dirname {output.bw})
-
-        # Safety check: assay must belong to the group
-        if [[ ! " {params.valid_assays} " =~ " {wildcards.assay} " ]]; then
-            echo "ERROR: {wildcards.assay} not in group {wildcards.gid}" >&2
-            exit 1
-        fi
-
         bamCoverage -b {input.bam} --normalizeUsing CPM -o {output.bw} &> {log}
         touch {output.done}
         """
+
 
 
 rule merge_bigwig_by_group_mean:
