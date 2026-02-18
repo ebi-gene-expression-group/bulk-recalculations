@@ -2196,7 +2196,7 @@ rule merge_bigwig_by_group_mean:
         bedGraph=temp("logs/{accession}_bigwig/{gid}-merged_sum.bedGraph"),
         mean_bedGraph=temp("logs/{accession}_bigwig/{gid}-merged_mean.bedGraph"),
         sorted_bedGraph=temp("logs/{accession}_bigwig/{gid}-merged_mean.sorted.bedGraph"),
-        mean_bw=f"{get_quantification_dir()}" + "/{accession}/star_salmon/{gid}.mean.CPM.bw",
+        mean_bw=f"{accession}.{gid}.mean.CPM.bw",
         done=temp("logs/{accession}_bigwig/{gid}-merge_bigwig_by_group_mean.done")
     conda: "envs/ucsc_bw_env.yml"
     shell:
@@ -2217,5 +2217,3 @@ rule merge_bigwig_by_group_mean:
         bedGraphToBigWig {output.sorted_bedGraph} $chrom_sizes {output.mean_bw}
         touch {output.done}
         """
-
-
