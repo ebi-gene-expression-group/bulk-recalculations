@@ -2172,7 +2172,6 @@ rule generate_bigwig_per_library:
         r"""
         mkdir -p $(dirname {output.bw})
         bamCoverage -b {input.bam} --normalizeUsing CPM -o {output.bw} &> {log}
-        touch {output.done}
         """
 
 
