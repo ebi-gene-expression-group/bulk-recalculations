@@ -2170,7 +2170,7 @@ rule generate_bigwig_per_library:
         "logs/{accession}_bigwig/{assay}-generate_bigwig_per_library.log"
     shell:
         r"""
-        mkdir -p $(dirname {output.done}) $(dirname {output.bw})
+        mkdir -p $(dirname {output.bw})
         bamCoverage -b {input.bam} --normalizeUsing CPM -o {output.bw} &> {log}
         touch {output.done}
         """
@@ -2200,14 +2200,19 @@ rule merge_bigwig_by_group_mean:
 		
         mkdir -p $(dirname {output.done}) $(dirname {output.mean_bw})
 
+		echo "Creating bigwigs"
         bigWigMerge {input.bws} {output.bedGraph}
         N=$(printf "%s\n" {input.bws} | wc -l)
 
-        awk -v n="$N" 'BEGIN{{OFS="\t"}} {{$4=$4/n; print}}' {output.bedGraph} > {output.mean_bedGraph}
+        echo "Creating bedgraph"
+		awk -v n="$N" 'BEGIN{{OFS="\t"}} {{$4=$4/n; print}}' {output.bedGraph} > {output.mean_bedGraph}
         sort -k1,1 -k2,2n {output.mean_bedGraph} > {output.sorted_bedGraph}
 		
         params_json=$(ls -t "$expQuantDir"/pipeline_info/params_*.json | head -n 1)
         chrom_sizes="$(jq -r 'toplevel.fa' "$params_json").sizes"
+
+		echo "Creating final bw"
+		echo "$chrom_sizes"
 
         bedGraphToBigWig {output.sorted_bedGraph} $chrom_sizes {output.mean_bw}
         touch {output.done}
