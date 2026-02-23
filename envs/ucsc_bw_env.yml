@@ -7,3 +7,4 @@ dependencies:
   - ucsc-bigwigmerge
   - samtools
   - coreutils
+  - jq
