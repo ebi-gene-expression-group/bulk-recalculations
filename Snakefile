@@ -2171,7 +2171,7 @@ rule generate_bigwig_per_library:
     shell:
         r"""
         mkdir -p $(dirname {output.bw})
-        bamCoverage -b {input.bam} --normalizeUsing CPM -o {output.bw} &> {log}
+        bamCoverage -b {input.bam} --normalizeUsing CPM --binSize 1 -o {output.bw} &> {log}
         """
 
 
@@ -2209,7 +2209,7 @@ rule merge_bigwig_by_group_mean:
         sort -k1,1 -k2,2n {output.mean_bedGraph} > {output.sorted_bedGraph}
 		
         params_json=$(ls -t "$expQuantDir"/pipeline_info/params_*.json | head -n 1)
-        chrom_sizes="$(jq -r 'fasta' "$params_json").sizes"
+        chrom_sizes="$(jq -r '.fasta' "$params_json").sizes"
 
 		echo "Creating final bw"
 		echo "$chrom_sizes"
