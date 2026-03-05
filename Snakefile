@@ -2185,7 +2185,7 @@ rule merge_bigwig_by_group_mean:
     output:
         bedGraph=temp("logs/{accession}_bigwig/{gid}-merged_sum.bedGraph"),
         mean_bedGraph=temp("logs/{accession}_bigwig/{gid}-merged_mean.bedGraph"),
-        sorted_bedGraph=temp("logs/{accession}_bigwig/{gid}-merged_mean.sorted.bedGraph"),
+        sorted_bedGraph="{accession}.{gid}.mean.expressions.bedGraph",
         mean_bw="{accession}.{gid}.mean.CPM.bw",
         done=temp("logs/{accession}_bigwig/{gid}-merge_bigwig_by_group_mean.done")
     conda: "envs/ucsc_bw_env.yml"
