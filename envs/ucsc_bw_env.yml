@@ -9,3 +9,4 @@ dependencies:
   - coreutils
   - jq
   - d4tools
+  - deeptools
