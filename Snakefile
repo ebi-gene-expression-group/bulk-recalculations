@@ -2174,14 +2174,26 @@ rule generate_bigwig_per_library:
         bamCoverage -b {input.bam} --normalizeUsing CPM --binSize 1 -o {output.bw} &> {log}
         """
 
+def get_bams_for_group(wc):
+    bams = []
+    base = f"{get_quantification_dir()}/{wc.accession}/star_salmon"
 
+    for a in GROUPS[wc.gid]["assays"]:
+        bam1 = f"{base}/{a}.markdup.sorted.bam"
+        bam2 = f"{base}/{a}.sorted.bam"
+
+        if os.path.exists(bam1):
+            bams.append(bam1)
+        elif os.path.exists(bam2):
+            bams.append(bam2)
+        else:
+            raise ValueError(f"No BAM found for assay {a}")
+
+    return bams
 
 rule merge_bams_by_group:
     input:
-        bams=lambda wc: [
-            f"{get_quantification_dir()}/{wc.accession}/star_salmon/{a}.sorted.bam"
-            for a in GROUPS[wc.gid]["assays"]
-        ]
+        bams=get_bams_for_group
     output:
         mergedBam="logs/{accession}_bigwig/{gid}-merged.bam"
     conda:
