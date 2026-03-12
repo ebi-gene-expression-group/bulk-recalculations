@@ -2222,7 +2222,7 @@ rule merged_bam_to_bw_d4_by_group:
           -b {input.mergedBam} \
           -o {output.mean_bw} \
           --normalizeUsing CPM \
-          --binSize 25 \
+          --binSize 1 \
           -p {threads} \
           &>> {log}
 
