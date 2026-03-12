@@ -2187,6 +2187,7 @@ rule merge_bigwig_by_group_mean:
         mean_bedGraph=temp("logs/{accession}_bigwig/{gid}-merged_mean.bedGraph"),
         sorted_bedGraph="{accession}.{gid}.mean.expressions.bedGraph",
         mean_bw="{accession}.{gid}.mean.CPM.bw",
+        mean_d4="{accession}.{gid}.mean.CPM.d4",
         done=temp("logs/{accession}_bigwig/{gid}-merge_bigwig_by_group_mean.done")
     conda: "envs/ucsc_bw_env.yml"
     resources: mem_mb=get_mem_mb
@@ -2215,6 +2216,9 @@ rule merge_bigwig_by_group_mean:
 		echo "$chrom_sizes"
 
         bedGraphToBigWig {output.sorted_bedGraph} $chrom_sizes {output.mean_bw}
+
+		d4tools create {{output.mean_bw}} {{output.mean_d4}}
+
         touch {output.done}
         """
 
