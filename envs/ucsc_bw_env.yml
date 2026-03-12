@@ -8,3 +8,4 @@ dependencies:
   - samtools
   - coreutils
   - jq
+  - d4tools
