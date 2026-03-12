@@ -2176,49 +2176,58 @@ rule generate_bigwig_per_library:
 
 
 
-rule merge_bigwig_by_group_mean:
+rule merge_bams_by_group:
     input:
-        bws=lambda wc: [
-            f"{get_quantification_dir()}/{wc.accession}/star_salmon/{a}.CPM.bw"
+        bams=lambda wc: [
+            f"{get_quantification_dir()}/{wc.accession}/star_salmon/{a}.sorted.bam"
             for a in GROUPS[wc.gid]["assays"]
         ]
     output:
-        bedGraph=temp("logs/{accession}_bigwig/{gid}-merged_sum.bedGraph"),
-        mean_bedGraph=temp("logs/{accession}_bigwig/{gid}-merged_mean.bedGraph"),
-        sorted_bedGraph="{accession}.{gid}.mean.expressions.bedGraph",
-        mean_bw="{accession}.{gid}.mean.CPM.bw",
-        mean_d4="{accession}.{gid}.mean.CPM.d4",
-        done=temp("logs/{accession}_bigwig/{gid}-merge_bigwig_by_group_mean.done")
-    conda: "envs/ucsc_bw_env.yml"
-    resources: mem_mb=get_mem_mb
+        mergedBam="logs/{accession}_bigwig/{gid}-merged.bam"
+    conda:
+        "envs/ucsc_bw_env.yml"
+    threads: 8
+    resources:
+        mem_mb=get_mem_mb
     log:
-        "logs/{accession}_{gid}_merge_bigwig_by_group_mean.log"
-    params:
-        quantification_dir=get_quantification_dir()
+        "logs/{accession}_{gid}_merge_bams_by_group.log"
     shell:
         r"""
-        expQuantDir={params.quantification_dir}/{wildcards.accession}
-		
-        mkdir -p $(dirname {output.done}) $(dirname {output.mean_bw})
+        mkdir -p "$(dirname {output.mergedBam})"
 
-		echo "Creating bigwigs"
-        bigWigMerge {input.bws} {output.bedGraph}
-        N=$(printf "%s\n" {input.bws} | wc -l)
+        echo "Creating merged BAM"
+        samtools merge -@ {threads} -o {output.mergedBam} {input.bams} &> {log}
+        """
 
-        echo "Creating bedgraph"
-		awk -v n="$N" 'BEGIN{{OFS="\t"}} {{$4=$4/n; print}}' {output.bedGraph} > {output.mean_bedGraph}
-        sort -k1,1 -k2,2n {output.mean_bedGraph} > {output.sorted_bedGraph}
-		
-        params_json=$(ls -t "$expQuantDir"/pipeline_info/params_*.json | head -n 1)
-        chrom_sizes="$(jq -r '.fasta' "$params_json").sizes"
+rule merged_bam_to_bw_d4_by_group:
+    input:
+        mergedBam="logs/{accession}_bigwig/{gid}-merged.bam"
+    output:
+        mean_bw="{accession}.{gid}.mean.CPM.bw",
+        mean_d4="{accession}.{gid}.mean.CPM.d4",
+        done=temp("logs/{accession}_bigwig/{gid}-merged_bam_to_bw_d4.done")
+    conda:
+        "envs/ucsc_bw_env.yml"
+    threads: 8
+    resources:
+        mem_mb=get_mem_mb
+    log:
+        "logs/{accession}_{gid}_merged_bam_to_bw_d4.log"
+    shell:
+        r"""
+        mkdir -p "$(dirname {output.done})" "$(dirname {output.mean_bw})"
 
-		echo "Creating final bw"
-		echo "$chrom_sizes"
+        echo "Creating BigWig from merged BAM"
+        bamCoverage \
+          -b {input.mergedBam} \
+          -o {output.mean_bw} \
+          --normalizeUsing CPM \
+          --binSize 25 \
+          -p {threads} \
+          &>> {log}
 
-        bedGraphToBigWig {output.sorted_bedGraph} $chrom_sizes {output.mean_bw}
-
-		d4tools create {{output.mean_bw}} {{output.mean_d4}}
+        echo "Creating D4"
+        #d4tools create -z {output.mean_bw} {output.mean_d4} &>> {log}
 
         touch {output.done}
         """
-
