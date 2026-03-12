@@ -2162,7 +2162,7 @@ GROUP_IDS = list(GROUPS.keys())
 rule generate_bigwig_per_library:
     input:
         xml="{accession}-configuration.xml",
-        bam=lambda wc: f"{get_quantification_dir()}/{wc.accession}/star_salmon/{wc.assay}.markdup.sorted.bam"
+        bam=lambda wc: f"{get_quantification_dir()}/{wc.accession}/star_salmon/{wc.assay}*sorted.bam"
     output:
         bw=f"{get_quantification_dir()}" + "/{accession}/star_salmon/{assay}.CPM.bw"
     conda: "envs/deeptools_env.yml"
