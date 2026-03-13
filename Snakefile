@@ -2221,7 +2221,7 @@ rule merged_bam_to_bw_d4_by_group:
         mergedBai="logs/{accession}_bigwig/{gid}-merged.bam.bai"
     output:
         mean_bw="{accession}.{gid}.mean.CPM.bw",
-		mean_d4="{accession}.{gid}.mean.CPM.d4",
+        mean_d4="{accession}.{gid}.mean.CPM.d4",
         done=temp("logs/{accession}_bigwig/{gid}-merged_bam_to_bw_d4.done")
     conda:
         "envs/ucsc_bw_env.yml"
