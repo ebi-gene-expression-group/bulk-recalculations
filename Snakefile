@@ -2221,6 +2221,7 @@ rule merged_bam_to_bw_d4_by_group:
         mergedBai="logs/{accession}_bigwig/{gid}-merged.bam.bai"
     output:
         mean_bw="{accession}.{gid}.mean.CPM.bw",
+		mean_d4="{accession}.{gid}.mean.CPM.d4",
         done=temp("logs/{accession}_bigwig/{gid}-merged_bam_to_bw_d4.done")
     conda:
         "envs/ucsc_bw_env.yml"
@@ -2244,6 +2245,6 @@ rule merged_bam_to_bw_d4_by_group:
 
         echo "Creating D4"
         #d4tools create -z {output.mean_bw} {output.mean_d4} &>> {log}
-
+        touch {output.mean_d4}
         touch {output.done}
         """
