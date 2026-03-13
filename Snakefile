@@ -2244,7 +2244,6 @@ rule merged_bam_to_bw_d4_by_group:
           &>> {log}
 
         echo "Creating D4"
-        #d4tools create -z {output.mean_bw} {output.mean_d4} &>> {log}
-        touch {output.mean_d4}
+        d4tools create -z {output.mean_bw} {output.mean_d4} &>> {log}
         touch {output.done}
         """
