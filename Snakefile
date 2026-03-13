@@ -2158,92 +2158,92 @@ def parse_groups(xml_path):
 GROUPS = parse_groups(f"{config['accession']}-configuration.xml")
 GROUP_IDS = list(GROUPS.keys())
 
+def get_bam_for_lib(wc):
+    base = f"{get_quantification_dir()}/{wc.accession}/star_salmon"
+
+    bam1 = f"{base}/{wc.assay}.markdup.sorted.bam"
+    bam2 = f"{base}/{wc.assay}.sorted.bam"
+
+    if os.path.exists(bam1):
+        bam = bam1
+    elif os.path.exists(bam2):
+        bam = bam2
+    else:
+        raise ValueError(f"No BAM found for assay {wc.assay}")
+
+    return bam
 
 rule generate_bigwig_per_library:
     input:
         xml="{accession}-configuration.xml",
-        bam=lambda wc: f"{get_quantification_dir()}/{wc.accession}/star_salmon/{wc.assay}.sorted.bam"
+        bam=get_bam_for_lib
     output:
         bw=f"{get_quantification_dir()}" + "/{accession}/star_salmon/{assay}.CPM.bw"
+    threads: 8
     conda: "envs/deeptools_env.yml"
     log:
         "logs/{accession}_bigwig/{assay}-generate_bigwig_per_library.log"
     shell:
         r"""
         mkdir -p $(dirname {output.bw})
-        bamCoverage -b {input.bam} --normalizeUsing CPM --binSize 1 -o {output.bw} &> {log}
+        echo "$(date '+%Y-%m-%d %H:%M:%S') START generate_bigwig_per_library rule {output.bw}" > {log}
+        bamCoverage -b {input.bam} --normalizeUsing CPM --binSize 1 -o {output.bw} -p {threads} &>> {log}
+        echo "$(date '+%Y-%m-%d %H:%M:%S') END generate_bigwig_per_library rule {output.bw}" &>> {log}
         """
 
-def get_bams_for_group(wc):
-    bams = []
-    base = f"{get_quantification_dir()}/{wc.accession}/star_salmon"
-
-    for a in GROUPS[wc.gid]["assays"]:
-        bam1 = f"{base}/{a}.markdup.sorted.bam"
-        bam2 = f"{base}/{a}.sorted.bam"
-
-        if os.path.exists(bam1):
-            bams.append(bam1)
-        elif os.path.exists(bam2):
-            bams.append(bam2)
-        else:
-            raise ValueError(f"No BAM found for assay {a}")
-
-    return bams
-
-rule merge_bams_by_group:
+rule merge_bigwig_by_group_mean:
     input:
-        bams=get_bams_for_group
+        bws=lambda wc: [
+            f"{get_quantification_dir()}/{wc.accession}/star_salmon/{a}.CPM.bw"
+            for a in GROUPS[wc.gid]["assays"]
+        ]
     output:
-        mergedBam="logs/{accession}_bigwig/{gid}-merged.bam",
-        mergedBai="logs/{accession}_bigwig/{gid}-merged.bam.bai"
-    conda:
-        "envs/ucsc_bw_env.yml"
-    threads: 8
-    resources:
-        mem_mb=get_mem_mb
-    log:
-        "logs/{accession}_{gid}_merge_bams_by_group.log"
-    shell:
-        r"""
-        mkdir -p "$(dirname {output.mergedBam})"
-
-        echo "Creating merged BAM" &> {log}
-        samtools merge -@ {threads} -o {output.mergedBam} {input.bams} &>> {log}
-
-		echo "Indexing merged BAM" &>> {log}
-        samtools index -@ {threads} {output.mergedBam} {output.mergedBai} &>> {log}
-        """
-
-rule merged_bam_to_bw_d4_by_group:
-    input:
-        mergedBam="logs/{accession}_bigwig/{gid}-merged.bam",
-        mergedBai="logs/{accession}_bigwig/{gid}-merged.bam.bai"
-    output:
+        bedGraph=temp("logs/{accession}_bigwig/{gid}-merged_sum.bedGraph"),
+        mean_bedGraph=temp("logs/{accession}_bigwig/{gid}-merged_mean.bedGraph"),
+        sorted_bedGraph="{accession}.{gid}.mean.expressions.bedGraph",
         mean_bw="{accession}.{gid}.mean.CPM.bw",
         mean_d4="{accession}.{gid}.mean.CPM.d4",
-        done=temp("logs/{accession}_bigwig/{gid}-merged_bam_to_bw_d4.done")
-    conda:
-        "envs/ucsc_bw_env.yml"
+        done=temp("logs/{accession}_bigwig/{gid}-merge_bigwig_by_group_mean.done")
     threads: 8
+    conda: "envs/ucsc_bw_env.yml"
     resources:
         mem_mb=get_mem_mb
     log:
-        "logs/{accession}_{gid}_merged_bam_to_bw_d4.log"
+        "logs/{accession}_{gid}_merge_bigwig_by_group_mean.log"
+    params:
+        quantification_dir=get_quantification_dir()
     shell:
         r"""
-        mkdir -p "$(dirname {output.done})" "$(dirname {output.mean_bw})"
+        ts() {{ date "+%Y-%m-%d %H:%M:%S"; }}
 
-        echo "Creating BigWig from merged BAM"
-        bamCoverage \
-          -b {input.mergedBam} \
-          -o {output.mean_bw} \
-          --normalizeUsing CPM \
-          --binSize 1 \
-          -p {threads} \
-          &>> {log}
+        expQuantDir={params.quantification_dir}/{wildcards.accession}
 
-        echo "Creating D4"
-        d4tools create -z {output.mean_bw} {output.mean_d4} &>> {log}
+        mkdir -p $(dirname {output.done}) $(dirname {output.mean_bw})
+
+        echo "$(ts) START bigWigMerge" > {log}
+        bigWigMerge {input.bws} {output.bedGraph} &>> {log}
+        echo "$(ts) FINISH bigWigMerge" &>> {log}
+
+        N=$(echo {input.bws} | wc -w)
+
+        echo "$(ts) START averaging bedGraph" &>> {log}
+        awk -v n="$N" 'BEGIN{{OFS="\t"}} {{$4=$4/n; print}}' {output.bedGraph} > {output.mean_bedGraph}
+        echo "$(ts) FINISH averaging bedGraph" &>> {log}
+
+        echo "$(ts) START sorting bedGraph" &>> {log}
+        LC_ALL=C sort --parallel={threads} -k1,1 -k2,2n {output.mean_bedGraph} > {output.sorted_bedGraph}
+        echo "$(ts) FINISH sorting bedGraph" &>> {log}
+
+        params_json=$(ls -t "$expQuantDir"/pipeline_info/params_*.json | head -n 1)
+        chrom_sizes="$(jq -r '.fasta' "$params_json").sizes"
+
+        echo "$(ts) START bedGraphToBigWig" &>> {log}
+        bedGraphToBigWig {output.sorted_bedGraph} $chrom_sizes {output.mean_bw} &>> {log}
+        echo "$(ts) FINISH bedGraphToBigWig" &>> {log}
+
+        echo "$(ts) START d4 conversion" &>> {log}
+        d4tools create {output.mean_bw} {output.mean_d4} &>> {log}
+        echo "$(ts) FINISH d4 conversion" &>> {log}
+
         touch {output.done}
         """
