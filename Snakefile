@@ -2195,7 +2195,8 @@ rule merge_bams_by_group:
     input:
         bams=get_bams_for_group
     output:
-        mergedBam="logs/{accession}_bigwig/{gid}-merged.bam"
+        mergedBam="logs/{accession}_bigwig/{gid}-merged.bam",
+        mergedBai="logs/{accession}_bigwig/{gid}-merged.bam.bai"
     conda:
         "envs/ucsc_bw_env.yml"
     threads: 8
@@ -2207,16 +2208,19 @@ rule merge_bams_by_group:
         r"""
         mkdir -p "$(dirname {output.mergedBam})"
 
-        echo "Creating merged BAM"
-        samtools merge -@ {threads} -o {output.mergedBam} {input.bams} &> {log}
+        echo "Creating merged BAM" &> {log}
+        samtools merge -@ {threads} -o {output.mergedBam} {input.bams} &>> {log}
+
+		echo "Indexing merged BAM" &>> {log}
+        samtools index -@ {threads} {output.mergedBam} {output.mergedBai} &>> {log}
         """
 
 rule merged_bam_to_bw_d4_by_group:
     input:
-        mergedBam="logs/{accession}_bigwig/{gid}-merged.bam"
+        mergedBam="logs/{accession}_bigwig/{gid}-merged.bam",
+        mergedBai="logs/{accession}_bigwig/{gid}-merged.bam.bai"
     output:
         mean_bw="{accession}.{gid}.mean.CPM.bw",
-        mean_d4="{accession}.{gid}.mean.CPM.d4",
         done=temp("logs/{accession}_bigwig/{gid}-merged_bam_to_bw_d4.done")
     conda:
         "envs/ucsc_bw_env.yml"
