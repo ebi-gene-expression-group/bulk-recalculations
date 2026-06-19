@@ -214,7 +214,8 @@ copy_experiment_from_analysis_to_atlas_exps(){
 copy_experiment() {
     rsyncExperimentFolders(){
     	rsync -a --copy-links --out-format="%n%L" \
-    	    --exclude '*archive/**' \
+    	    --exclude '*fpkm*' \
+			--exclude '*archive/**' \
     	    --exclude '*condensed-sdrf*' \
     	    --exclude '*lsf*' \
     	    --exclude '*cluster*' \
