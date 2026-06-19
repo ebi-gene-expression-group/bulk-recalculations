@@ -213,26 +213,26 @@ copy_experiment_from_analysis_to_atlas_exps(){
 # - copy the subset of the data
 copy_experiment() {
     rsyncExperimentFolders(){
-    	rsync -a --copy-links --out-format="%n%L" \
-    	    --exclude '*fpkm*' \
-			--exclude '*archive/**' \
-    	    --exclude '*condensed-sdrf*' \
-    	    --exclude '*lsf*' \
-    	    --exclude '*cluster*' \
-            --exclude 'logs' \
-    	    --include '*/' \
-    	    --include '*.tsv' \
-    	    --include 'qc/**' \
-    	    --include '*.xml' \
-    	    --include '*.txt' \
-    	    --include '*.png' \
-    	    --include '*.bedGraph'\
-    	    --include '*.Rdata' \
-    	    --include '*.pdf' \
-    	    --include '*.tsv.gz' \
-    	    --exclude '*' \
-    		$@
-    }
+	    rsync -a --copy-links --out-format="%n%L" \
+	        --exclude '*fpkm*' \
+	        --filter 'P archive/***' \
+	        --exclude '*condensed-sdrf*' \
+	        --exclude '*lsf*' \
+	        --exclude '*cluster*' \
+	        --exclude 'logs/***' \
+	        --include '*/' \
+	        --include '*.tsv' \
+	        --include 'qc/**' \
+	        --include '*.xml' \
+	        --include '*.txt' \
+	        --include '*.png' \
+	        --include '*.bedGraph' \
+	        --include '*.Rdata' \
+	        --include '*.pdf' \
+	        --include '*.tsv.gz' \
+	        --exclude '*' \
+	        "$@"
+	}
     copy_experiment_usage(){
         echo "copy_experiment: " $@ " Usage: [-c=<mode> create if needed and set permissions] [-s=<source directory>] -t=<target directory>"
         return 2
@@ -276,7 +276,7 @@ copy_experiment() {
     fi
 
     if [ -d "$source_dir" ]; then
-    	rsyncExperimentFolders --prune-empty-dirs -b --backup-dir --delete --delete-excluded "archive" --suffix ".1" "$source_dir/*" "$target_dir"
+    	rsyncExperimentFolders --prune-empty-dirs -b --backup-dir "$target_dir/archive" --suffix ".1" --delete --delete-excluded  "$source_dir"/ "$target_dir"/
     fi
 }
 
