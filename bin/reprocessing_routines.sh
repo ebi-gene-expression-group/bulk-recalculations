@@ -276,7 +276,7 @@ copy_experiment() {
     fi
 
     if [ -d "$source_dir" ]; then
-    	rsyncExperimentFolders --prune-empty-dirs -b --backup-dir --delete --delete-excluded"archive" --suffix ".1" "$source_dir/*" "$target_dir"
+    	rsyncExperimentFolders --prune-empty-dirs -b --backup-dir --delete --delete-excluded "archive" --suffix ".1" "$source_dir/*" "$target_dir"
     fi
 }
 
