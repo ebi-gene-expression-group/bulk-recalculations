@@ -84,7 +84,7 @@ unless( $atlasProdDir ) {
   $logger->logdie( "ATLAS_PROD environment variable is not defined, cannot continue." );
 }
 unless( $aeLoadDir ) {
-  $logger->logdie( "AE2_BASE_DIR environment variable is not defined, cannot continue." );
+  $logger->logdie( "ATLAS_MAGETAB environment variable is not defined, cannot continue." );
 }
 
 # Get the pipeline (e.g. MEXP, MTAB, GEOD, ...) for this experiment.
