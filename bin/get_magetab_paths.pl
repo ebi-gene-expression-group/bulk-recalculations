@@ -78,7 +78,7 @@ my $exptAccession = (split '\/', $atlasExperimentDir)[-1];
 
 # Path to directory with ATLAS_PROD, ArrayExpress/Atlas load directories.
 my $atlasProdDir = $ENV{ "ATLAS_PROD" };
-my $aeLoadDir = $ENV{"AE2_BASE_DIR"};
+my $aeLoadDir = $ENV{"ATLAS_MAGETAB"};
 
 unless( $atlasProdDir ) {
   $logger->logdie( "ATLAS_PROD environment variable is not defined, cannot continue." );
