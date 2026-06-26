@@ -2179,7 +2179,7 @@ rule generate_bigwig_per_library:
         bam=get_bam_for_lib
     output:
         bw=f"{get_quantification_dir()}" + "/{accession}/star_salmon/{assay}.CPM.bw"
-    threads: 8
+    threads: 1
     conda: "envs/deeptools_env.yml"
     log:
         "logs/{accession}_bigwig/{assay}-generate_bigwig_per_library.log"
