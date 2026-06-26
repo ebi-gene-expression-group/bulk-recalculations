@@ -4,4 +4,4 @@ channels:
 dependencies:
  - r=4.5
  - perl-atlas-modules=0.3.2
- - dos2unix=7.4.2
+ - conda-forge::dos2unix
