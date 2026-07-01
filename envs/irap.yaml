@@ -4,6 +4,5 @@ channels:
  - ebi-gene-expression-group
 dependencies:
  - irap-components=0.0.1
- - r-base>=4.5,<4.6
- - grep=3.12
- - bioconductor-piano=2.26.0
+ - grep=3.4
+ - bioconductor-piano=1.22.0
