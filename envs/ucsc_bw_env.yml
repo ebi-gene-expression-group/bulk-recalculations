@@ -5,7 +5,7 @@ channels:
 dependencies:
   - ucsc-bedgraphtobigwig
   - ucsc-bigwigmerge
-  - samtools
+  - ucsc-bigwigtobedgraph
   - coreutils
   - jq
   - d4tools
