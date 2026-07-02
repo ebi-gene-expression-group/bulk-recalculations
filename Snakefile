@@ -2204,7 +2204,7 @@ rule merge_bigwig_by_group_mean:
         mean_bw="{accession}.{gid}.mean.CPM.bw",
         mean_d4="{accession}.{gid}.mean.CPM.d4",
         done=temp("logs/{accession}_bigwig/{gid}-merge_bigwig_by_group_mean.done")
-    threads: 8
+    threads: 1
     conda: "envs/ucsc_bw_env.yml"
     resources:
         mem_mb=get_mem_mb
