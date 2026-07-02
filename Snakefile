@@ -2221,7 +2221,15 @@ rule merge_bigwig_by_group_mean:
         mkdir -p $(dirname {output.done}) $(dirname {output.mean_bw})
 
         echo "$(ts) START bigWigMerge" > {log}
-        bigWigMerge {input.bws} {output.bedGraph} &>> {log}
+
+		N=$(echo {input} | wc -w)
+
+		if [ "$N" -eq 1 ]; then
+		    bigWigToBedGraph {input} {output.bedGraph} &>> {log}
+		else
+		    bigWigMerge {input} {output.bedGraph} &>> {log}
+		fi
+
         echo "$(ts) FINISH bigWigMerge" &>> {log}
 
         N=$(echo {input.bws} | wc -w)
