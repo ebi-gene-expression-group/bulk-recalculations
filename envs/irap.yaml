@@ -1,5 +1,6 @@
 channels:
  - conda-forge
+ - bioconda
  - ebi-gene-expression-group
 dependencies:
  - irap-components=0.0.1

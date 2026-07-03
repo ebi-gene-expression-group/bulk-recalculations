@@ -2129,3 +2129,129 @@ rule get_magetab_for_experiment:
         touch {output} 
         """
 
+# Following part not tested
+import xml.etree.ElementTree as ET
+
+def parse_groups(xml_path):
+    root = ET.parse(xml_path).getroot()
+
+    def local(tag):
+        return tag.split("}", 1)[-1] if "}" in tag else tag
+
+    groups = {}
+    for g in root.iter():
+        if local(g.tag) != "assay_group":
+            continue
+
+        gid = g.attrib.get("id")
+        label = g.attrib.get("label", gid)
+
+        assays = []
+        for child in g:
+            if local(child.tag) == "assay" and child.text:
+                assays.append(child.text.strip())
+
+        groups[gid] = {"label": label, "assays": assays}
+
+    return groups
+
+GROUPS = parse_groups(f"{config['accession']}-configuration.xml")
+GROUP_IDS = list(GROUPS.keys())
+
+def get_bam_for_lib(wc):
+    base = f"{get_quantification_dir()}/{wc.accession}/star_salmon"
+
+    bam1 = f"{base}/{wc.assay}.markdup.sorted.bam"
+    bam2 = f"{base}/{wc.assay}.sorted.bam"
+
+    if os.path.exists(bam1):
+        bam = bam1
+    elif os.path.exists(bam2):
+        bam = bam2
+    else:
+        raise ValueError(f"No BAM found for assay {wc.assay}")
+
+    return bam
+
+rule generate_bigwig_per_library:
+    input:
+        xml="{accession}-configuration.xml",
+        bam=get_bam_for_lib
+    output:
+        bw=f"{get_quantification_dir()}" + "/{accession}/star_salmon/{assay}.CPM.bw"
+    threads: 1
+    conda: "envs/deeptools_env.yml"
+    log:
+        "logs/{accession}_bigwig/{assay}-generate_bigwig_per_library.log"
+    shell:
+        r"""
+        mkdir -p $(dirname {output.bw})
+        echo "$(date '+%Y-%m-%d %H:%M:%S') START generate_bigwig_per_library rule {output.bw}" > {log}
+        bamCoverage -b {input.bam} --normalizeUsing CPM --binSize 1 -o {output.bw} -p {threads} &>> {log}
+        echo "$(date '+%Y-%m-%d %H:%M:%S') END generate_bigwig_per_library rule {output.bw}" &>> {log}
+        """
+
+rule merge_bigwig_by_group_mean:
+    input:
+        bws=lambda wc: [
+            f"{get_quantification_dir()}/{wc.accession}/star_salmon/{a}.CPM.bw"
+            for a in GROUPS[wc.gid]["assays"]
+        ]
+    output:
+        bedGraph=temp("logs/{accession}_bigwig/{gid}-merged_sum.bedGraph"),
+        mean_bedGraph=temp("logs/{accession}_bigwig/{gid}-merged_mean.bedGraph"),
+        sorted_bedGraph="{accession}.{gid}.mean.expressions.bedGraph",
+        mean_bw="{accession}.{gid}.mean.CPM.bw",
+        mean_d4="{accession}.{gid}.mean.CPM.d4",
+        done=temp("logs/{accession}_bigwig/{gid}-merge_bigwig_by_group_mean.done")
+    threads: 1
+    conda: "envs/ucsc_bw_env.yml"
+    resources:
+        mem_mb=get_mem_mb
+    log:
+        "logs/{accession}_{gid}_merge_bigwig_by_group_mean.log"
+    params:
+        quantification_dir=get_quantification_dir()
+    shell:
+        r"""
+        ts() {{ date "+%Y-%m-%d %H:%M:%S"; }}
+
+        expQuantDir={params.quantification_dir}/{wildcards.accession}
+
+        mkdir -p $(dirname {output.done}) $(dirname {output.mean_bw})
+
+        echo "$(ts) START bigWigMerge" > {log}
+
+		N=$(echo {input} | wc -w)
+
+		if [ "$N" -eq 1 ]; then
+		    bigWigToBedGraph {input} {output.bedGraph} &>> {log}
+		else
+		    bigWigMerge {input} {output.bedGraph} &>> {log}
+		fi
+
+        echo "$(ts) FINISH bigWigMerge" &>> {log}
+
+        N=$(echo {input.bws} | wc -w)
+
+        echo "$(ts) START averaging bedGraph" &>> {log}
+        awk -v n="$N" 'BEGIN{{OFS="\t"}} {{$4=$4/n; print}}' {output.bedGraph} > {output.mean_bedGraph}
+        echo "$(ts) FINISH averaging bedGraph" &>> {log}
+
+        echo "$(ts) START sorting bedGraph" &>> {log}
+        LC_ALL=C sort --parallel={threads} -k1,1 -k2,2n {output.mean_bedGraph} > {output.sorted_bedGraph}
+        echo "$(ts) FINISH sorting bedGraph" &>> {log}
+
+        params_json=$(ls -t "$expQuantDir"/pipeline_info/params_*.json | head -n 1)
+        chrom_sizes="$(jq -r '.fasta' "$params_json").sizes"
+
+        echo "$(ts) START bedGraphToBigWig" &>> {log}
+        bedGraphToBigWig {output.sorted_bedGraph} $chrom_sizes {output.mean_bw} &>> {log}
+        echo "$(ts) FINISH bedGraphToBigWig" &>> {log}
+
+        echo "$(ts) START d4 conversion" &>> {log}
+        d4tools create {output.mean_bw} {output.mean_d4} &>> {log}
+        echo "$(ts) FINISH d4 conversion" &>> {log}
+
+        touch {output.done}
+        """
