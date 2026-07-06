@@ -103,13 +103,6 @@ def get_user_species(wildcards):
     else:
         return 'True'
 
-def get_db_params(param):
-    """Return config parameters to establish connection with isl db."""
-    if param in config:
-        return config[param]
-    else:
-        sys.exit(1)
-
 def read_skip_accessions_file(analysis_goal):
     """
     List of accessions that should be skipped from reprocessing
@@ -300,10 +293,6 @@ rule produce_reprocess_call:
         goal=config['goal'],
         atlasmeta_config=get_meta_config(),
         allowed_organism=get_user_species,
-        oracle_home=get_db_params('oracle_home'),
-        python_user=get_db_params('python_user'),
-        python_connect_string=get_db_params('python_connect_string'),
-        python_password=get_db_params('python_password'),
         deconv_ref=config['deconv_ref']
 
     output:
@@ -339,10 +328,6 @@ rule produce_reprocess_call:
                 quantification_dir={params.quantification_dir} \
                 tmp_dir={params.tmp_dir} \
                 atlas_meta_config={params.atlasmeta_config} \
-                oracle_home={params.oracle_home} \
-                python_user={params.python_user} \
-                python_connect_string={params.python_connect_string} \
-                python_password={params.python_password} \
                 deconv_ref={params.deconv_ref} \
                 -s {workflow.basedir}/Snakefile-reprocess {params.log_handler_script}
 
@@ -371,10 +356,6 @@ rule produce_recalculations_call:
         priv_stat_file = config['priv_stat_file'],
         tmp_dir=config['tmp_dir'],
         allowed_organism=get_user_species,
-        oracle_home=get_db_params('oracle_home'),
-        python_user=get_db_params('python_user'),
-        python_connect_string=get_db_params('python_connect_string'),
-        python_password=get_db_params('python_password'),
         deconv_ref=config['deconv_ref'],
         quantification_dir=config['quantification_dir']
 	
@@ -408,10 +389,6 @@ rule produce_recalculations_call:
 		atlas_exps={params.atlas_exps} \
 		priv_stat_file={params.priv_stat_file} \
 	       	tmp_dir={params.tmp_dir} \
-                oracle_home={params.oracle_home} \
-                python_user={params.python_user} \
-                python_connect_string={params.python_connect_string} \
-                python_password={params.python_password} \
 		deconv_ref={params.deconv_ref} \
 		quantification_dir={params.quantification_dir} \
                 -s {workflow.basedir}/Snakefile-recalculations {params.log_handler_script}

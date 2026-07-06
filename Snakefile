@@ -143,7 +143,7 @@ def get_metrics_reprocess():
         #    metrics_reprocess.append('fpkms')
 
         if not metrics_reprocess:
-            sys.exit("No metrics for reprocessing found in isl path.")
+            sys.exit("No metrics for reprocessing found in nf-core/rnaseq path.")
         else:
             return metrics_reprocess
 
@@ -153,21 +153,6 @@ def get_meta_config():
     else:
         print(f" WARNING - atlas_meta_config not provided in config")
         return None
-
-# To be remove/modify
-def get_db_params():
-    """
-    When goal is reprocess, return config parameters to establish connection with isl db.
-    """
-    isl_vars=[ 'oracle_home', 'python_user', 'python_connect_string', 'python_password' ] 
-    db_params = []
-    for i in isl_vars:
-        if i in config:
-            db_params.append( config[i] )
-        else:
-            print(f" Missing ISL db param: {i}")
-            sys.exit(1)
-    return db_params
 
 
 #metrics = get_metrics()
@@ -703,7 +688,7 @@ rule copy_raw_gene_counts_from_nf_core:
     """
     Copy raw gene counts file.
     """
-    log: "logs/{accession}-copy_raw_gene_counts_from_isl.log"
+    log: "logs/{accession}-copy_raw_gene_counts_from_nf_core.log"
     output:
         raw_counts_undecorated="{accession}-raw-counts.tsv.undecorated"
     params:
@@ -736,7 +721,7 @@ rule copy_normalised_counts_from_nf_core:
     Copy tpm gene expression files.
     Replaces copy_unit_matrices_from_isl in experiment_loading_routines.sh
     """
-    log: "logs/{accession}-{metric}-copy_normalised_counts_from_isl.log"
+    log: "logs/{accession}-{metric}-copy_normalised_counts_from_nf_core.log"
     params:
         organism=get_organism(),
         quantification_dir=get_quantification_dir()  
@@ -747,7 +732,7 @@ rule copy_normalised_counts_from_nf_core:
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
         expQuantDir={params.quantification_dir}/{wildcards.accession}
-        echo "ISL dir: $expQuantDir"
+        echo "nf_core dir: $expQuantDir"
 
         [ ! -z $expQuantDir+x ] || (echo "snakemake param exp_quantification_dir needs to defined in rule" && exit 1)
 
@@ -776,7 +761,7 @@ rule copy_transcript_files_from_nf_core:
     This rule attemps to copy Kallisto TPM transcripts if metrics 'tpms' exists.
     If file does not exist for an accession, this rule can be skipped.
     """
-    log: "logs/{accession}-copy_transcript_files_{metric}_from_isl.log"
+    log: "logs/{accession}-copy_transcript_files_{metric}_from_nf_core.log"
     params:
         organism=get_organism(),
         quantification_dir=get_quantification_dir()  
@@ -826,7 +811,7 @@ rule copy_transcript_relative_isoforms_from_nf_core:
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
         expQuantDir={params.quantification_dir}/{wildcards.accession}/{params.organism}
-        echo "ISL dir: $expQuantDir"
+        echo "nf_core dir: $expQuantDir"
 
         [ ! -z $expQuantDir+x ] || (echo "snakemake param exp_quantification_dir needs to defined in rule" && exit 1)
 
@@ -944,7 +929,7 @@ rule transcripts_na_check:
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
         expQuantDir={params.quantification_dir}/{wildcards.accession}
-        echo "ISL dir: $expQuantDir"
+        echo "nf_core dir: $expQuantDir"
 
         [ ! -z $expQuantDir+x ] || (echo "snakemake param exp_quantification_dir needs to defined in rule" && exit 1)
 
@@ -1030,7 +1015,7 @@ rule summarize_transcripts:
 
 rule generate_methods_baseline_rnaseq:
     """
-    Fetches metadata about the analysis methods used in ISL/iRap to preprocess the experiment,
+    Fetches metadata about the analysis methods used in nf-core/rnaseq to preprocess the experiment,
     to generate analysis methods.
 	Update to support nf-core
     """
@@ -1319,7 +1304,7 @@ rule round_log2_fold_changes_rnaseq:
 
 rule generate_methods_differential_rnaseq:
     """
-    Fetches metadata about the analysis methods used in ISL/iRap to preprocess the experiment,
+    Fetches metadata about the analysis methods used in nf-core/rnaseq to preprocess the experiment,
     to generate analysis methods.
 	Update to support nf-core
     """
@@ -1346,7 +1331,7 @@ rule generate_methods_differential_rnaseq:
 
 		echo "parameters $params_json"
 
-        # set env variables for mapper and quantification methods from used in irap.
+        # set env variables for mapper.
         deseq2version=`cat {input.deseq2version}`
         echo $deseq2version
 
