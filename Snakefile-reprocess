@@ -47,8 +47,6 @@ def get_outputs():
     # collect output for reprocessing
     if experiment_type == 'rnaseq_mrna_baseline':
     #if config['tool']=="all-baseline" or 'baseline-tracks' in config['tool'] or 'baseline-heatmap' in config['tool'] or 'baseline-coexpression' in config['tool']:
-        #outputs.extend(expand("logs/"+f"{config['accession']}"+"-add_runs_to_db.done" ))
-        #outputs.extend(expand("logs/"+f"{config['accession']}"+"-get_irap_versions_file.done" ))
         outputs.append(f"{config['accession']}-raw-counts.tsv.undecorated")
         outputs.extend(expand(config['accession']+"-{metric}.tsv.undecorated", metric=metrics))
         outputs.extend(expand(config['accession']+"-transcripts-{metric}.tsv.undecorated", metric=["tpms"] ))
@@ -89,8 +87,6 @@ def get_outputs():
             outputs.append(f"{config['accession']}-deconvolution.proportions.tsv")
     # collect output for differential rna-seq
     if experiment_type == 'rnaseq_mrna_differential':
-        #outputs.extend(expand("logs/"+f"{config['accession']}"+"-add_runs_to_db.done" ))
-        #outputs.extend(expand("logs/"+f"{config['accession']}"+"-get_irap_versions_file.done" ))
         outputs.append(f"{config['accession']}-raw-counts.tsv.undecorated")
         if skip(config['accession'],'rnaseq_qc'):
             outputs.extend(expand("qc/"+f"{config['accession']}-multiqc_report.html" )) 
