@@ -17,18 +17,6 @@ def read_metadata_summary():
 
 read_metadata_summary()
 
-def get_methods_template_baseline():
-    if 'methods_base' in config:
-        return config['methods_base']
-    else:
-        return None
-
-def get_methods_template_differential():
-    if 'methods_dif' in config:
-        return config['methods_dif']
-    else:
-        return None
-
 def get_zooma_exclusions():
     if 'zooma_exclusions' in config:
         return config['zooma_exclusions']

@@ -290,8 +290,6 @@ rule produce_reprocess_call:
         bioentities_properties=config['bioentities_properties'],
         skip_steps_file=get_skip_steps_file(),
         run_deconv_file=get_run_deconv_file(),
-        methods_base=config['methods_base'],
-        methods_dif=config['methods_dif'],
         zooma_exclusions=config['zooma_exclusions'],
         quantification_dir=config['quantification_dir'],
         tmp_dir=config['tmp_dir'],
@@ -335,8 +333,6 @@ rule produce_reprocess_call:
                 bioentities_properties={params.bioentities_properties} \
                 skip_steps_file={params.skip_steps_file} \
                 run_deconv_file={params.run_deconv_file} \
-                methods_base={params.methods_base} \
-                methods_dif={params.methods_dif} \
                 atlas_exps={params.atlas_exps} \
                 priv_stat_file={params.priv_stat_file} \
                 zooma_exclusions={params.zooma_exclusions} \
@@ -380,8 +376,6 @@ rule produce_recalculations_call:
         python_connect_string=get_db_params('python_connect_string'),
         python_password=get_db_params('python_password'),
         deconv_ref=config['deconv_ref'],
-        methods_base=config['methods_base'],
-        methods_dif=config['methods_dif'],
         quantification_dir=config['quantification_dir']
 	
     output:
@@ -419,8 +413,6 @@ rule produce_recalculations_call:
                 python_connect_string={params.python_connect_string} \
                 python_password={params.python_password} \
 		deconv_ref={params.deconv_ref} \
-		methods_base={params.methods_base} \
-                methods_dif={params.methods_dif} \
 		quantification_dir={params.quantification_dir} \
                 -s {workflow.basedir}/Snakefile-recalculations {params.log_handler_script}
                 
