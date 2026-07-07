@@ -48,6 +48,8 @@ For differential RNA-seq and microarray experiments, the following outputs are g
 3. **Differential GSEA rule**
 - Outputs: `{accession}.{contrast_id}.{ext_db}.gsea.tsv`
 - Outputs: `{accession}.{contrast_id}.{ext_db}.gsea_list.tsv`
+- Outputs: `{accession}.{contrast_id}.{ext_db}.gsea.dotplot.png`
+- Outputs: `{accession}.{contrast_id}.{ext_db}.gsea.dotplot.svg`
 
 4. **atlas_experiment_summary rule**
 - Output: `{accession}-atlasExperimentSummary.Rdata`
