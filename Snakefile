@@ -489,7 +489,7 @@ rule differential_gsea:
             touch {wildcards.accession}.{wildcards.contrast_id}.{wildcards.ext_db}.gsea.tsv
             touch {wildcards.accession}.{wildcards.contrast_id}.{wildcards.ext_db}.gsea_list.tsv
         fi
-        Rscript {workflow.basedir}/atlas-analysis/gsea/plot_gsea_results.R {output.gsea} {output.gsea_dotplot_png} {output.gsea_dotplot_svg} "$plotTitle" {wildcards.ext_db} 10
+        Rscript {workflow.basedir}/atlas-analysis/gsea/plot_gsea_results.R {output.gsea} {output.gsea_dotplot_png} {output.gsea_dotplot_svg} "$plotTitle" {wildcards.ext_db} 10 "$annotationFile" {output.gsea_list}
         """
 
 rule check_differential_gsea:
