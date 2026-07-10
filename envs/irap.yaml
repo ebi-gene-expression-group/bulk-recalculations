@@ -6,5 +6,5 @@ dependencies:
  - irap-components=0.0.1
  - grep=3.4
  - bioconductor-piano=1.22.0
- - r-ggplot2
- - r-svglite
+ - r-ggplot2=4.0.3
+ - r-svglite=2.2.2
