@@ -476,10 +476,7 @@ rule differential_gsea:
             fi
         fi
         set -e
-        plotTitle="
-        Top 10 {params.ext_db_label} enriched in
-        {params.contrast_label}
-        (Fisher-exact, FDR < 0.1)"
+        plotTitle=$'Top 10 {params.ext_db_label} enriched in\n{params.contrast_label}\n(Fisher-exact, FDR < 0.1)'
         annotationFile=$(find_properties_file_gsea {params.organism} {wildcards.ext_db})
         if [ -s "$annotationFile" ]; then
             pvalColNum=$(get_contrast_colnum $analyticsFile {wildcards.contrast_id} "p-value")
