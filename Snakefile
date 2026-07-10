@@ -455,8 +455,8 @@ rule differential_gsea:
     output:
         gsea="{accession}.{contrast_id}.{ext_db}.gsea.tsv",
         gsea_list="{accession}.{contrast_id}.{ext_db}.gsea_list.tsv",
-        gsea_dotplot_png="{accession}.{contrast_id}.{ext_db}.gsea.dotplot.png",
-        gsea_dotplot_svg="{accession}.{contrast_id}.{ext_db}.gsea.dotplot.svg"
+        gsea_plot_png="{accession}.{contrast_id}.{ext_db}.gsea_class_non_dir_both.png",
+        gsea_plot_svg="{accession}.{contrast_id}.{ext_db}.gsea_class_non_dir_both.svg"
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
@@ -482,11 +482,13 @@ rule differential_gsea:
             pvalColNum=$(get_contrast_colnum $analyticsFile {wildcards.contrast_id} "p-value")
             log2foldchangeColNum=$(get_contrast_colnum $analyticsFile {wildcards.contrast_id} "log2foldchange")
             {workflow.basedir}/bin/gxa_calculate_gsea.sh {wildcards.accession} $annotationFile $analyticsFile $pvalColNum $log2foldchangeColNum ./ {wildcards.contrast_id} "$plotTitle" {params.organism} {wildcards.ext_db} {threads}
+            mv {output.gsea_plot_png} {output.gsea_plot_png}_old
+            mv {output.gsea_plot_png%.png}.ps {output.gsea_plot_png%.png}.ps_old
+            Rscript {workflow.basedir}/atlas-analysis/gsea/plot_gsea_results.R {output.gsea} {output.gsea_plot_png} {output.gsea_plot_svg} "$plotTitle" {wildcards.ext_db} 10 "$annotationFile" {output.gsea_list}
         else
             touch {wildcards.accession}.{wildcards.contrast_id}.{wildcards.ext_db}.gsea.tsv
             touch {wildcards.accession}.{wildcards.contrast_id}.{wildcards.ext_db}.gsea_list.tsv
         fi
-        Rscript {workflow.basedir}/atlas-analysis/gsea/plot_gsea_results.R {output.gsea} {output.gsea_dotplot_png} {output.gsea_dotplot_svg} "$plotTitle" {wildcards.ext_db} 10 "$annotationFile" {output.gsea_list}
         """
 
 rule check_differential_gsea:
