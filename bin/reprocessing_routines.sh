@@ -274,6 +274,10 @@ copy_experiment() {
     if [ ! -d "$target_dir" ] ; then
         copy_experiment_usage "Not a directory: $target_dir"
     fi
+
+	if [ -d "$source_dir" ]; then
+    	rsyncExperimentFolders --prune-empty-dirs -b --backup-dir "$target_dir/archive" --suffix ".1" --delete --delete-excluded  "$source_dir"/ "$target_dir"/
+    fi
 }
 
 mktemp_dir() {
