@@ -11,7 +11,8 @@ def get_array_design_from_xml():
     itemlist = xmldoc.getElementsByTagName('array_design')
     array_designs_grabbed = []
     for s in itemlist:
-        array_designs_grabbed.append( " ".join(s.firstChild.nodeValue.split() ) )
+        array_design = " ".join(s.firstChild.nodeValue.split())
+        array_designs_grabbed.append(validate_identifier(array_design, "array design"))
     return array_designs_grabbed
 
 
@@ -197,4 +198,3 @@ def get_outputs():
 rule all:
     input:
         required_outputs=get_outputs()
-
