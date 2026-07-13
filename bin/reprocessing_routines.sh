@@ -213,7 +213,7 @@ copy_experiment_from_analysis_to_atlas_exps(){
 # - copy the subset of the data
 copy_experiment() {
     rsyncExperimentFolders(){
-	    rsync -a --out-format="%n%L" \
+	    rsync -a --copy-links --out-format="%n%L" \
 	        --exclude '*fpkm*' \
 	        --filter 'P archive/***' \
 	        --exclude '*condensed-sdrf*' \
@@ -273,15 +273,6 @@ copy_experiment() {
 
     if [ ! -d "$target_dir" ] ; then
         copy_experiment_usage "Not a directory: $target_dir"
-    fi
-
-    if [ -d "$source_dir" ]; then
-        first_symlink=$(find "$source_dir" -type l -print -quit)
-        if [ -n "$first_symlink" ]; then
-            echo "copy_experiment ERROR: Refusing to copy experiment containing symlink: $first_symlink" >&2
-            return 1
-        fi
-    	rsyncExperimentFolders --prune-empty-dirs -b --backup-dir "$target_dir/archive" --suffix ".1" --delete --delete-excluded  "$source_dir"/ "$target_dir"/
     fi
 }
 
