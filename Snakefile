@@ -412,7 +412,7 @@ localrules: check_differential_gsea, link_baseline_coexpression, link_baseline_h
 ruleorder: decorate_differential_rnaseq > decorate_differential_proteomics
 
 wildcard_constraints:
-    accession="E-\D+-\d+",
+    accession=r"E-[A-Z]+-\d+",
     metric="tpms|fpkms",
     contrast_id="[A-Za-z0-9_.-]+",
     assay_id="[A-Za-z0-9_.-]+",
