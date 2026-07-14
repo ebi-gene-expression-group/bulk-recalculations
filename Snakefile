@@ -474,7 +474,7 @@ rule differential_gsea:
             fi
         fi
         set -e
-        plotTitle=$'Top 10 {params.ext_db_label} enriched in\n{params.contrast_label}\n(Fisher-exact, FDR < 0.1)'
+        plotTitle=$(printf 'Top 10 %s enriched in\n%s\n(Fisher-exact, FDR < 0.1)' {params.ext_db_label:q} {params.contrast_label:q})
         annotationFile=$(find_properties_file_gsea {params.organism} {wildcards.ext_db})
         if [ -s "$annotationFile" ]; then
             pvalColNum=$(get_contrast_colnum $analyticsFile {wildcards.contrast_id} "p-value")
@@ -508,7 +508,7 @@ rule plot_differential_gsea:
         export BIOENTITIES_PROPERTIES_PATH={params.BIOENTITIES_PROPERTIES_PATH}
         source {workflow.basedir}/bin/gsea_functions.sh
 
-        plotTitle=$'Top 10 {params.ext_db_label} enriched in\n{params.contrast_label}\n(Fisher-exact, FDR < 0.1)'
+        plotTitle=$(printf 'Top 10 %s enriched in\n%s\n(Fisher-exact, FDR < 0.1)' {params.ext_db_label:q} {params.contrast_label:q})
         set +e
         annotationFile=$(find_properties_file_gsea {params.organism} {wildcards.ext_db})
         set -e
