@@ -1083,7 +1083,7 @@ rule generate_methods_baseline_rnaseq:
         ref_fasta=$(jq -r '.fasta' "$params_json" | xargs basename)
 		ref_gtf=$(jq -r '.gtf' "$params_json" | xargs basename)
 
-        echo -e "Reference\t " > {output.methods}
+        echo -e "References\t " > {output.methods}
         echo -e "Genome (Fasta)\t$ref_fasta" >> {output.methods}
 		echo -e "Genes (GTF)\t$ref_gtf" >> {output.methods}
         echo -e "\t" >> {output.methods}
@@ -1096,7 +1096,9 @@ rule generate_methods_baseline_rnaseq:
             exit 1
         fi
 
+        echo -e "\t" >> {output.methods}
         echo -e "Post processing\thttps://github.com/ebi-gene-expression-group/bulk-recalculations.git" >> {output.methods}
+        echo -e "Tool\tVersion" >> {output.methods}
 
 		cat {output.methods}
 
@@ -1384,7 +1386,7 @@ rule generate_methods_differential_rnaseq:
         ref_fasta=$(jq -r '.fasta' "$params_json" | xargs basename)
 		ref_gtf=$(jq -r '.gtf' "$params_json" | xargs basename)
 
-        echo -e "Reference\t " > {output.methods}
+        echo -e "References\t " > {output.methods}
         echo -e "Genome (Fasta)\t$ref_fasta" >> {output.methods}
 		echo -e "Genes (GTF)\t$ref_gtf" >> {output.methods}
         echo -e "\t" >> {output.methods}
@@ -1397,8 +1399,9 @@ rule generate_methods_differential_rnaseq:
             exit 1
         fi
 
+        echo -e "\t" >> {output.methods}
         echo -e "Post processing\thttps://github.com/ebi-gene-expression-group/bulk-recalculations.git" >> {output.methods}
-        
+        echo -e "Tool\tVersion" >> {output.methods}
 		echo -e "Differential Expression\tDESeq2 version: $deseq2version" >> {output.methods}
 		echo -e "Gene Set Overlap\tFisher (non-directional), FDR &lt; 0.1 using <a href="http://www.bioconductor.org/packages/release/bioc/html/piano.html">piano</a>"  >> {output.methods}
 
