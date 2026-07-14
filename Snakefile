@@ -1079,21 +1079,26 @@ rule generate_methods_baseline_rnaseq:
             echo "$params_json not found for {wildcards.accession} "
             exit 1
         fi
+		
+        ref_fasta=$(jq -r '.fasta' "$params_json" | xargs basename)
+		ref_gtf=$(jq -r '.gtf' "$params_json" | xargs basename)
 
-        python {workflow.basedir}/bin/gxa_generate_method.py "$expQuantDir/pipeline_info/nf_core_rnaseq_software_mqc_versions.yml" > {output.methods}
+        echo -e "Reference\t " > {output.methods}
+        echo -e "Genome (Fasta)\t$ref_fasta" >> {output.methods}
+		echo -e "Genes (GTF)\t$ref_gtf" >> {output.methods}
+        echo -e "\t" >> {output.methods}
+        echo -e "Quantification\t " >> {output.methods}
+
+        python {workflow.basedir}/bin/gxa_generate_method.py "$expQuantDir/pipeline_info/nf_core_rnaseq_software_mqc_versions.yml" >> {output.methods}
 
         if [ $? -ne 0 ]; then
             echo "ERROR: Failed to generate analysis methods for {wildcards.accession}" >&2
             exit 1
         fi
 
+        echo -e "Post processing\thttps://github.com/ebi-gene-expression-group/bulk-recalculations.git" >> {output.methods}
+
 		cat {output.methods}
-
-		ref_fasta=$(jq -r '.fasta' "$params_json" | xargs basename)
-		ref_gtf=$(jq -r '.gtf' "$params_json" | xargs basename)
-
-		echo -e "Genome (Fasta)\t$ref_fasta" >> {output.methods}
-		echo -e "Genes (GTF)\t$ref_gtf" >> {output.methods}
 
         cp {output.methods} {wildcards.accession}-analysis-methods.tsv
         """
@@ -1376,20 +1381,24 @@ rule generate_methods_differential_rnaseq:
             exit 1
         fi
 
-        python {workflow.basedir}/bin/gxa_generate_method.py "$expQuantDir/pipeline_info/nf_core_rnaseq_software_mqc_versions.yml" > {output.methods}
+        ref_fasta=$(jq -r '.fasta' "$params_json" | xargs basename)
+		ref_gtf=$(jq -r '.gtf' "$params_json" | xargs basename)
+
+        echo -e "Reference\t " > {output.methods}
+        echo -e "Genome (Fasta)\t$ref_fasta" >> {output.methods}
+		echo -e "Genes (GTF)\t$ref_gtf" >> {output.methods}
+        echo -e "\t" >> {output.methods}
+        echo -e "Quantification\t " >> {output.methods}
+
+        python {workflow.basedir}/bin/gxa_generate_method.py "$expQuantDir/pipeline_info/nf_core_rnaseq_software_mqc_versions.yml" >> {output.methods}
 
         if [ $? -ne 0 ]; then
             echo "ERROR: Failed to generate analysis methods for {wildcards.accession}" >&2
             exit 1
         fi
 
-		ref_fasta=$(jq -r '.fasta' "$params_json" | xargs basename)
-		ref_gtf=$(jq -r '.gtf' "$params_json" | xargs basename)
-
-
-		echo -e "Genome (Fasta)\t$ref_fasta" >> {output.methods}
-		echo -e "Genes (GTF)\t$ref_gtf" >> {output.methods}
-
+        echo -e "Post processing\thttps://github.com/ebi-gene-expression-group/bulk-recalculations.git" >> {output.methods}
+        
 		echo -e "Differential Expression\tDESeq2 version: $deseq2version" >> {output.methods}
 		echo -e "Gene Set Overlap\tFisher (non-directional), FDR &lt; 0.1 using <a href="http://www.bioconductor.org/packages/release/bioc/html/piano.html">piano</a>"  >> {output.methods}
 
