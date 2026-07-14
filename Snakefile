@@ -474,12 +474,12 @@ rule differential_gsea:
             fi
         fi
         set -e
-        plotTitle=$(printf 'Top 10 %s enriched in\n%s\n(Fisher-exact, FDR < 0.1)' {params.ext_db_label:q} {params.contrast_label:q})
         annotationFile=$(find_properties_file_gsea {params.organism} {wildcards.ext_db})
         if [ -s "$annotationFile" ]; then
             pvalColNum=$(get_contrast_colnum $analyticsFile {wildcards.contrast_id} "p-value")
             log2foldchangeColNum=$(get_contrast_colnum $analyticsFile {wildcards.contrast_id} "log2foldchange")
             {workflow.basedir}/bin/gxa_calculate_gsea.sh {wildcards.accession} $annotationFile $analyticsFile $pvalColNum $log2foldchangeColNum ./ {wildcards.contrast_id} "$plotTitle" {params.organism} {wildcards.ext_db} {threads}
+            rm -rf {wildcards.accession}.{wildcards.contrast_id}.{wildcards.ext_db}.gsea_class_non_dir_both.png
         else
             touch {wildcards.accession}.{wildcards.contrast_id}.{wildcards.ext_db}.gsea.tsv
             touch {wildcards.accession}.{wildcards.contrast_id}.{wildcards.ext_db}.gsea_list.tsv
@@ -513,7 +513,6 @@ rule plot_differential_gsea:
         annotationFile=$(find_properties_file_gsea {params.organism} {wildcards.ext_db})
         set -e
 
-        rm -f {output.gsea_plot_png} {output.gsea_plot_png%.png}.ps {output.gsea_plot_svg}
         Rscript {workflow.basedir}/atlas-analysis/gsea/plot_gsea_results.R {input.gsea} {output.gsea_plot_png} {output.gsea_plot_svg} "$plotTitle" {wildcards.ext_db} 10 "$annotationFile" {input.gsea_list}
         """
 
