@@ -1,6 +1,7 @@
 from sys import exit
 import yaml
 import os
+import re
 
 os.makedirs('logs', exist_ok='True')
 
@@ -8,6 +9,28 @@ os.makedirs('logs', exist_ok='True')
 # atom: set grammar=python
 
 metadata_summary = {}
+
+SAFE_IDENTIFIER_PATTERN = re.compile(r"^[A-Za-z0-9_.-]+$")
+
+def validate_identifier(value, field):
+    if value is None:
+        raise ValueError(f"Missing {field}")
+    value = str(value)
+    if not SAFE_IDENTIFIER_PATTERN.fullmatch(value):
+        raise ValueError(f"Unsafe {field}: {value!r}")
+    return value
+
+def validate_identifiers(values, field):
+    return [validate_identifier(value, field) for value in values]
+
+def validate_label(value, field):
+    value = str(value)
+    if any(char in value for char in ("\x00", "\r", "\n")):
+        raise ValueError(f"Unsafe {field}: {value!r}")
+    return value
+
+def validate_labels(values, field):
+    return [validate_label(value, field) for value in values]
 
 def read_metadata_summary():
     global metadata_summary
@@ -73,36 +96,40 @@ def get_organism():
 
 def get_contrast_labels():
     if 'contrast_labels' in config:
-        return f"{config['contrast_labels']}".split("&&")
+        return validate_labels(f"{config['contrast_labels']}".split("&&"), "contrast label")
     else:
         read_metadata_summary()
-        return [metadata_summary['contrasts'][x] for x in metadata_summary['contrasts']]
+        return validate_labels([metadata_summary['contrasts'][x] for x in metadata_summary['contrasts']], "contrast label")
 
 def get_contrast_ids():
     if 'contrast_ids' in config:
-        return f"{config['contrast_ids']}".split("::")
+        return validate_identifiers(f"{config['contrast_ids']}".split("::"), "contrast id")
     else:
         read_metadata_summary()
-        return [x for x in metadata_summary['contrasts']]
+        return validate_identifiers([x for x in metadata_summary['contrasts']], "contrast id")
 
 def get_assay_labels():
     if 'assay_labels' in config:
-        return f"{config['assay_labels']}".split("&&")
+        return validate_labels(f"{config['assay_labels']}".split("&&"), "assay label")
     else:
         read_metadata_summary()
-        return [metadata_summary['assays'][x] for x in metadata_summary['assays']]
+        return validate_labels([metadata_summary['assays'][x] for x in metadata_summary['assays']], "assay label")
 
 def get_assay_ids():
     if 'assay_ids' in config:
-        return f"{config['assay_ids']}".split("::")
+        return validate_identifiers(f"{config['assay_ids']}".split("::"), "assay id")
     else:
-        return [x for x in metadata_summary['assays']]
+        return validate_identifiers([x for x in metadata_summary['assays']], "assay id")
 
 def get_ext_db():
     if 'ext' in config:
-        return f"{config['ext']}".split(":")
+        ext_dbs = f"{config['ext']}".split(":")
     else:
-        return ["go", "reactome", "interpro"]
+        ext_dbs = ["go", "reactome", "interpro"]
+    invalid_ext_dbs = [ext_db for ext_db in ext_dbs if ext_db not in plot_labels]
+    if invalid_ext_dbs:
+        raise ValueError(f"Unsupported ext db value(s): {invalid_ext_dbs}")
+    return ext_dbs
 
 def get_metrics_recalculations():
     """
@@ -202,15 +229,20 @@ def get_contrast_label(wildcards):
     metadata_summary.
     """
     global metadata_summary
-    if wildcards['contrast_id'] in metadata_summary['contrasts']:
-        return metadata_summary['contrasts'][wildcards['contrast_id']]
+    contrast_id = validate_identifier(wildcards['contrast_id'], "contrast id")
+    if contrast_id in metadata_summary['contrasts']:
+        return validate_label(metadata_summary['contrasts'][contrast_id], "contrast label")
+    raise ValueError(f"Unknown contrast id: {contrast_id}")
 
 def get_ext_db_label(wildcards):
     """
     Meant to be used within a rule, where a specific ext_db is set in
     the wildcards.
     """
-    return plot_labels[wildcards['ext_db']]
+    ext_db = validate_identifier(wildcards['ext_db'], "ext db")
+    if ext_db not in plot_labels:
+        raise ValueError(f"Unsupported ext db value: {ext_db}")
+    return plot_labels[ext_db]
 
 def get_assay_label(wildcards):
     """
@@ -219,7 +251,17 @@ def get_assay_label(wildcards):
     metadata_summary.
     """
     global metadata_summary
-    return metadata_summary['assays'][wildcards['assay_id']]
+    assay_id = validate_identifier(wildcards['assay_id'], "assay id")
+    if assay_id not in metadata_summary['assays']:
+        raise ValueError(f"Unknown assay id: {assay_id}")
+    return validate_label(metadata_summary['assays'][assay_id], "assay label")
+
+def get_gsea_plot_title(wildcards):
+    return (
+        f"Top 10 {get_ext_db_label(wildcards)} enriched in\n"
+        f"{get_contrast_label(wildcards)}\n"
+        "(Fisher-exact, FDR < 0.1)"
+    )
 
 def get_mem_mb(wildcards, attempt):
     """
@@ -321,7 +363,8 @@ def get_array_design_from_xml(wildcards):
     itemlist = xmldoc.getElementsByTagName('array_design')
     array_designs_grabbed = []
     for s in itemlist:
-        array_designs_grabbed.append( " ".join(s.firstChild.nodeValue.split() ) )
+        array_design = " ".join(s.firstChild.nodeValue.split())
+        array_designs_grabbed.append(validate_identifier(array_design, "array design"))
     return array_designs_grabbed
 
 
@@ -369,8 +412,13 @@ localrules: check_differential_gsea, link_baseline_coexpression, link_baseline_h
 ruleorder: decorate_differential_rnaseq > decorate_differential_proteomics
 
 wildcard_constraints:
-    accession="E-\D+-\d+",
-    metric="tpms|fpkms"
+    accession=r"E-[A-Z]+-\d+",
+    metric="tpms|fpkms",
+    contrast_id="[A-Za-z0-9_.-]+",
+    assay_id="[A-Za-z0-9_.-]+",
+    array_design="[A-Za-z0-9_.-]+",
+    gid="[A-Za-z0-9_.-]+",
+    assay="[A-Za-z0-9_.-]+"
 
 
 rule percentile_ranks:
@@ -451,6 +499,7 @@ rule differential_gsea:
         BIOENTITIES_PROPERTIES_PATH=config['bioentities_properties'],
         contrast_label=get_contrast_label,
         ext_db_label=get_ext_db_label,
+        plot_title=get_gsea_plot_title,
         exp_type=get_from_config_or_metadata_summary('experiment_type')
     output:
         gsea="{accession}.{contrast_id}.{ext_db}.gsea.tsv",
@@ -474,7 +523,7 @@ rule differential_gsea:
             fi
         fi
         set -e
-        plotTitle=$'Top 10 {params.ext_db_label} enriched in\n{params.contrast_label}\n(Fisher-exact, FDR < 0.1)'
+        plotTitle={params.plot_title:q}
         annotationFile=$(find_properties_file_gsea {params.organism} {wildcards.ext_db})
         if [ -s "$annotationFile" ]; then
             pvalColNum=$(get_contrast_colnum $analyticsFile {wildcards.contrast_id} "p-value")
@@ -2146,13 +2195,13 @@ def parse_groups(xml_path):
         if local(g.tag) != "assay_group":
             continue
 
-        gid = g.attrib.get("id")
+        gid = validate_identifier(g.attrib.get("id"), "assay group id")
         label = g.attrib.get("label", gid)
 
         assays = []
         for child in g:
             if local(child.tag) == "assay" and child.text:
-                assays.append(child.text.strip())
+                assays.append(validate_identifier(child.text.strip(), "assay"))
 
         groups[gid] = {"label": label, "assays": assays}
 
