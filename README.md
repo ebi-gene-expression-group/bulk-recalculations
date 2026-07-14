@@ -45,7 +45,7 @@ For differential RNA-seq and microarray experiments, the following outputs are g
 - Outputs: `{accession}.{contrast_id}.genes.pval.bedGraph`
 - Outputs: `{accession}.{contrast_id}.genes.log2foldchange.bedGraph`
 
-3. **Differential GSEA rule**
+3. **Differential GSEA and plot rules**
 - Outputs: `{accession}.{contrast_id}.{ext_db}.gsea.tsv`
 - Outputs: `{accession}.{contrast_id}.{ext_db}.gsea_list.tsv`
 - Outputs: `{accession}.{contrast_id}.{ext_db}.gsea_class_non_dir_both.png`
@@ -81,6 +81,7 @@ For proteomics experiments (`proteomics_baseline`, `proteomics_baseline_dia`, `p
 | atlas_experiment_summary    |  &#x2713;  |       &#x2713;       |         &#x2713;        |
 | check_differential_gsea     |            |       &#x2713;       |         &#x2713;        |
 | differential_gsea           |            |       &#x2713;       |         &#x2713;        |
+| plot_differential_gsea      |            |       &#x2713;       |         &#x2713;        |
 | differential_tracks         |            |       &#x2713;       |         &#x2713;        |
 | percentile_ranks            |            |       &#x2713;       |         &#x2713;        |
 | baseline_coexpression       |  &#x2713;  |                      |                         |

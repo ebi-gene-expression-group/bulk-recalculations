@@ -454,9 +454,7 @@ rule differential_gsea:
         exp_type=get_from_config_or_metadata_summary('experiment_type')
     output:
         gsea="{accession}.{contrast_id}.{ext_db}.gsea.tsv",
-        gsea_list="{accession}.{contrast_id}.{ext_db}.gsea_list.tsv",
-        gsea_plot_png="{accession}.{contrast_id}.{ext_db}.gsea_class_non_dir_both.png",
-        gsea_plot_svg="{accession}.{contrast_id}.{ext_db}.gsea_class_non_dir_both.svg"
+        gsea_list="{accession}.{contrast_id}.{ext_db}.gsea_list.tsv"
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
@@ -482,12 +480,41 @@ rule differential_gsea:
             pvalColNum=$(get_contrast_colnum $analyticsFile {wildcards.contrast_id} "p-value")
             log2foldchangeColNum=$(get_contrast_colnum $analyticsFile {wildcards.contrast_id} "log2foldchange")
             {workflow.basedir}/bin/gxa_calculate_gsea.sh {wildcards.accession} $annotationFile $analyticsFile $pvalColNum $log2foldchangeColNum ./ {wildcards.contrast_id} "$plotTitle" {params.organism} {wildcards.ext_db} {threads}
-            rm -f {output.gsea_plot_png} {output.gsea_plot_png%.png}.ps
-            Rscript {workflow.basedir}/atlas-analysis/gsea/plot_gsea_results.R {output.gsea} {output.gsea_plot_png} {output.gsea_plot_svg} "$plotTitle" {wildcards.ext_db} 10 "$annotationFile" {output.gsea_list}
         else
             touch {wildcards.accession}.{wildcards.contrast_id}.{wildcards.ext_db}.gsea.tsv
             touch {wildcards.accession}.{wildcards.contrast_id}.{wildcards.ext_db}.gsea_list.tsv
         fi
+        """
+
+rule plot_differential_gsea:
+    conda: "envs/gsea-plot.yaml"
+    log: "logs/{accession}.{contrast_id}.{ext_db}-plot_differential_gsea.log"
+    resources: mem_mb=get_mem_mb
+    input:
+        gsea="{accession}.{contrast_id}.{ext_db}.gsea.tsv",
+        gsea_list="{accession}.{contrast_id}.{ext_db}.gsea_list.tsv"
+    params:
+        organism=get_organism(),
+        BIOENTITIES_PROPERTIES_PATH=config['bioentities_properties'],
+        contrast_label=get_contrast_label,
+        ext_db_label=get_ext_db_label
+    output:
+        gsea_plot_png="{accession}.{contrast_id}.{ext_db}.gsea_class_non_dir_both.png",
+        gsea_plot_svg="{accession}.{contrast_id}.{ext_db}.gsea_class_non_dir_both.svg"
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+        export BIOENTITIES_PROPERTIES_PATH={params.BIOENTITIES_PROPERTIES_PATH}
+        source {workflow.basedir}/bin/gsea_functions.sh
+
+        plotTitle=$'Top 10 {params.ext_db_label} enriched in\n{params.contrast_label}\n(Fisher-exact, FDR < 0.1)'
+        set +e
+        annotationFile=$(find_properties_file_gsea {params.organism} {wildcards.ext_db})
+        set -e
+
+        rm -f {output.gsea_plot_png} {output.gsea_plot_png%.png}.ps {output.gsea_plot_svg}
+        Rscript {workflow.basedir}/atlas-analysis/gsea/plot_gsea_results.R {input.gsea} {output.gsea_plot_png} {output.gsea_plot_svg} "$plotTitle" {wildcards.ext_db} 10 "$annotationFile" {input.gsea_list}
         """
 
 rule check_differential_gsea:
@@ -499,7 +526,9 @@ rule check_differential_gsea:
     log: "logs/{accession}.{contrast_id}.{ext_db}-check-differential_gsea.log"
     input:
         gsea="{accession}.{contrast_id}.{ext_db}.gsea.tsv",
-        gsea_list="{accession}.{contrast_id}.{ext_db}.gsea_list.tsv"
+        gsea_list="{accession}.{contrast_id}.{ext_db}.gsea_list.tsv",
+        gsea_plot_png="{accession}.{contrast_id}.{ext_db}.gsea_class_non_dir_both.png",
+        gsea_plot_svg="{accession}.{contrast_id}.{ext_db}.gsea_class_non_dir_both.svg"
     output:
         temp_gsea=temp("logs/{accession}.{contrast_id}.{ext_db}.check_differential_gsea.done"),
         temp_gsea_list=temp("logs/{accession}.{contrast_id}.{ext_db}.check_differential_gsea_list.done")
