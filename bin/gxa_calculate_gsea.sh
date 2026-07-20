@@ -29,9 +29,8 @@ rm -rf ${expPath}/${expAcc}.${organism}.${contrastId}.ensgene.${geneSetType}.tsv
 rm -rf ${expPath}/${expAcc}.${organism}.${contrastId}.wbpsgene.${geneSetType}.tsv.aux*
 rm -rf ${expPath}/${expAcc}.${organism}.${contrastId}.${geneSetType}.gsea*
 
-# Set up environment to be able to run irap_GSE_piano
+# Set up environment to be able to run the standalone piano wrapper.
 # done by conda
-# source $IRAP_SINGLE_LIB/irap_environment.sh
 
 geneSetFilePath=`ls $geneSetFile`
 if [ $? -eq 0 ]; then
@@ -51,9 +50,9 @@ if [ $? -eq 0 ]; then
    fi
 
    set -v
-   irap_GSE_piano --tsv=$analyticsFile --pvalue-col=$pvalColNum --foldchange-col=$log2foldchangeColNum --title="$plotTitle" --pvalue=0.05 --gs_fdr=0.1 --method=fisher-exact --dup-use-best --plot-annot-only --top=10 --minsize 5 --maxsize 100 --descr $mappingFile --go=$geneSetFilePath --cores=$numberCores --out=$outputFile 2>&1
+   Rscript "${scriptDir}/gxa_run_piano_gsea.R" --tsv "$analyticsFile" --pvalue-col "$pvalColNum" --foldchange-col "$log2foldchangeColNum" --pvalue 0.05 --gs-fdr 0.1 --minsize 5 --maxsize 100 --descr "$mappingFile" --go "$geneSetFilePath" --out "$outputFile" 2>&1
    if [ $? -ne 0 ]; then
-	echo "ERROR: Command: 'irap_GSE_piano --tsv=$analyticsFile --pvalue-col=$pvalColNum --foldchange-col=$log2foldchangeColNum --title=\"$plotTitle\" --pvalue=0.05 --gs_fdr=0.1 --method=fisher-exact --dup-use-best --plot-annot-only --top=10 --minsize 5 --maxsize 100 --descr $mappingFile --go=$geneSetFilePath --cores=$numberCores --out=$outputFile' failed" >&2
+	echo "ERROR: Command: 'run_piano_gsea.R --tsv \"$analyticsFile\" --pvalue-col \"$pvalColNum\" --foldchange-col \"$log2foldchangeColNum\" --pvalue 0.05 --gs-fdr 0.1 --minsize 5 --maxsize 100 --descr \"$mappingFile\" --go \"$geneSetFilePath\" --out \"$outputFile\"' failed" >&2
 	exit 1
    fi
    unset -v

@@ -441,7 +441,7 @@ rule differential_tracks:
 
 # To be remove/modify
 rule differential_gsea:
-    conda: "envs/irap.yaml"
+    conda: "envs/piano-gsea.yaml"
     log: "logs/{accession}.{contrast_id}.{ext_db}-differential_gsea.log"
     resources: mem_mb=get_mem_mb
     threads: 8
