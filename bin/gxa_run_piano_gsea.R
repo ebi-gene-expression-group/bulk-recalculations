@@ -8,6 +8,7 @@ usage <- paste(
   "                    --go <gene-set.tsv> --descr <term-to-accession.tsv>",
   "                    --out <output-prefix> [--pvalue 0.05] [--gs-fdr 0.1]",
   "                    [--minsize 5] [--maxsize 100]",
+  "                    [--annot-only true] [--dup-best-stat fold-change]",
   sep = "\n"
 )
 
@@ -19,16 +20,33 @@ parse_args <- function(args) {
     if (!startsWith(key, "--")) {
       stop("Unexpected argument: ", key, call. = FALSE)
     }
-    name <- sub("^--", "", key)
-    if (i == length(args) || startsWith(args[[i + 1]], "--")) {
+
+    key <- sub("^--", "", key)
+    if (grepl("=", key, fixed = TRUE)) {
+      name <- sub("=.*$", "", key)
+      parsed[[name]] <- sub("^[^=]*=", "", key)
+      i <- i + 1
+    } else if (i == length(args) || startsWith(args[[i + 1]], "--")) {
+      name <- key
       parsed[[name]] <- TRUE
       i <- i + 1
     } else {
+      name <- key
       parsed[[name]] <- args[[i + 1]]
       i <- i + 2
     }
   }
   parsed
+}
+
+arg_value <- function(args, name, default = NULL, aliases = character()) {
+  for (key in c(name, aliases)) {
+    value <- args[[key]]
+    if (!is.null(value)) {
+      return(value)
+    }
+  }
+  default
 }
 
 required_arg <- function(args, name) {
@@ -39,8 +57,8 @@ required_arg <- function(args, name) {
   value
 }
 
-as_numeric_arg <- function(args, name, default = NULL) {
-  value <- args[[name]]
+as_numeric_arg <- function(args, name, default = NULL, aliases = character()) {
+  value <- arg_value(args, name, default = NULL, aliases = aliases)
   if (is.null(value)) {
     return(default)
   }
@@ -49,6 +67,24 @@ as_numeric_arg <- function(args, name, default = NULL) {
     stop("Argument --", name, " must be numeric", call. = FALSE)
   }
   numeric_value
+}
+
+as_logical_arg <- function(args, name, default = FALSE) {
+  value <- arg_value(args, name, default = NULL)
+  if (is.null(value)) {
+    return(default)
+  }
+  if (is.logical(value)) {
+    return(isTRUE(value))
+  }
+  value <- tolower(as.character(value))
+  if (value %in% c("true", "t", "1", "yes", "y")) {
+    return(TRUE)
+  }
+  if (value %in% c("false", "f", "0", "no", "n")) {
+    return(FALSE)
+  }
+  stop("Argument --", name, " must be true or false", call. = FALSE)
 }
 
 read_tsv <- function(path, header = TRUE) {
@@ -109,6 +145,43 @@ choose_gene_set_columns <- function(gene_sets, gene_ids, term_to_accession, acce
   candidates[[which.max(scores)]]
 }
 
+select_duplicate_genes <- function(analytics, dup_use_best, dup_best_stat) {
+  duplicated_genes <- duplicated(analytics$gene) | duplicated(analytics$gene, fromLast = TRUE)
+  if (!any(duplicated_genes)) {
+    return(analytics)
+  }
+
+  if (!dup_use_best) {
+    stop("Duplicated genes found. Enable --dup-use-best to proceed.", call. = FALSE)
+  }
+
+  choose_row <- function(rows) {
+    if (length(rows) == 1) {
+      return(rows)
+    }
+
+    if (dup_best_stat == "p-value") {
+      values <- analytics$pvalue[rows]
+      if (all(is.na(values))) {
+        return(integer())
+      }
+      best_value <- min(values, na.rm = TRUE)
+      return(rows[which(values == best_value)[[1]]])
+    }
+
+    values <- abs(analytics$foldchange[rows])
+    if (all(is.na(values))) {
+      return(integer())
+    }
+    best_value <- max(values, na.rm = TRUE)
+    rows[which(values == best_value)[[1]]]
+  }
+
+  rows_by_gene <- split(seq_len(nrow(analytics)), analytics$gene)
+  keep_rows <- unlist(lapply(rows_by_gene, choose_row), use.names = FALSE)
+  analytics[sort(keep_rows), , drop = FALSE]
+}
+
 args <- parse_args(commandArgs(trailingOnly = TRUE))
 
 analytics_file <- required_arg(args, "tsv")
@@ -118,9 +191,15 @@ output_prefix <- required_arg(args, "out")
 pvalue_col <- as.integer(required_arg(args, "pvalue-col"))
 foldchange_col <- as.integer(required_arg(args, "foldchange-col"))
 pvalue_cutoff <- as_numeric_arg(args, "pvalue", 0.05)
-gsea_fdr <- as_numeric_arg(args, "gs-fdr", 0.1)
+gsea_fdr <- as_numeric_arg(args, "gs-fdr", 0.1, aliases = "gs_fdr")
 min_size <- as_numeric_arg(args, "minsize", 5)
 max_size <- as_numeric_arg(args, "maxsize", 100)
+annotated_only <- as_logical_arg(args, "annot-only", TRUE)
+dup_use_best <- as_logical_arg(args, "dup-use-best", TRUE)
+dup_best_stat <- arg_value(args, "dup-best-stat", "fold-change")
+if (!dup_best_stat %in% c("fold-change", "p-value")) {
+  stop("Argument --dup-best-stat must be fold-change or p-value", call. = FALSE)
+}
 
 analytics <- read_tsv(analytics_file, header = TRUE)
 if (pvalue_col < 1 || pvalue_col > ncol(analytics)) {
@@ -135,7 +214,7 @@ gene_ids <- as.character(analytics[[gene_column]])
 pvalues <- suppressWarnings(as.numeric(analytics[[pvalue_col]]))
 foldchanges <- suppressWarnings(as.numeric(analytics[[foldchange_col]]))
 
-valid <- nzchar(gene_ids) & !is.na(gene_ids) & is.finite(pvalues)
+valid <- nzchar(gene_ids) & !is.na(gene_ids)
 analytics <- data.frame(
   gene = gene_ids[valid],
   pvalue = pvalues[valid],
@@ -148,10 +227,9 @@ if (nrow(analytics) == 0) {
   quit(save = "no", status = 0)
 }
 
-analytics$abs_foldchange <- abs(analytics$foldchange)
-analytics$abs_foldchange[!is.finite(analytics$abs_foldchange)] <- -Inf
-analytics <- analytics[order(analytics$gene, analytics$pvalue, -analytics$abs_foldchange), ]
-analytics <- analytics[!duplicated(analytics$gene), ]
+analytics <- select_duplicate_genes(analytics, dup_use_best, dup_best_stat)
+analytics <- analytics[!is.na(analytics$pvalue) & !is.na(analytics$foldchange), , drop = FALSE]
+analytics$pvalue[is.infinite(analytics$pvalue)] <- 1
 
 if (!any(analytics$pvalue <= pvalue_cutoff, na.rm = TRUE)) {
   write_empty_outputs(output_prefix)
@@ -187,6 +265,17 @@ gene_set_data <- unique(gene_set_data)
 if (nrow(gene_set_data) == 0) {
   write_empty_outputs(output_prefix)
   quit(save = "no", status = 0)
+}
+
+if (annotated_only) {
+  annotated_genes <- unique(gene_set_data$gene)
+  analytics <- analytics[analytics$gene %in% annotated_genes, , drop = FALSE]
+  gene_set_data <- gene_set_data[gene_set_data$gene %in% analytics$gene, , drop = FALSE]
+
+  if (nrow(analytics) == 0 || !any(analytics$pvalue <= pvalue_cutoff, na.rm = TRUE)) {
+    write_empty_outputs(output_prefix)
+    quit(save = "no", status = 0)
+  }
 }
 
 gsc <- loadGSC(gene_set_data, type = "data.frame")
