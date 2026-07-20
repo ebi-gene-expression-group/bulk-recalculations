@@ -1097,8 +1097,9 @@ rule generate_methods_baseline_rnaseq:
         fi
 
         echo -e "\t" >> {output.methods}
-        echo -e "Post processing\thttps://github.com/ebi-gene-expression-group/bulk-recalculations.git" >> {output.methods}
+        echo -e "Post processing\t " >> {output.methods}
         echo -e "Tool\tVersion" >> {output.methods}
+        echo -e "Bulk Recalculations\thttps://github.com/ebi-gene-expression-group/bulk-recalculations.git" >> {output.methods}
 
 		cat {output.methods}
 
@@ -1400,9 +1401,10 @@ rule generate_methods_differential_rnaseq:
         fi
 
         echo -e "\t" >> {output.methods}
-        echo -e "Post processing\thttps://github.com/ebi-gene-expression-group/bulk-recalculations.git" >> {output.methods}
+        echo -e "Post processing\t " >> {output.methods}
         echo -e "Tool\tVersion" >> {output.methods}
-		echo -e "Differential Expression\tDESeq2 version: $deseq2version" >> {output.methods}
+        echo -e "Bulk Recalculations\thttps://github.com/ebi-gene-expression-group/bulk-recalculations.git" >> {output.methods}
+        echo -e "Differential Expression\tDESeq2 version: $deseq2version" >> {output.methods}
 		echo -e "Gene Set Overlap\tFisher (non-directional), FDR &lt; 0.1 using <a href="http://www.bioconductor.org/packages/release/bioc/html/piano.html">piano</a>"  >> {output.methods}
 
         cp {output.methods} {wildcards.accession}-analysis-methods.tsv
