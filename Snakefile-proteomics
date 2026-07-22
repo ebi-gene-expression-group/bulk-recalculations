@@ -235,7 +235,8 @@ rule baseline_markers_proteomics:
         starting_check=rules.final_check_tsv_data_file_not_empty_of_data.output,
         config_xml="{accession}-configuration.xml",
         expression_file_undecorated="{accession}.tsv.undecorated.aggregated",
-        expression_file="{accession}.tsv",
+        expression_file="{accession}.tsv"
+    params:
         methods_file="{accession}-analysis-methods.tsv"
     output:
         markers="{accession}-markers.tsv"
@@ -246,11 +247,17 @@ rule baseline_markers_proteomics:
 
         echo "Calculating markers for {wildcards.accession} using bioconductor package MGFR"
 
+        if [ ! -s "{params.methods_file}" ]; then
+            echo "ERROR: missing methods file {params.methods_file}" >&2
+            echo "Expected processing_steps_newer_datasets / rename_files_baseline to create it." >&2
+            exit 1
+        fi
+
         Rscript {workflow.basedir}/atlas-analysis/baselinemarkers/get_marker_genes_proteomics.R {input.config_xml} {input.expression_file_undecorated} {input.expression_file} {output.markers} 0.3 0.5
 
-        echo "Adding markers software version to the methods file {input.methods_file}"
+        echo "Adding markers software version to the methods file {params.methods_file}"
         MGFR_VERSION=$(Rscript -e "cat(as.character(packageVersion('MGFR')))")
-        echo -e "Gene marker identification\tMGFR version: $MGFR_VERSION" >> {input.methods_file}
+        echo -e "Gene marker identification\tMGFR version: $MGFR_VERSION" >> {params.methods_file}
 
         echo "Markers calculation completed for {wildcards.accession}"        
         """
