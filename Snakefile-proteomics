@@ -78,9 +78,11 @@ rule processing_steps_newer_datasets:
 
         echo "Is old dataset: {params.is_old}"  
 
+        source {workflow.basedir}/bin/proteomics_functions.sh
+
         # skip some steps for older proteomics datasets that break otherwise
 
-        if [ "{params.is_old}" = "False" ] && compgen -G "*.done" > /dev/null; then
+        if [ "{params.is_old}" = "False" ] && compgen -G "*.done" > /dev/null && [ ! -s "{wildcards.accession}.tsv.undecorated.backup" ] && [ ! -s "{wildcards.accession}.tsv.undecorated" ]; then
             echo "Skipping: "
             echo "- rename_files"
             echo "- removeGeneNamesInDataMatrix.R"
@@ -89,26 +91,33 @@ rule processing_steps_newer_datasets:
             echo "...as the study is an old proteomics dataset and this sets would break that."
 
         else
-            source {workflow.basedir}/bin/proteomics_functions.sh
-
             # it will generate: 
             # {wildcards.accession}.tsv.undecorated.backup, {wildcards.accession}.tsv.undecorated, {wildcards.accession}.tsv.undecorated.aggregated
 
-            if [ -e {wildcards.accession}.tsv.undecorated ] && [ -e {wildcards.accession}.tsv.undecorated.aggregated ] && [ -e {wildcards.accession}.tsv ]; then
-                echo "These three files already exist for proteomics baseline experiment {wildcards.accession}: {wildcards.accession}.tsv.undecorated, {wildcards.accession}.tsv.undecorated.aggregated, {wildcards.accession}.tsv"
-                echo "If you want to recreate them, please delete them first and rerun the pipeline."
-                echo "If you don't want to recreate them, perhaps delete {wildcards.accession}.old_proteomics_dataset to skip this rule."
-                exit 1
+            # rename analysis methods
+            if [ ! -s "{wildcards.accession}.tsv.undecorated.backup" ]; then
+                echo "renaming {wildcards.accession}"
+                rename_files_baseline {wildcards.accession}
+            else
+                echo "Using existing {wildcards.accession}.tsv.undecorated.backup"
             fi
 
-            # rename analysis methods
-            echo "renaming {wildcards.accession}"
-            rename_files_baseline {wildcards.accession}
+            if [ ! -s "{wildcards.accession}-analysis-methods.tsv" ] && [ -s "analysis-methods.tsv" ]; then
+                echo "Creating {wildcards.accession}-analysis-methods.tsv from analysis-methods.tsv"
+                rename_files_baseline {wildcards.accession}
+            fi
+
+            if [ ! -s "{wildcards.accession}-analysis-methods.tsv" ]; then
+                echo "Missing file {wildcards.accession}-analysis-methods.tsv "
+                exit 1
+            fi
 
             # remove quotes and gename and make matrix in tsv format.
             # remove genename column as we will decorate using recent Ensembl annotations.
 
             if [ -f "{wildcards.accession}.tsv.undecorated.backup" ]; then
+                rm -f {wildcards.accession}.tsv.undecorated
+                rm -f {wildcards.accession}.tsv.undecorated.aggregated
                 echo "Remove genes names and make the matrix to tsv for {wildcards.accession}"
                 {workflow.basedir}/proteomics-import/bin/removeGeneNamesInDataMatrix.R {wildcards.accession}.tsv.undecorated.backup
                 # writes or rewrites {wildcards.accession}.tsv.undecorated
@@ -267,6 +276,7 @@ rule baseline_markers_proteomics:
 
         echo "Adding markers software version to the methods file {params.methods_file}"
         MGFR_VERSION=$(Rscript -e "cat(as.character(packageVersion('MGFR')))")
+        sed -i '/^Gene marker identification[[:space:]]MGFR version:/d' {params.methods_file}
         echo -e "Gene marker identification\tMGFR version: $MGFR_VERSION" >> {params.methods_file}
 
         echo "Markers calculation completed for {wildcards.accession}"        
