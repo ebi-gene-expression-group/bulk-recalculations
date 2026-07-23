@@ -263,7 +263,7 @@ rule baseline_markers_proteomics:
             exit 1
         fi
 
-        Rscript {workflow.basedir}/atlas-analysis/baselinemarkers/get_marker_genes_proteomics.R {input.config_xml} {input.expression_file_undecorated} {input.expression_file} {output.markers} 0.3 0.5
+        Rscript {workflow.basedir}/atlas-analysis/baselinemarkers/get_marker_genes_proteomics.R {input.config_xml} {params.expression_file_undecorated} {params.expression_file} {output.markers} 0.3 0.5
 
         echo "Adding markers software version to the methods file {params.methods_file}"
         MGFR_VERSION=$(Rscript -e "cat(as.character(packageVersion('MGFR')))")
