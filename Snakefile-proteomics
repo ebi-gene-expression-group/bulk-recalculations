@@ -236,7 +236,7 @@ rule baseline_markers_proteomics:
         config_xml="{accession}-configuration.xml",
     params:
         expression_file_undecorated="{accession}.tsv.undecorated.aggregated",
-        expression_file="{accession}.tsv"
+        expression_file="{accession}.tsv",
         methods_file="{accession}-analysis-methods.tsv"
     output:
         markers="{accession}-markers.tsv"
