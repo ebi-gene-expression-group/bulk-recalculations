@@ -6,3 +6,5 @@ dependencies:
  - r-xml2
  - r-dplyr
  - r-data.table
+ - r-this.path
+ - r-tidyr
