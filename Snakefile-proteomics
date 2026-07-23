@@ -234,9 +234,9 @@ rule baseline_markers_proteomics:
     input:
         starting_check=rules.final_check_tsv_data_file_not_empty_of_data.output,
         config_xml="{accession}-configuration.xml",
+    params:
         expression_file_undecorated="{accession}.tsv.undecorated.aggregated",
         expression_file="{accession}.tsv"
-    params:
         methods_file="{accession}-analysis-methods.tsv"
     output:
         markers="{accession}-markers.tsv"
@@ -250,6 +250,16 @@ rule baseline_markers_proteomics:
         if [ ! -s "{params.methods_file}" ]; then
             echo "ERROR: missing methods file {params.methods_file}" >&2
             echo "Expected processing_steps_newer_datasets / rename_files_baseline to create it." >&2
+            exit 1
+        fi
+
+        if [ ! -s "{params.expression_file_undecorated}" ]; then
+            echo "ERROR: missing expression file {params.expression_file_undecorated}" >&2
+            exit 1
+        fi
+
+        if [ ! -s "{params.expression_file}" ]; then
+            echo "ERROR: missing expression file {params.expression_file}" >&2
             exit 1
         fi
 
