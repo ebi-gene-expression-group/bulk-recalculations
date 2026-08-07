@@ -230,6 +230,8 @@ copy_experiment() {
 	        --include '*.Rdata' \
 	        --include '*.pdf' \
 	        --include '*.tsv.gz' \
+	        --include '*.bw' \
+	        --include '*.d4' \
 	        --exclude '*' \
 	        "$@"
 	}
