@@ -248,8 +248,7 @@ rule get_experiment_metadata:
         fi
 	    echo "GTF file location sourced"
 		exp_id={wildcards.accession}
-		exp_type=$(echo "${exp_id#E-}" | sed 's/-.*//')
-
+		exp_type=$(echo "${{exp_id#E-}}" | sed 's/-.*//')
 
         prot_exp_type_all='experimentType="proteomics_'
         # this applies to all proteomics experiments
