@@ -187,8 +187,7 @@ rule get_experiment_metadata:
         atlas_prod = config['atlas_prod'],
         atlas_exps = config['atlas_exps'],
         check_species_file=config['check_sp_file'],
-        prot_magetab_files=config['prot_magetabfiles'],
-		exp_type = lambda wildcards: get_exp_type(wildcards.accession)
+        prot_magetab_files=config['prot_magetabfiles']
     input:
         config_file = "{accession}/{accession}-configuration.xml",
         gtf_dir = config['gtf_dir']
@@ -256,8 +255,8 @@ rule get_experiment_metadata:
             sdrf={params.prot_magetab_files}/{wildcards.accession}/{wildcards.accession}.sdrf.txt
         else
             # Prefer atlas_exps/local files over perl-derived path to avoid stale AE2_PRODUCTION paths
-			idf_candidate="{params.atlas_prod}/atlas_magetab/{params.exp_type}/{wildcards.accession}/{wildcards.accession}.idf.txt"
-			sdrf_candidate="{params.atlas_prod}/atlas_magetab/{params.exp_type}/{wildcards.accession}/{wildcards.accession}.sdrf.txt"
+			idf_candidate="{params.atlas_prod}/atlas_magetab/{get_exp_type(wildcards.accession)}/{wildcards.accession}/{wildcards.accession}.idf.txt"
+			sdrf_candidate="{params.atlas_prod}/atlas_magetab/{get_exp_type(wildcards.accession)}/{wildcards.accession}/{wildcards.accession}.sdrf.txt"
 			
 			if [ -f "$idf_candidate" ] && [ -f "$sdrf_candidate" ]; then
 			    echo "Using MAGETAB from atlas_exps"
