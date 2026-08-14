@@ -257,9 +257,9 @@ rule get_experiment_metadata:
             sdrf={params.prot_magetab_files}/{wildcards.accession}/{wildcards.accession}.sdrf.txt
         else
             # Prefer atlas_exps/local files over perl-derived path to avoid stale AE2_PRODUCTION paths
-			idf_candidate="{params.atlas_prod}/atlas_magetab/${exp_type}/{wildcards.accession}/{wildcards.accession}.idf.txt"
-			sdrf_candidate="{params.atlas_prod}/atlas_magetab/${exp_type}/{wildcards.accession}/{wildcards.accession}.sdrf.txt"
-			
+			idf_candidate="{params.atlas_prod}/atlas_magetab/${{exp_type}}/{wildcards.accession}/{wildcards.accession}.idf.txt"
+			sdrf_candidate="{params.atlas_prod}/atlas_magetab/${{exp_type}}/{wildcards.accession}/{wildcards.accession}.sdrf.txt"
+
 			if [ -f "$idf_candidate" ] && [ -f "$sdrf_candidate" ]; then
 			    echo "Using MAGETAB from atlas_exps"
 			    idf="$idf_candidate"
