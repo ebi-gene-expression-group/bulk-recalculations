@@ -888,6 +888,16 @@ rule rnaseq_qc:
             # Decide behaviour here:
             # exit 1  # fail the rule (recommended, otherwise output won't exist)
         fi
+
+        if [ -s "$expQuantDir/multiqc/star_salmon/multiqc_report.json" ]; then
+            rsync -avz \
+                "$expQuantDir/multiqc/star_salmon/multiqc_report.json" \
+                "{output}"
+        else
+            echo "$expQuantDir/multiqc/star_salmon/multiqc_report.json not found - skipping" >&2
+            # Decide behaviour here:
+            # exit 1  # fail the rule (recommended, otherwise output won't exist)
+        fi
         """
 
 rule quantile_normalise_expression:
