@@ -68,11 +68,6 @@ use 5.10.0;
 
 use Atlas::Magetab4Atlas;
 use EBI::FGPT::Config qw( $CONFIG );
-use Atlas::Common qw(
-    create_atlas_site_config
-    make_ae_idf_path
-    get_idfFile_path
-);
 use Atlas::AtlasConfig::Reader qw( parseAtlasConfig );
 use File::Spec;
 use Getopt::Long;
@@ -99,7 +94,7 @@ my $args = parse_args();
 
 my $expAcc = $args->{ "experiment_accession" };
 
-my $idfFile = get_idfFile_path( $expAcc );
+my $idfFile = get_idf_file_path( $expAcc );
 
 my $magetab4atlas = Atlas::Magetab4Atlas->new( idf_filename => $idfFile, strict => !$args->{ "not_strict" } );
 
@@ -254,6 +249,51 @@ sub say_raw_data_files {
     foreach my $rawDataFile ( keys %{ $rawDataFiles } ) {
         say $rawDataFile;
     }
+}
+
+
+sub get_idf_file_path {
+    my ( $expAcc ) = @_;
+
+    # Path to directory with ATLAS_PROD, ArrayExpress/Atlas load directories.
+    my $atlasProdDir = $ENV{ "ATLAS_PROD" };
+    my $aeLoadDir = $ENV{ "AE2_BASE_DIR" };
+
+    unless( $atlasProdDir ) {
+        $logger->logdie( "ATLAS_PROD environment variable is not defined, cannot continue." );
+    }
+    unless( $aeLoadDir ) {
+        $logger->logdie( "AE2_BASE_DIR environment variable is not defined, cannot continue." );
+    }
+
+    # Get the pipeline (e.g. MEXP, MTAB, GEOD, ...) for this experiment.
+    ( my $pipeline = $expAcc ) =~ s/E-(\w{4})-\d+/$1/;
+
+    # If any GEOD or ENAD studies, retrieve raw files from AtlasProd and
+    # curated magetab files, or else look in ArrayExpress.
+    my $rawFilesDir;
+    if( $pipeline eq "GEOD" ) {
+        $rawFilesDir = File::Spec->catdir( $atlasProdDir, "GEO_import" );
+    }
+    elsif( $pipeline eq "ENAD" ) {
+        $rawFilesDir = File::Spec->catdir( $atlasProdDir, "ENA_import" );
+    }
+    else {
+        $rawFilesDir = $aeLoadDir;
+    }
+
+    # Experiment load directory and IDF filename.
+    my $loadDir = File::Spec->catdir( $rawFilesDir, $pipeline, $expAcc );
+    my $idfFilename = File::Spec->catfile( $loadDir, "$expAcc.idf.txt" );
+
+    # Check for GEO datasets to see if they are new (idf exists in the
+    # current set) directory or not (old GEO, needs to be retrieved from AE).
+    if( ! -e $idfFilename && $pipeline eq "GEOD" ) {
+        $loadDir = File::Spec->catdir( $aeLoadDir, $pipeline, $expAcc );
+        $idfFilename = File::Spec->catfile( $loadDir, "$expAcc.idf.txt" );
+    }
+
+    return $idfFilename;
 }
 
 
