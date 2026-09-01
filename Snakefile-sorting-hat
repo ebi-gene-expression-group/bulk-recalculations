@@ -227,7 +227,7 @@ rule get_experiment_metadata:
         elif [ -e "{wildcards.accession}/{wildcards.accession}-configuration.xml" ]; then
             echo "Trying with perl (produces organism with capitals and spaces)"
             
-			organism=$(perl {workflow.basedir}/bin/get_experiment_info.pl --experiment {wildcards.accession} --xmlfile {wildcards.accession}/{wildcards.accession}-configuration.xml ---magetabfiles {params.atlas_prod}/atlas_magetab/${{exp_type}}/{wildcards.accession}/{wildcards.accession}.idf.txt,{params.atlas_prod}/atlas_magetab/${{exp_type}}/{wildcards.accession}/{wildcards.accession}.sdrf.txt --organism | sed 's/ /_/g' | tr '[:upper:]' '[:lower:]')
+			organism=$(perl {workflow.basedir}/bin/get_experiment_info.pl --experiment {wildcards.accession} --xmlfile {wildcards.accession}/{wildcards.accession}-configuration.xml ---magetabfiles {params.atlas_prod}/atlas_magetab/$exp_type/{wildcards.accession}/{wildcards.accession}.idf.txt,{params.atlas_prod}/atlas_magetab/$exp_type/{wildcards.accession}/{wildcards.accession}.sdrf.txt --organism | sed 's/ /_/g' | tr '[:upper:]' '[:lower:]')
         else
             echo "Nothing worked...Exiting with error"
             >&2 echo "Can't retrieve organism: neither {wildcards.accession}.condensed-sdrf.tsv nor {wildcards.accession}/{wildcards.accession}-configuration.xml not found "
@@ -258,8 +258,8 @@ rule get_experiment_metadata:
             sdrf={params.prot_magetab_files}/{wildcards.accession}/{wildcards.accession}.sdrf.txt
         else
             # Prefer atlas_exps/local files over perl-derived path to avoid stale AE2_PRODUCTION paths
-			idf_candidate="{params.atlas_prod}/atlas_magetab/${{exp_type}}/{wildcards.accession}/{wildcards.accession}.idf.txt"
-			sdrf_candidate="{params.atlas_prod}/atlas_magetab/${{exp_type}}/{wildcards.accession}/{wildcards.accession}.sdrf.txt"
+			idf_candidate="{params.atlas_prod}/atlas_magetab/$exp_type/{wildcards.accession}/{wildcards.accession}.idf.txt"
+			sdrf_candidate="{params.atlas_prod}/atlas_magetab/$exp_type/{wildcards.accession}/{wildcards.accession}.sdrf.txt"
 
 			if [ -f "$idf_candidate" ] && [ -f "$sdrf_candidate" ]; then
 			    echo "Using MAGETAB from atlas_exps"
