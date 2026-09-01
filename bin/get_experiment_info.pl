@@ -125,8 +125,16 @@ elsif( $args->{ "raw_data_files" } ) {
     say_raw_data_files( $assays, $expAcc );
 }
 elsif( $args->{ "magetabfiles" } ) {
-  (my $sdrfFile = $idfFile) =~ s/\.idf\./\.sdrf\./g;
-  say $idfFile.",".$sdrfFile;
+  my $magetabInput = $args->{ "magetabfiles" };
+  
+  # If no value was provided (default behavior), auto-generate
+  if( !defined($magetabInput) || $magetabInput eq "1" ) {
+    (my $sdrfFile = $idfFile) =~ s/\.idf\./\.sdrf\./g;
+    say $idfFile.",".$sdrfFile;
+  } else {
+    # User provided comma-separated files
+    say $magetabInput;
+  }
 }
 
 
@@ -139,7 +147,7 @@ sub parse_args {
         "o|organism"        => \$args{ "organism" },
         "a|arraydesign"     => \$args{ "array_design" },
         "r|rawdatafiles"    => \$args{ "raw_data_files" },
-        "m|magetabfiles"    => \$args{ "magetabfiles" },
+        "m|magetabfiles=s"  => \$args{ "magetabfiles" },
 	"n|not-strict"      => \$args{ "not_strict" }, # added as negation to keep the default true as it was.
         "x|xmlfile=s"         => \$args{ "xml_filename" }
     );
