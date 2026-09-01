@@ -202,6 +202,8 @@ rule get_experiment_metadata:
         export ATLAS_PROD="{params.atlas_prod}"
         export ATLAS_EXPS="{params.atlas_exps}"
         source "{workflow.basedir}/atlas-bash-util/generic_routines.sh"
+		exp_id={wildcards.accession}
+		exp_type=$(echo "${{exp_id#E-}}" | sed 's/-.*//')
 
         # proteomics baseline experiments do not need to include exp type assays/contrasts in the summary yaml
         prot_exp_type='experimentType="proteomics_baseline'
@@ -248,8 +250,7 @@ rule get_experiment_metadata:
             gff_file=$( find {input.gtf_dir}/$organism -iname "$organism_*.gff3" | head -n1)
         fi
 	    echo "GTF file location sourced"
-		exp_id={wildcards.accession}
-		exp_type=$(echo "${{exp_id#E-}}" | sed 's/-.*//')
+
 
         prot_exp_type_all='experimentType="proteomics_'
         # this applies to all proteomics experiments
