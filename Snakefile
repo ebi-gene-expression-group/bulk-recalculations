@@ -4,6 +4,7 @@ import os
 
 os.makedirs('logs', exist_ok='True')
 
+
 # atom: set grammar=python
 
 metadata_summary = {}
@@ -16,45 +17,15 @@ def read_metadata_summary():
 
 read_metadata_summary()
 
-def get_methods_template_baseline():
-    if 'methods_base' in config:
-        return config['methods_base']
-    else:
-        return None
-
-def get_methods_template_differential():
-    if 'methods_dif' in config:
-        return config['methods_dif']
-    else:
-        return None
-
 def get_zooma_exclusions():
     if 'zooma_exclusions' in config:
         return config['zooma_exclusions']
     else:
         return None
 
-def get_isl_dir():
-    if 'isl_dir' in config:
-        return config['isl_dir']
-    else:
-        return None
-
-def get_isl_genomes():
-    if 'isl_genomes' in config:
-        return config['isl_genomes']
-    else:
-        return None
-
-def get_irap_versions():
-    if 'irap_versions' in config:
-        return config['irap_versions']
-    else:
-        return None
-
-def get_irap_container():
-    if 'irap_container' in config:
-        return config['irap_container']
+def get_quantification_dir():
+    if 'quantification_dir' in config:
+        return config['quantification_dir']
     else:
         return None
 
@@ -151,27 +122,28 @@ def get_metrics_recalculations():
         else:
             sys.exit("No metric available for baseline analyses.")
 
+# To be remove/modify
 def get_metrics_reprocess():
     """
-    The logic is based on files processed by iRAP/ISL.
+    The logic is based on files processed by nf-core/rnaseq.
     """
     import os
     if 'metric' in config:
         return config['metric'].split(":")
     else:
         metrics_reprocess = []
-        isl_dir = get_isl_dir()
-        organism = get_organism()
+        quantification_dir = get_quantification_dir()
         acc = config['accession']
-        files_ils_dir = os.listdir( f"{isl_dir}/{acc}/{organism}" )
+        files_ils_dir = os.listdir( f"{quantification_dir}/{acc}/star_salmon/" )
         # we only need one match, no need to traverse the full list
-        if next((s for s in files_ils_dir if '.tpm.' in s), None):
+        if next((s for s in files_ils_dir if '_tpm.' in s), None):
             metrics_reprocess.append('tpms')
-        if next((s for s in files_ils_dir if '.fpkm.' in s), None):
-            metrics_reprocess.append('fpkms')
+        # No FPKMs in nf-core/rnaseq
+ 		# if next((s for s in files_ils_dir if '.fpkm.' in s), None):
+        #    metrics_reprocess.append('fpkms')
 
         if not metrics_reprocess:
-            sys.exit("No metrics for reprocessing found in isl path.")
+            sys.exit("No metrics for reprocessing found in nf-core/rnaseq path.")
         else:
             return metrics_reprocess
 
@@ -181,20 +153,6 @@ def get_meta_config():
     else:
         print(f" WARNING - atlas_meta_config not provided in config")
         return None
-
-def get_db_params():
-    """
-    When goal is reprocess, return config parameters to establish connection with isl db.
-    """
-    isl_vars=[ 'oracle_home', 'python_user', 'python_connect_string', 'python_password' ] 
-    db_params = []
-    for i in isl_vars:
-        if i in config:
-            db_params.append( config[i] )
-        else:
-            print(f" Missing ISL db param: {i}")
-            sys.exit(1)
-    return db_params
 
 
 #metrics = get_metrics()
@@ -449,6 +407,7 @@ rule percentile_ranks:
         fi
         """
 
+# To be remove/modify
 rule differential_tracks:
     conda: "envs/irap.yaml"
     log: "logs/{accession}.{contrast_id}-differential_tracks.log"
@@ -480,6 +439,7 @@ rule differential_tracks:
         generate_differential_tracks {wildcards.accession} {wildcards.contrast_id} $analyticsFile {input.gff} {params.contrast_label:q} ./
         """
 
+# To be remove/modify
 rule differential_gsea:
     conda: "envs/irap.yaml"
     log: "logs/{accession}.{contrast_id}.{ext_db}-differential_gsea.log"
@@ -518,15 +478,43 @@ rule differential_gsea:
         if [ -s "$annotationFile" ]; then
             pvalColNum=$(get_contrast_colnum $analyticsFile {wildcards.contrast_id} "p-value")
             log2foldchangeColNum=$(get_contrast_colnum $analyticsFile {wildcards.contrast_id} "log2foldchange")
-            plotTitle="
-            Top 10 {params.ext_db_label} enriched in
-            {params.contrast_label}
-            (Fisher-exact, FDR < 0.1)"
+            plotTitle=$(printf 'Top 10 %s enriched in\n%s\n(Fisher-exact, FDR < 0.1)' {params.ext_db_label:q} {params.contrast_label:q})
             {workflow.basedir}/bin/gxa_calculate_gsea.sh {wildcards.accession} $annotationFile $analyticsFile $pvalColNum $log2foldchangeColNum ./ {wildcards.contrast_id} "$plotTitle" {params.organism} {wildcards.ext_db} {threads}
+            rm -rf {wildcards.accession}.{wildcards.contrast_id}.{wildcards.ext_db}.gsea_class_non_dir_both.png
         else
             touch {wildcards.accession}.{wildcards.contrast_id}.{wildcards.ext_db}.gsea.tsv
             touch {wildcards.accession}.{wildcards.contrast_id}.{wildcards.ext_db}.gsea_list.tsv
         fi
+        """
+
+rule plot_differential_gsea:
+    conda: "envs/gsea-plot.yaml"
+    log: "logs/{accession}.{contrast_id}.{ext_db}-plot_differential_gsea.log"
+    resources: mem_mb=get_mem_mb
+    input:
+        gsea="{accession}.{contrast_id}.{ext_db}.gsea.tsv",
+        gsea_list="{accession}.{contrast_id}.{ext_db}.gsea_list.tsv"
+    params:
+        organism=get_organism(),
+        BIOENTITIES_PROPERTIES_PATH=config['bioentities_properties'],
+        contrast_label=get_contrast_label,
+        ext_db_label=get_ext_db_label
+    output:
+        gsea_plot_png="{accession}.{contrast_id}.{ext_db}.gsea_class_non_dir_both.png",
+        gsea_plot_svg="{accession}.{contrast_id}.{ext_db}.gsea_class_non_dir_both.svg"
+    shell:
+        """
+        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        exec &> "{log}"
+        export BIOENTITIES_PROPERTIES_PATH={params.BIOENTITIES_PROPERTIES_PATH}
+        source {workflow.basedir}/bin/gsea_functions.sh
+
+        plotTitle=$(printf 'Top 10 %s enriched in\n%s\n(Fisher-exact, FDR < 0.1)' {params.ext_db_label:q} {params.contrast_label:q})
+        set +e
+        annotationFile=$(find_properties_file_gsea {params.organism} {wildcards.ext_db})
+        set -e
+
+        Rscript {workflow.basedir}/atlas-analysis/gsea/plot_gsea_results.R {input.gsea} {output.gsea_plot_png} {output.gsea_plot_svg} "$plotTitle" {wildcards.ext_db} 10 "$annotationFile" {input.gsea_list}
         """
 
 rule check_differential_gsea:
@@ -538,7 +526,9 @@ rule check_differential_gsea:
     log: "logs/{accession}.{contrast_id}.{ext_db}-check-differential_gsea.log"
     input:
         gsea="{accession}.{contrast_id}.{ext_db}.gsea.tsv",
-        gsea_list="{accession}.{contrast_id}.{ext_db}.gsea_list.tsv"
+        gsea_list="{accession}.{contrast_id}.{ext_db}.gsea_list.tsv",
+        gsea_plot_png="{accession}.{contrast_id}.{ext_db}.gsea_class_non_dir_both.png",
+        gsea_plot_svg="{accession}.{contrast_id}.{ext_db}.gsea_class_non_dir_both.svg"
     output:
         temp_gsea=temp("logs/{accession}.{contrast_id}.{ext_db}.check_differential_gsea.done"),
         temp_gsea_list=temp("logs/{accession}.{contrast_id}.{ext_db}.check_differential_gsea_list.done")
@@ -571,6 +561,7 @@ rule check_differential_gsea:
         touch {output.temp_gsea_list}
         """
 
+# To be remove/modify
 rule baseline_tracks:
     conda: "envs/irap.yaml"
     log: "logs/{accession}-{assay_id}-{metric}-baseline_tracks.log"
@@ -723,87 +714,57 @@ rule atlas_experiment_summary:
 
 # baseline_rnaseq_experiment
 
-rule add_runs_to_db:
-    """
-    Get run ids from config file and add them to isl db.
-    """
-    conda: "envs/isl-db.yaml"
-    log: "logs/{accession}-add_runs_to_db.log"
-    input:
-        config_xml="{accession}-configuration.xml"
-    params:
-        db_params=get_db_params()
-    output:
-        temp("logs/{accession}-add_runs_to_db.done")
-    shell:
-        """
-        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
-        exec &> "{log}"
-        export TNS_ADMIN={params.db_params[0]}/network/admin
-        export LD_LIBRARY_PATH={params.db_params[0]}/lib:$LD_LIBRARY_PATH
-        export PATH={params.db_params[0]}/bin:$PATH
-        export PYTHON_USER={params.db_params[1]}
-        export PYTHON_CONNECT_STRING={params.db_params[2]}
-        export PYTHON_PASSWORD={params.db_params[3]}
-
-        python {workflow.basedir}/isl/db/scripts/get_run_ids_atlas_prod.py {input.config_xml}
-        if [ $? -ne 0 ]; then
-	        echo "ERROR: Failed to parse atlas config file and get run ids for {wildcards.accession} " >&2
-	        exit 1
-        fi
-        touch {output}
-        """
-
-rule copy_raw_gene_counts_from_isl:
+rule copy_raw_gene_counts_from_nf_core:
     """
     Copy raw gene counts file.
     """
-    log: "logs/{accession}-copy_raw_gene_counts_from_isl.log"
-    input:
-        rules.add_runs_to_db.output
+    log: "logs/{accession}-copy_raw_gene_counts_from_nf_core.log"
     output:
         raw_counts_undecorated="{accession}-raw-counts.tsv.undecorated"
     params:
         organism=get_organism(),
-        isl_dir=get_isl_dir()
+        quantification_dir=get_quantification_dir()
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
-        expIslDir={params.isl_dir}/{wildcards.accession}/{params.organism}
-        echo "ISL dir: $expIslDir"
+        expQuantDir={params.quantification_dir}/{wildcards.accession}
+        echo "Qunatification dir: $expQuantDir"
 
-        [ ! -z $expIslDir+x ] || (echo "Env var $expIslDir needs to defined" && exit 1)
-        if [ -s "$expIslDir/genes.raw.htseq2.tsv" ]; then
-            rsync -avz $expIslDir/genes.raw.htseq2.tsv {output.raw_counts_undecorated}
-        elif [ -s "$expIslDir/genes.raw.featurecounts.tsv" ]; then
-            rsync -avz $expIslDir/genes.raw.featurecounts.tsv {output.raw_counts_undecorated}
+		[ ! -z $expQuantDir+x ] || (echo "Env var $expQuantDir needs to defined" && exit 1)
+        
+        if [ -s "$expQuantDir/star_salmon/salmon.merged.gene_counts.tsv" ]; then
+            rsync -avz $expQuantDir/star_salmon/salmon.merged.gene_counts.tsv tmp.tsv
         else
-            echo "Neither genes.raw.htseq2.tsv nor genes.raw.featurecounts.tsv found on $expIslDir"
+            echo "salmon.merged.gene_counts.tsv not found on $expQuantDir"
             exit 1
         fi
+
+		# removing column 2, which contains gene_name and not present in iRAP result, might affect downstream processes so
+		# Can be added back in future after making downstream process compatible
+		cut --complement -f2 tmp.tsv > {output.raw_counts_undecorated}
         """
 
 
-rule copy_normalised_counts_from_isl:
+rule copy_normalised_counts_from_nf_core:
     """
-    Copy fpkm and tpm gene expression files.
+    Copy tpm gene expression files.
     Replaces copy_unit_matrices_from_isl in experiment_loading_routines.sh
     """
-    log: "logs/{accession}-{metric}-copy_normalised_counts_from_isl.log"
+    log: "logs/{accession}-{metric}-copy_normalised_counts_from_nf_core.log"
     params:
         organism=get_organism(),
-        isl_dir=get_isl_dir()  
+        quantification_dir=get_quantification_dir()  
     output:
         normalised_counts_undecorated="{accession}-{metric}.tsv.undecorated"
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
-        expIslDir={params.isl_dir}/{wildcards.accession}/{params.organism}
-        echo "ISL dir: $expIslDir"
+        expQuantDir={params.quantification_dir}/{wildcards.accession}
+        echo "nf_core dir: $expQuantDir"
 
-        [ ! -z $expIslDir+x ] || (echo "snakemake param exp_isl_dir needs to defined in rule" && exit 1)
+        [ ! -z $expQuantDir+x ] || (echo "snakemake param exp_quantification_dir needs to defined in rule" && exit 1)
 
         if [[ "{wildcards.metric}" == "tpms" ]]; then
             metrictype="tpm"
@@ -811,45 +772,59 @@ rule copy_normalised_counts_from_isl:
             metrictype="fpkm"
         fi
 
-        if [ -s "$expIslDir/genes.$metrictype.htseq2.tsv" ]; then
-            rsync -avz $expIslDir/genes.$metrictype.htseq2.tsv {output.normalised_counts_undecorated}
-        elif [ -s "$expIslDir/genes.$metrictype.featurecounts.tsv" ]; then
-            rsync -avz $expIslDir/genes.$metrictype.featurecounts.tsv {output.normalised_counts_undecorated}
+        if [ -s "$expQuantDir/star_salmon/salmon.merged.gene_tpm.tsv" ]; then
+            rsync -avz $expQuantDir/star_salmon/salmon.merged.gene_tpm.tsv tmp.tsv
         else
-            echo "$expIslDir/genes.$metrictype.htseqORfeaturecounts.tsv not found"
+            echo "$expQuantDir/star_salmon/salmon.merged.gene_tpm.tsv not found"
             exit 1
         fi
+
+		# removing column 2, which contains gene_name and not present in iRAP result, might affect downstream processes so
+		# Can be added back in future after making downstream process compatible
+		cut --complement -f2 tmp.tsv > {output.normalised_counts_undecorated} 
+		
         """
 
 
-rule copy_transcript_files_from_isl:
+rule copy_transcript_files_from_nf_core:
     """
     This rule attemps to copy Kallisto TPM transcripts if metrics 'tpms' exists.
     If file does not exist for an accession, this rule can be skipped.
     """
-    log: "logs/{accession}-copy_transcript_files_{metric}_from_isl.log"
+    log: "logs/{accession}-copy_transcript_files_{metric}_from_nf_core.log"
     params:
         organism=get_organism(),
-        isl_dir=get_isl_dir()  
+        quantification_dir=get_quantification_dir()  
     output:
         transcripts="{accession}-transcripts-{metric}.tsv.undecorated"
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
-        expIslDir={params.isl_dir}/{wildcards.accession}/{params.organism}
-        echo "ISL dir: $expIslDir"
+        expQuantDir={params.quantification_dir}/{wildcards.accession}
+        echo "Quantification dir: $expQuantDir"
 
-        [ ! -z $expIslDir+x ] || (echo "snakemake param exp_isl_dir needs to defined in rule" && exit 1)
+        [ ! -z $expQuantDir+x ] || (echo "snakemake param exp_quantification_dir needs to defined in rule" && exit 1)
 
-        if [ -s "$expIslDir/transcripts.tpm.kallisto.tsv" ] ; then
-            rsync -avz $expIslDir/transcripts.tpm.kallisto.tsv {output.transcripts}
+        if [ -s "$expQuantDir/star_salmon/salmon.merged.transcript_tpm.tsv" ] ; then
+            rsync -avz $expQuantDir/star_salmon/salmon.merged.transcript_tpm.tsv tmp.tsv 
         else
-            echo "$expIslDir/transcripts.tpm.kallisto.tsv not found - skipping"
+            echo "$expQuantDir/star_salmon/salmon.merged.transcript_tpm.tsv not found - skipping"
         fi
+
+		# removing column 2, which contains gene_id and not present in iRAP result, might affect downstream processes so
+		# Can be added back in future after making downstream process compatible
+
+		# removing column 2, which contains gene_id and not present in iRAP result, might affect downstream processes so
+		# Can be added back in future after making downstream process compatible
+
+
+		cut --complement -f2 tmp.tsv > {output.transcripts}
+
         """
 
-rule copy_transcript_relative_isoforms:
+# Can be skipped for now
+rule copy_transcript_relative_isoforms_from_nf_core:
     """
     Copy transcripts relative isoform usage files.
     If file does not exist for an accession, this rule can be skipped.
@@ -860,20 +835,20 @@ rule copy_transcript_relative_isoforms:
     params:
         transcripts_relative_isoforms="{accession}-transcripts.riu.tsv",
         organism=get_organism(),
-        isl_dir=get_isl_dir()  
+        quantification_dir=get_quantification_dir()  
     shell:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
-        expIslDir={params.isl_dir}/{wildcards.accession}/{params.organism}
-        echo "ISL dir: $expIslDir"
+        expQuantDir={params.quantification_dir}/{wildcards.accession}/{params.organism}
+        echo "nf_core dir: $expQuantDir"
 
-        [ ! -z $expIslDir+x ] || (echo "snakemake param exp_isl_dir needs to defined in rule" && exit 1)
+        [ ! -z $expQuantDir+x ] || (echo "snakemake param exp_quantification_dir needs to defined in rule" && exit 1)
 
-        if [ -s "$expIslDir/transcripts.riu.kallisto.tsv" ] ; then
-            rsync -avz $expIslDir/transcripts.riu.kallisto.tsv {params.transcripts_relative_isoforms}
+        if [ -s "$expQuantDir/transcripts.riu.kallisto.tsv" ] ; then
+            rsync -avz $expQuantDir/transcripts.riu.kallisto.tsv {params.transcripts_relative_isoforms}
         else
-            echo "$expIslDir/transcripts.riu.kallisto.tsv not found for {wildcards.accession} - skipping"
+            echo "$expQuantDir/transcripts.riu.kallisto.tsv not found for {wildcards.accession} - skipping"
         fi
         touch {output}
         """
@@ -881,33 +856,47 @@ rule copy_transcript_relative_isoforms:
 rule rnaseq_qc:
     """
     QC step for rnaseq experiments.
-    Non-standard experiments for which there is no QC information stored in the database
-    should be added to 'skip_steps_file' to skip this rule.
+    QC reports generated by nf-core/rnaseq are used
     """
-    conda: "envs/perl-atlas-modules.yaml"
-    input: "{accession}-raw-counts.tsv.undecorated"
-    log: "logs/{accession}-rnaseq_qc.log"
-    output: "qc/{accession}-irap-single-lib-report.tsv"
+    output:
+        "qc/{accession}-multiqc_report.html"
+    log:
+        "logs/{accession}-rnaseq_qc.log"
+    params:
+        quantification_dir = get_quantification_dir()
     shell:
         """
-        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
+        set -e  # or: set -euo pipefail
         exec &> "{log}"
-        echo "Running QC, raw counts file found {input}"
 
-        {workflow.basedir}/atlas-analysis/qc/rnaseqQC.sh {wildcards.accession}
-        qcExitCode=$?
+        # Build quantification dir for this accession
+        expQuantDir="{params.quantification_dir}/{wildcards.accession}"
+        echo "Quantification dir: $expQuantDir"
 
-        if [ "$qcExitCode" -eq 2 ]; then
-            echo "Experiment {wildcards.accession} has been disqualified due to insufficient quality, exiting"
+        # Sanity check (optional, but at least valid Bash)
+        if [ -z "$expQuantDir" ]; then
+            echo "ERROR: expQuantDir is empty. Check quantification_dir param in rule rnaseq_qc." >&2
             exit 1
-        elif [ "$qcExitCode" -ne 0 ]; then
-            echo "ERROR: QC for {wildcards.accession} failed" >&2
-            exit "$qcExitCode"
         fi
 
-        if [ -d .qc ]; then
-            # TODO: Temporary workaround until irap_single_lib is able to aggregate quality reports per study
-            mv .qc qc
+        if [ -s "$expQuantDir/multiqc/star_salmon/multiqc_report.html" ]; then
+            rsync -avz \
+                "$expQuantDir/multiqc/star_salmon/multiqc_report.html" \
+                "{output}"
+        else
+            echo "$expQuantDir/multiqc/star_salmon/multiqc_report.html not found - skipping" >&2
+            # Decide behaviour here:
+            # exit 1  # fail the rule (recommended, otherwise output won't exist)
+        fi
+
+        if [ -s "$expQuantDir/multiqc/star_salmon/multiqc_report.json" ]; then
+            rsync -avz \
+                "$expQuantDir/multiqc/star_salmon/multiqc_report.json" \
+                "{output}"
+        else
+            echo "$expQuantDir/multiqc/star_salmon/multiqc_report.json not found - skipping" >&2
+            # Decide behaviour here:
+            # exit 1  # fail the rule (recommended, otherwise output won't exist)
         fi
         """
 
@@ -959,6 +948,7 @@ rule summarize_expression:
             > {output.sum_expression}
         """
 
+# To be remove/modify
 rule transcripts_na_check:
     """
     Replace NAs with 0 in Kallisto TPM transcripts, if the file exists
@@ -969,7 +959,7 @@ rule transcripts_na_check:
     resources: mem_mb=get_mem_mb
     params:
         organism=get_organism(),
-        isl_dir=get_isl_dir()  
+        quantification_dir=get_quantification_dir()  
     input:
         transcripts="{accession}-transcripts-{metric}.tsv.undecorated"
     output:
@@ -978,16 +968,16 @@ rule transcripts_na_check:
         """
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
-        expIslDir={params.isl_dir}/{wildcards.accession}/{params.organism}
-        echo "ISL dir: $expIslDir"
+        expQuantDir={params.quantification_dir}/{wildcards.accession}
+        echo "nf_core dir: $expQuantDir"
 
-        [ ! -z $expIslDir+x ] || (echo "snakemake param exp_isl_dir needs to defined in rule" && exit 1)
+        [ ! -z $expQuantDir+x ] || (echo "snakemake param exp_quantification_dir needs to defined in rule" && exit 1)
 
-        if [ -s "$expIslDir/transcripts.raw.kallisto.tsv" ] ; then
-            {workflow.basedir}/atlas-analysis/transcripts_expr_values_check.R {input.transcripts} $expIslDir/transcripts.raw.kallisto.tsv
+        if [ -s "$expQuantDir/star_salmon/salmon.merged.transcript_counts.tsv" ] ; then
+            {workflow.basedir}/atlas-analysis/transcripts_expr_values_check.R {input.transcripts} $expQuantDir/star_salmon/salmon.merged.transcript_counts.tsv
             echo "transcripts NA check -  executed for {input.transcripts} "
         else
-            echo "$expIslDir/transcripts.raw.kallisto.tsv not found for {wildcards.accession} - skipping rule_transcripts_na_check for {input.transcripts}"
+            echo "$expQuantDir/star_salmon/salmon.merged.transcript_counts.tsv not found for {wildcards.accession} - skipping rule_transcripts_na_check for {input.transcripts}"
         fi
         touch {output}
         """
@@ -1063,50 +1053,16 @@ rule summarize_transcripts:
         touch {output}
         """
 
-rule get_irap_versions_file:
-    """
-    If iRAP versions file not present, get it from the container.
-    """
-    log: 
-        "logs/{accession}-get_irap_versions_file.log"
-    params:
-        irap_versions=get_irap_versions(),
-        irap_container=get_irap_container()
-    output:
-        temp("logs/{accession}-get_irap_versions_file.done")
-    shell:
-        """
-        set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
-        exec &> "{log}"
-
-        if [ ! -s {params.irap_versions} ] ; then
-            echo "Attempting to transfer the file {params.irap_versions} from the singularity container {params.irap_container}"
-            singularity exec {params.irap_container} cp /opt/irap/aux/mk/irap_versions.mk {params.irap_versions}
-            if [ ! -s {params.irap_versions} ] ; then
-                echo "ERROR: Failed to retrieve {params.irap_versions} from the container" >&2
-                exit 1
-            fi
-        else
-            echo "The file {params.irap_versions} already exists."
-        fi
-        touch {output}
-        """
-
 rule generate_methods_baseline_rnaseq:
     """
-    Fetches metadata about the analysis methods used in ISL/iRap to preprocess the experiment,
+    Fetches metadata about the analysis methods used in nf-core/rnaseq to preprocess the experiment,
     to generate analysis methods.
+	Update to support nf-core
     """
-    conda: "envs/perl-atlas-modules.yaml"
+    conda: "envs/deconvolution.yaml"
     log: "logs/{accession}-generate_methods_baseline_rnaseq.log"
-    input:
-        rules.get_irap_versions_file.output
     params:
-        organism=get_organism(),
-        template=get_methods_template_baseline(),
-        isl_dir=get_isl_dir(),
-        isl_genomes=get_isl_genomes(),
-        irap_versions=get_irap_versions()
+        quantification_dir=get_quantification_dir()
     output:
         methods=temp("{accession}-analysis-methods.tsv_baseline_rnaseq")
     shell:
@@ -1114,48 +1070,49 @@ rule generate_methods_baseline_rnaseq:
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
 
-        if [ ! -s {params.template} ] ; then
-            echo "Methods template not found "
+        expQuantDir={params.quantification_dir}/{wildcards.accession}
+        echo "Quantification dir: $expQuantDir"
+
+        [ ! -z $expQuantDir+x ] || (echo "snakemake param exp_quantification_dir needs to defined in rule" && exit 1)
+
+		params_json=$(ls -t "$expQuantDir"/pipeline_info/params_*.json | head -n 1)
+
+		echo "parameters $params_json"
+
+        # nf-core/rnaseq methods version file
+        if [ ! -s "$expQuantDir/pipeline_info/nf_core_rnaseq_software_mqc_versions.yml" ] ; then
+            echo "$expQuantDir/pipeline_info/nf_core_rnaseq_software_mqc_versions.yml not found for {wildcards.accession} "
             exit 1
         fi
 
-        source {workflow.basedir}/bin/reprocessing_routines.sh
-        expIslDir={params.isl_dir}/{wildcards.accession}/{params.organism}
-        echo "ISL dir: $expIslDir"
-        echo "ISL genome references: {params.isl_genomes}"
-
-        [ ! -z $expIslDir+x ] || (echo "snakemake param exp_isl_dir needs to defined in rule" && exit 1)
-
-        # IRAP methods version file
-        if [ ! -s "$expIslDir/irap.versions.tsv" ] ; then
-            echo "$expIslDir/irap.versions.tsv not found for {wildcards.accession} "
+		if [ ! -s "$params_json" ] ; then
+            echo "$params_json not found for {wildcards.accession} "
             exit 1
         fi
+		
+        ref_fasta=$(jq -r '.fasta' "$params_json" | xargs basename)
+		ref_gtf=$(jq -r '.gtf' "$params_json" | xargs basename)
 
-        # set env variables for mapper and quantification methods from used in irap.
-        get_methods_from_irap "$expIslDir/irap.versions.tsv"
-        [ ! -z ${{baseline_mapper+x}} ] || (echo "Env var baseline_mapper not defined." && exit 1)
-        [ ! -z ${{baseline_quantMethod+x}} ] || (echo "Env var baseline_quantMethod not defined." && exit 1)
-        [ ! -z ${{de_mapper+x}} ] || (echo "Env var de_mapper not defined." && exit 1)
-        [ ! -z ${{de_quantMethod+x}} ] || (echo "Env var de_mapper not defined." && exit 1)
-        [ ! -z ${{de_deMethod+x}} ] || (echo "Env var de_mapper not defined." && exit 1)
+        echo -e "References\t " > {output.methods}
+        echo -e "Genome (Fasta)\t$ref_fasta" >> {output.methods}
+		echo -e "Genes (GTF)\t$ref_gtf" >> {output.methods}
+        echo -e "\t" >> {output.methods}
+        echo -e "Quantification\t " >> {output.methods}
 
-        echo $baseline_mapper
-        echo $baseline_quantMethod
-        echo $de_mapper
-        echo $de_quantMethod
-        echo $de_deMethod
-
-        # not used, only for differential rnaseq
-        deseq2version='none'
-        echo $deseq2version
-
-        perl {workflow.basedir}/bin/gxa_generate_methods.pl "$expIslDir/irap.versions.tsv" {wildcards.accession} {params.organism} {params.template} "${{baseline_mapper:?}}" "${{baseline_quantMethod:?}}" "${{de_mapper:?}}" "${{de_quantMethod:?}}" "${{de_deMethod:?}}" "${{deseq2version:?}}" {params.isl_genomes} {params.irap_versions} > {output.methods}
+        python {workflow.basedir}/bin/gxa_generate_method.py "$expQuantDir/pipeline_info/nf_core_rnaseq_software_mqc_versions.yml" >> {output.methods}
 
         if [ $? -ne 0 ]; then
             echo "ERROR: Failed to generate analysis methods for {wildcards.accession}" >&2
             exit 1
         fi
+
+        echo -e "\t" >> {output.methods}
+        echo -e "Post processing\t " >> {output.methods}
+        echo -e "Tool\tVersion" >> {output.methods}
+        echo -e "Bulk Recalculations\thttps://github.com/ebi-gene-expression-group/bulk-recalculations.git" >> {output.methods}
+
+		cat {output.methods}
+
         cp {output.methods} {wildcards.accession}-analysis-methods.tsv
         """
 
@@ -1395,20 +1352,16 @@ rule round_log2_fold_changes_rnaseq:
 
 rule generate_methods_differential_rnaseq:
     """
-    Fetches metadata about the analysis methods used in ISL/iRap to preprocess the experiment,
+    Fetches metadata about the analysis methods used in nf-core/rnaseq to preprocess the experiment,
     to generate analysis methods.
+	Update to support nf-core
     """
-    conda: "envs/perl-atlas-modules.yaml"
+    conda: "envs/deconvolution.yaml"
     log: "logs/{accession}-generate_methods_differential_rnaseq.log"
     input:
         deseq2version=rules.differential_statistics_rnaseq.output.deseq2version,
-        check_irap_done=rules.get_irap_versions_file.output
     params:
-        organism=get_organism(),
-        template=get_methods_template_differential(),
-        isl_dir=get_isl_dir(),
-        isl_genomes=get_isl_genomes(),
-        irap_versions=get_irap_versions()
+        quantification_dir=get_quantification_dir(),
     output:
         methods=temp("{accession}-analysis-methods.tsv_differential_rnaseq")
     shell:
@@ -1416,47 +1369,54 @@ rule generate_methods_differential_rnaseq:
         set -e # snakemake on the cluster doesn't stop on error when --keep-going is set
         exec &> "{log}"
 
-        if [ ! -s {params.template} ] ; then
-            echo "Methods template not found "
-            exit 1
-        fi
+        expQuantDir={params.quantification_dir}/{wildcards.accession}
+        echo "Quantification dir: $expQuantDir"
 
-        source {workflow.basedir}/bin/reprocessing_routines.sh
-        expIslDir={params.isl_dir}/{wildcards.accession}/{params.organism}
-        echo "ISL dir: $expIslDir"
-        echo "ISL genome references: {params.isl_genomes}"
+        [ ! -z $expQuantDir+x ] || (echo "snakemake param exp_quantification_dir needs to defined in rule" && exit 1)
 
-        [ ! -z $expIslDir+x ] || (echo "snakemake param exp_isl_dir needs to defined in rule" && exit 1)
+        params_json=$(ls -t "$expQuantDir"/pipeline_info/params_*.json | head -n 1)
 
-        # IRAP methods version file
-        if [ ! -s "$expIslDir/irap.versions.tsv" ] ; then
-            echo "$expIslDir/irap.versions.tsv not found for {wildcards.accession} "
-            exit 1
-        fi
 
-        # set env variables for mapper and quantification methods from used in irap.
-        get_methods_from_irap "$expIslDir/irap.versions.tsv"
-        [ ! -z ${{baseline_mapper+x}} ] || (echo "Env var baseline_mapper not defined." && exit 1)
-        [ ! -z ${{baseline_quantMethod+x}} ] || (echo "Env var baseline_quantMethod not defined." && exit 1)
-        [ ! -z ${{de_mapper+x}} ] || (echo "Env var de_mapper not defined." && exit 1)
-        [ ! -z ${{de_quantMethod+x}} ] || (echo "Env var de_mapper not defined." && exit 1)
-        [ ! -z ${{de_deMethod+x}} ] || (echo "Env var de_mapper not defined." && exit 1)
+		echo "parameters $params_json"
 
-        echo $baseline_mapper
-        echo $baseline_quantMethod
-        echo $de_mapper
-        echo $de_quantMethod
-        echo $de_deMethod
-
+        # set env variables for mapper.
         deseq2version=`cat {input.deseq2version}`
         echo $deseq2version
 
-        perl {workflow.basedir}/bin/gxa_generate_methods.pl "$expIslDir/irap.versions.tsv" {wildcards.accession} {params.organism} {params.template} "${{baseline_mapper:?}}" "${{baseline_quantMethod:?}}" "${{de_mapper:?}}" "${{de_quantMethod:?}}" "${{de_deMethod:?}}" "${{deseq2version:?}}" {params.isl_genomes} {params.irap_versions} > {output.methods}
+		# nf-core/rnaseq methods version file
+        if [ ! -s "$expQuantDir/pipeline_info/nf_core_rnaseq_software_mqc_versions.yml" ] ; then
+            echo "$expQuantDir/pipeline_info/nf_core_rnaseq_software_mqc_versions.yml not found for {wildcards.accession} "
+            exit 1
+        fi
+
+		if [ ! -s "$params_json" ] ; then
+            echo "$params_json not found for {wildcards.accession} "
+            exit 1
+        fi
+
+        ref_fasta=$(jq -r '.fasta' "$params_json" | xargs basename)
+		ref_gtf=$(jq -r '.gtf' "$params_json" | xargs basename)
+
+        echo -e "References\t " > {output.methods}
+        echo -e "Genome (Fasta)\t$ref_fasta" >> {output.methods}
+		echo -e "Genes (GTF)\t$ref_gtf" >> {output.methods}
+        echo -e "\t" >> {output.methods}
+        echo -e "Quantification\t " >> {output.methods}
+
+        python {workflow.basedir}/bin/gxa_generate_method.py "$expQuantDir/pipeline_info/nf_core_rnaseq_software_mqc_versions.yml" >> {output.methods}
 
         if [ $? -ne 0 ]; then
             echo "ERROR: Failed to generate analysis methods for {wildcards.accession}" >&2
             exit 1
         fi
+
+        echo -e "\t" >> {output.methods}
+        echo -e "Post processing\t " >> {output.methods}
+        echo -e "Tool\tVersion" >> {output.methods}
+        echo -e "Bulk Recalculations\thttps://github.com/ebi-gene-expression-group/bulk-recalculations.git" >> {output.methods}
+        echo -e "Differential Expression\tDESeq2 version: $deseq2version" >> {output.methods}
+		echo -e "Gene Set Overlap\tFisher (non-directional), FDR &lt; 0.1 using <a href="http://www.bioconductor.org/packages/release/bioc/html/piano.html">piano</a>"  >> {output.methods}
+
         cp {output.methods} {wildcards.accession}-analysis-methods.tsv
         """
 
@@ -2116,7 +2076,7 @@ rule baseline_markers_rnaseq:
 
         echo "Calculating markers for {wildcards.accession} with metric {wildcards.metric} using bioconductor package MGFR"
 
-        Rscript {workflow.basedir}/atlas-analysis/baselinemarkers/get_marker_genes_rnaseq.R {input.config_xml} {input.expression_file_undecorated} {input.expression_file} {output.markers} 0.3 0.5
+        Rscript {workflow.basedir}/atlas-analysis/baselinemarkers/marker_gene.R {input.config_xml} {input.expression_file_undecorated} {input.expression_file} {output.markers} 0.3 0.5
 
         # write only once
 	    if [ "{wildcards.metric}" = "tpms" ]; then
@@ -2196,3 +2156,129 @@ rule get_magetab_for_experiment:
         touch {output} 
         """
 
+# Following part not tested
+import xml.etree.ElementTree as ET
+
+def parse_groups(xml_path):
+    root = ET.parse(xml_path).getroot()
+
+    def local(tag):
+        return tag.split("}", 1)[-1] if "}" in tag else tag
+
+    groups = {}
+    for g in root.iter():
+        if local(g.tag) != "assay_group":
+            continue
+
+        gid = g.attrib.get("id")
+        label = g.attrib.get("label", gid)
+
+        assays = []
+        for child in g:
+            if local(child.tag) == "assay" and child.text:
+                assays.append(child.text.strip())
+
+        groups[gid] = {"label": label, "assays": assays}
+
+    return groups
+
+GROUPS = parse_groups(f"{config['accession']}-configuration.xml")
+GROUP_IDS = list(GROUPS.keys())
+
+def get_bam_for_lib(wc):
+    base = f"{get_quantification_dir()}/{wc.accession}/star_salmon"
+
+    bam1 = f"{base}/{wc.assay}.markdup.sorted.bam"
+    bam2 = f"{base}/{wc.assay}.sorted.bam"
+
+    if os.path.exists(bam1):
+        bam = bam1
+    elif os.path.exists(bam2):
+        bam = bam2
+    else:
+        raise ValueError(f"No BAM found for assay {wc.assay}")
+
+    return bam
+
+rule generate_bigwig_per_library:
+    input:
+        xml="{accession}-configuration.xml",
+        bam=get_bam_for_lib
+    output:
+        bw=f"{get_quantification_dir()}" + "/{accession}/star_salmon/{assay}.CPM.bw"
+    threads: 1
+    conda: "envs/deeptools_env.yml"
+    log:
+        "logs/{accession}_bigwig/{assay}-generate_bigwig_per_library.log"
+    shell:
+        r"""
+        mkdir -p $(dirname {output.bw})
+        echo "$(date '+%Y-%m-%d %H:%M:%S') START generate_bigwig_per_library rule {output.bw}" > {log}
+        bamCoverage -b {input.bam} --normalizeUsing CPM --binSize 1 -o {output.bw} -p {threads} &>> {log}
+        echo "$(date '+%Y-%m-%d %H:%M:%S') END generate_bigwig_per_library rule {output.bw}" &>> {log}
+        """
+
+rule merge_bigwig_by_group_mean:
+    input:
+        bws=lambda wc: [
+            f"{get_quantification_dir()}/{wc.accession}/star_salmon/{a}.CPM.bw"
+            for a in GROUPS[wc.gid]["assays"]
+        ]
+    output:
+        bedGraph=temp("logs/{accession}_bigwig/{gid}-merged_sum.bedGraph"),
+        mean_bedGraph=temp("logs/{accession}_bigwig/{gid}-merged_mean.bedGraph"),
+        sorted_bedGraph="{accession}.{gid}.mean.expressions.bedGraph",
+        mean_bw="{accession}.{gid}.mean.CPM.bw",
+        mean_d4="{accession}.{gid}.mean.CPM.d4",
+        done=temp("logs/{accession}_bigwig/{gid}-merge_bigwig_by_group_mean.done")
+    threads: 1
+    conda: "envs/ucsc_bw_env.yml"
+    resources:
+        mem_mb=get_mem_mb
+    log:
+        "logs/{accession}_{gid}_merge_bigwig_by_group_mean.log"
+    params:
+        quantification_dir=get_quantification_dir()
+    shell:
+        r"""
+        ts() {{ date "+%Y-%m-%d %H:%M:%S"; }}
+
+        expQuantDir={params.quantification_dir}/{wildcards.accession}
+
+        mkdir -p $(dirname {output.done}) $(dirname {output.mean_bw})
+
+        echo "$(ts) START bigWigMerge" > {log}
+
+		N=$(echo {input} | wc -w)
+
+		if [ "$N" -eq 1 ]; then
+		    bigWigToBedGraph {input} {output.bedGraph} &>> {log}
+		else
+		    bigWigMerge {input} {output.bedGraph} &>> {log}
+		fi
+
+        echo "$(ts) FINISH bigWigMerge" &>> {log}
+
+        N=$(echo {input.bws} | wc -w)
+
+        echo "$(ts) START averaging bedGraph" &>> {log}
+        awk -v n="$N" 'BEGIN{{OFS="\t"}} {{$4=$4/n; print}}' {output.bedGraph} > {output.mean_bedGraph}
+        echo "$(ts) FINISH averaging bedGraph" &>> {log}
+
+        echo "$(ts) START sorting bedGraph" &>> {log}
+        LC_ALL=C sort --parallel={threads} -k1,1 -k2,2n {output.mean_bedGraph} > {output.sorted_bedGraph}
+        echo "$(ts) FINISH sorting bedGraph" &>> {log}
+
+        params_json=$(ls -t "$expQuantDir"/pipeline_info/params_*.json | head -n 1)
+        chrom_sizes="$(jq -r '.fasta' "$params_json").sizes"
+
+        echo "$(ts) START bedGraphToBigWig" &>> {log}
+        bedGraphToBigWig {output.sorted_bedGraph} $chrom_sizes {output.mean_bw} &>> {log}
+        echo "$(ts) FINISH bedGraphToBigWig" &>> {log}
+
+        echo "$(ts) START d4 conversion" &>> {log}
+        d4tools create {output.mean_bw} {output.mean_d4} &>> {log}
+        echo "$(ts) FINISH d4 conversion" &>> {log}
+
+        touch {output.done}
+        """

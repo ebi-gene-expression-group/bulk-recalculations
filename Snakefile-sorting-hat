@@ -103,13 +103,6 @@ def get_user_species(wildcards):
     else:
         return 'True'
 
-def get_db_params(param):
-    """Return config parameters to establish connection with isl db."""
-    if param in config:
-        return config[param]
-    else:
-        sys.exit(1)
-
 def read_skip_accessions_file(analysis_goal):
     """
     List of accessions that should be skipped from reprocessing
@@ -209,6 +202,8 @@ rule get_experiment_metadata:
         export ATLAS_PROD="{params.atlas_prod}"
         export ATLAS_EXPS="{params.atlas_exps}"
         source "{workflow.basedir}/atlas-bash-util/generic_routines.sh"
+		exp_id={wildcards.accession}
+		exp_type=$(echo "${{exp_id#E-}}" | sed 's/-.*//')
 
         # proteomics baseline experiments do not need to include exp type assays/contrasts in the summary yaml
         prot_exp_type='experimentType="proteomics_baseline'
@@ -233,7 +228,8 @@ rule get_experiment_metadata:
             organism=$(get_organism_from_condensed_sdrf "{wildcards.accession}/{wildcards.accession}.condensed-sdrf.tsv")
         elif [ -e "{wildcards.accession}/{wildcards.accession}-configuration.xml" ]; then
             echo "Trying with perl (produces organism with capitals and spaces)"
-            organism=$(perl {workflow.basedir}/bin/get_experiment_info.pl --experiment {wildcards.accession} --xmlfile {wildcards.accession}/{wildcards.accession}-configuration.xml --organism | sed 's/ /_/g' | tr '[:upper:]' '[:lower:]')
+            echo "perl {workflow.basedir}/bin/get_experiment_info.pl --experiment {wildcards.accession} --xmlfile {wildcards.accession}/{wildcards.accession}-configuration.xml --organism"
+			organism=$(perl {workflow.basedir}/bin/get_experiment_info.pl --experiment {wildcards.accession} --xmlfile {wildcards.accession}/{wildcards.accession}-configuration.xml  --organism | sed 's/ /_/g' | tr '[:upper:]' '[:lower:]')
         else
             echo "Nothing worked...Exiting with error"
             >&2 echo "Can't retrieve organism: neither {wildcards.accession}.condensed-sdrf.tsv nor {wildcards.accession}/{wildcards.accession}-configuration.xml not found "
@@ -255,16 +251,33 @@ rule get_experiment_metadata:
         fi
 	    echo "GTF file location sourced"
 
+
         prot_exp_type_all='experimentType="proteomics_'
         # this applies to all proteomics experiments
         if grep -q "$prot_exp_type_all" {input.config_file} ; then
             idf={params.prot_magetab_files}/{wildcards.accession}/{wildcards.accession}.idf.txt
             sdrf={params.prot_magetab_files}/{wildcards.accession}/{wildcards.accession}.sdrf.txt
         else
-            magetabfiles=$( perl {workflow.basedir}/bin/get_experiment_info.pl --experiment {wildcards.accession} --xmlfile {wildcards.accession}/{wildcards.accession}-configuration.xml --magetabfiles --not-strict)
-            echo "MAGETAB location sourced"
-            idf=$( echo $magetabfiles | awk -F',' '{{ print $1 }}' )
-            sdrf=$( echo $magetabfiles | awk -F',' '{{ print $2 }}' )
+            # Prefer atlas_exps/local files over perl-derived path to avoid stale AE2_PRODUCTION paths
+			idf_candidate="{params.atlas_prod}/atlas_magetab/$exp_type/{wildcards.accession}/{wildcards.accession}.idf.txt"
+			sdrf_candidate="{params.atlas_prod}/atlas_magetab/$exp_type/{wildcards.accession}/{wildcards.accession}.sdrf.txt"
+
+			if [ -f "$idf_candidate" ] && [ -f "$sdrf_candidate" ]; then
+			    echo "Using MAGETAB from atlas_exps"
+			    idf="$idf_candidate"
+			    sdrf="$sdrf_candidate"
+			else
+			    echo "Falling back to get_experiment_info.pl --magetabfiles"
+			    env | egrep 'AE2|ATLAS|PROD|EXPS' || true
+			    magetabfiles=$(perl {workflow.basedir}/bin/get_experiment_info.pl \
+			      --experiment {wildcards.accession} \
+			      --xmlfile {wildcards.accession}/{wildcards.accession}-configuration.xml \
+			      --magetabfiles --not-strict)
+			    echo "magetabfiles=$magetabfiles"
+			
+			    idf=$(echo "$magetabfiles" | awk -F',' '{{print $1}}')
+			    sdrf=$(echo "$magetabfiles" | awk -F',' '{{print $2}}')
+			fi
         fi
 
         if [ -z "$gff_file" ] || [ -z "$idf" ] || [ -z "$sdrf" ]; then
@@ -290,13 +303,8 @@ rule produce_reprocess_call:
         bioentities_properties=config['bioentities_properties'],
         skip_steps_file=get_skip_steps_file(),
         run_deconv_file=get_run_deconv_file(),
-        methods_base=config['methods_base'],
-        methods_dif=config['methods_dif'],
         zooma_exclusions=config['zooma_exclusions'],
-        isl_dir=config['isl_dir'],
-        isl_genomes=config['isl_genomes'],
-        irap_versions=config['irap_versions'],
-        irap_container=config['irap_container'],
+        quantification_dir=config['quantification_dir'],
         tmp_dir=config['tmp_dir'],
         atlas_exps = config['atlas_exps'],
         priv_stat_file = config['priv_stat_file'],
@@ -305,10 +313,6 @@ rule produce_reprocess_call:
         goal=config['goal'],
         atlasmeta_config=get_meta_config(),
         allowed_organism=get_user_species,
-        oracle_home=get_db_params('oracle_home'),
-        python_user=get_db_params('python_user'),
-        python_connect_string=get_db_params('python_connect_string'),
-        python_password=get_db_params('python_password'),
         deconv_ref=config['deconv_ref']
 
     output:
@@ -338,21 +342,12 @@ rule produce_reprocess_call:
                 bioentities_properties={params.bioentities_properties} \
                 skip_steps_file={params.skip_steps_file} \
                 run_deconv_file={params.run_deconv_file} \
-                methods_base={params.methods_base} \
-                methods_dif={params.methods_dif} \
                 atlas_exps={params.atlas_exps} \
                 priv_stat_file={params.priv_stat_file} \
                 zooma_exclusions={params.zooma_exclusions} \
-                isl_dir={params.isl_dir} \
-                isl_genomes={params.isl_genomes} \
-                irap_versions={params.irap_versions} \
-                irap_container={params.irap_container} \
+                quantification_dir={params.quantification_dir} \
                 tmp_dir={params.tmp_dir} \
                 atlas_meta_config={params.atlasmeta_config} \
-                oracle_home={params.oracle_home} \
-                python_user={params.python_user} \
-                python_connect_string={params.python_connect_string} \
-                python_password={params.python_password} \
                 deconv_ref={params.deconv_ref} \
                 -s {workflow.basedir}/Snakefile-reprocess {params.log_handler_script}
 
@@ -381,17 +376,8 @@ rule produce_recalculations_call:
         priv_stat_file = config['priv_stat_file'],
         tmp_dir=config['tmp_dir'],
         allowed_organism=get_user_species,
-        oracle_home=get_db_params('oracle_home'),
-        python_user=get_db_params('python_user'),
-        python_connect_string=get_db_params('python_connect_string'),
-        python_password=get_db_params('python_password'),
         deconv_ref=config['deconv_ref'],
-        irap_versions=config['irap_versions'],
-        irap_container=config['irap_container'],
-        methods_base=config['methods_base'],
-        methods_dif=config['methods_dif'],
-        isl_dir=config['isl_dir'],
-        isl_genomes=config['isl_genomes']
+        quantification_dir=config['quantification_dir']
 	
     output:
         touch("{accession}/{accession}.recalculations.done")
@@ -423,17 +409,8 @@ rule produce_recalculations_call:
 		atlas_exps={params.atlas_exps} \
 		priv_stat_file={params.priv_stat_file} \
 	       	tmp_dir={params.tmp_dir} \
-                oracle_home={params.oracle_home} \
-                python_user={params.python_user} \
-                python_connect_string={params.python_connect_string} \
-                python_password={params.python_password} \
 		deconv_ref={params.deconv_ref} \
-		irap_versions={params.irap_versions} \
-                irap_container={params.irap_container} \
-		methods_base={params.methods_base} \
-                methods_dif={params.methods_dif} \
-		isl_dir={params.isl_dir} \
-                isl_genomes={params.isl_genomes} \
+		quantification_dir={params.quantification_dir} \
                 -s {workflow.basedir}/Snakefile-recalculations {params.log_handler_script}
                 
         else
