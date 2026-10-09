@@ -245,9 +245,9 @@ rule get_experiment_metadata:
         ##echo $organism "check-> "$organism_check >> organisms.txt
         organism=$organism_check
 
-        gff_file=$( find {input.gtf_dir}/$organism -iname "$organism.*.gff3" | head -n1)
+        gff_file=$( find {input.gtf_dir}/${organism} -iname "${organism}.*.gff3" | head -n1)
         if [ -z "$gff_file" ]; then
-            gff_file=$( find {input.gtf_dir}/$organism -iname "$organism_*.gff3" | head -n1)
+            gff_file=$( find {input.gtf_dir}/${organism} -iname "${organism}_*.gff3" | head -n1)
         fi
 	    echo "GTF file location sourced"
 
