@@ -244,6 +244,8 @@ rule get_experiment_metadata:
 
         ##echo $organism "check-> "$organism_check >> organisms.txt
         organism=$organism_check
+        echo ${{organism}}            ##########
+        echo "${{organism}}.*.gff3"   ##########
 
         gff_file=$( find {input.gtf_dir}/${{organism}} -iname "${{organism}}.*.gff3" | head -n1)
         if [ -z "$gff_file" ]; then
