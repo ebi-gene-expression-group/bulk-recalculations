@@ -78,13 +78,13 @@ my $exptAccession = (split '\/', $atlasExperimentDir)[-1];
 
 # Path to directory with ATLAS_PROD, ArrayExpress/Atlas load directories.
 my $atlasProdDir = $ENV{ "ATLAS_PROD" };
-my $aeLoadDir = $ENV{"AE2_BASE_DIR"};
+my $aeLoadDir = $ENV{"ATLAS_MAGETAB"};
 
 unless( $atlasProdDir ) {
   $logger->logdie( "ATLAS_PROD environment variable is not defined, cannot continue." );
 }
 unless( $aeLoadDir ) {
-  $logger->logdie( "AE2_BASE_DIR environment variable is not defined, cannot continue." );
+  $logger->logdie( "ATLAS_MAGETAB environment variable is not defined, cannot continue." );
 }
 
 # Get the pipeline (e.g. MEXP, MTAB, GEOD, ...) for this experiment.
